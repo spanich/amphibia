@@ -1265,6 +1265,9 @@ public class Amphibia extends JFrame {
                     mainPanel.loadProject(selectedProject);
                     mainPanel.expandDefaultNodes(selectedProject);
                     selectedProject.save();
+                    if (mainPanel.tabRight.isEnabledAt(1)) {
+                        mainPanel.tabRight.setSelectedIndex(1);
+                    }
                 } catch (IOException ex) {
                     mainPanel.addError(ex);
                 }

@@ -129,6 +129,8 @@ public final class MainPanel extends javax.swing.JPanel {
 
         editor.setMainPanel(this);
         runner = new Runner(this, editor);
+        
+        tabRight.setEnabledAt(1, false);
 
         final JTextArea errors = new JTextArea();
         final FontMetrics fm = getFontMetrics(errors.getFont());
@@ -1117,7 +1119,9 @@ public final class MainPanel extends javax.swing.JPanel {
         debugTreeNav = new JTree();
         spnReport = new JScrollPane();
         reportTreeNav = new JTree();
+        tabRight = new JTabbedPane();
         editor = new Editor();
+        wizard = new Wizard();
 
         setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
 
@@ -1141,7 +1145,11 @@ public final class MainPanel extends javax.swing.JPanel {
         tabLeft.addTab(bundle.getString("report"), new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/export_junit_16.png")), spnReport); // NOI18N
 
         spnMainPane.setLeftComponent(tabLeft);
-        spnMainPane.setRightComponent(editor);
+
+        tabRight.addTab(bundle.getString("editor"), new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/editor_16.png")), editor); // NOI18N
+        tabRight.addTab(bundle.getString("wizard"), new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/wizard_16.png")), wizard); // NOI18N
+
+        spnMainPane.setRightComponent(tabRight);
 
         add(spnMainPane);
     }// </editor-fold>//GEN-END:initComponents
@@ -1155,6 +1163,8 @@ public final class MainPanel extends javax.swing.JPanel {
     private JScrollPane spnReport;
     JScrollPane spnTreeNav;
     public JTabbedPane tabLeft;
+    public JTabbedPane tabRight;
     JTree treeNav;
+    Wizard wizard;
     // End of variables declaration//GEN-END:variables
 }
