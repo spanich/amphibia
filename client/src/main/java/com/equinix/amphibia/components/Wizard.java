@@ -26,20 +26,162 @@ public class Wizard extends BaseTaskPane {
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
+        java.awt.GridBagConstraints gridBagConstraints;
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
-        this.setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 952, Short.MAX_VALUE)
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 466, Short.MAX_VALUE)
-        );
+        pnlTop = new javax.swing.JPanel();
+        lblEnv = new javax.swing.JLabel();
+        cmdEnv = new javax.swing.JComboBox<>();
+        lblMethod = new javax.swing.JLabel();
+        cmdMethod = new javax.swing.JComboBox<>();
+        lblPath = new javax.swing.JLabel();
+        txtPath = new javax.swing.JTextField();
+        btnHeaders = new javax.swing.JButton();
+        lblClose = new javax.swing.JLabel();
+        tabBody = new javax.swing.JTabbedPane();
+        spnReqBody = new javax.swing.JScrollPane();
+        txtReqBody = new javax.swing.JTextArea();
+        spnResBody = new javax.swing.JScrollPane();
+        txtResBody = new javax.swing.JTextArea();
+        spnConsole = new javax.swing.JScrollPane();
+        txtConsole = new javax.swing.JTextArea();
+        pnlFooter = new javax.swing.JPanel();
+        lblStatusCode = new javax.swing.JLabel();
+        lblCode = new javax.swing.JLabel();
+        btnOpenTC = new javax.swing.JButton();
+        btnSend = new javax.swing.JButton();
+        btnSave = new javax.swing.JButton();
+
+        setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        setLayout(new java.awt.BorderLayout());
+
+        pnlTop.setLayout(new java.awt.GridBagLayout());
+
+        java.util.ResourceBundle bundle = java.util.ResourceBundle.getBundle("com/equinix/amphibia/messages"); // NOI18N
+        lblEnv.setText(bundle.getString("environment")); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        pnlTop.add(lblEnv, gridBagConstraints);
+
+        cmdEnv.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        pnlTop.add(cmdEnv, gridBagConstraints);
+
+        lblMethod.setText(bundle.getString("method")); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        pnlTop.add(lblMethod, gridBagConstraints);
+
+        cmdMethod.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS" }));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        pnlTop.add(cmdMethod, gridBagConstraints);
+
+        lblPath.setText(bundle.getString("path")); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        pnlTop.add(lblPath, gridBagConstraints);
+
+        txtPath.setEditable(false);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        pnlTop.add(txtPath, gridBagConstraints);
+
+        btnHeaders.setText(bundle.getString("headers")); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridy = 3;
+        pnlTop.add(btnHeaders, gridBagConstraints);
+
+        lblClose.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
+        lblClose.setText("x");
+        lblClose.setToolTipText("");
+        lblClose.setAutoscrolls(true);
+        lblClose.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 0, 5));
+        lblClose.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        lblClose.setInheritsPopupMenu(false);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHEAST;
+        pnlTop.add(lblClose, gridBagConstraints);
+
+        add(pnlTop, java.awt.BorderLayout.NORTH);
+
+        txtReqBody.setColumns(20);
+        txtReqBody.setRows(5);
+        spnReqBody.setViewportView(txtReqBody);
+
+        tabBody.addTab(bundle.getString("requestBody"), spnReqBody); // NOI18N
+
+        txtResBody.setColumns(20);
+        txtResBody.setRows(5);
+        spnResBody.setViewportView(txtResBody);
+
+        tabBody.addTab(bundle.getString("responseBody"), spnResBody); // NOI18N
+
+        txtConsole.setColumns(20);
+        txtConsole.setRows(5);
+        spnConsole.setViewportView(txtConsole);
+
+        tabBody.addTab(bundle.getString("console"), spnConsole); // NOI18N
+
+        add(tabBody, java.awt.BorderLayout.CENTER);
+
+        pnlFooter.setLayout(new java.awt.GridBagLayout());
+
+        lblStatusCode.setText(bundle.getString("statusCode")); // NOI18N
+        pnlFooter.add(lblStatusCode, new java.awt.GridBagConstraints());
+
+        lblCode.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 0, 5));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 1.0;
+        pnlFooter.add(lblCode, gridBagConstraints);
+
+        btnOpenTC.setText(bundle.getString("openTestcase")); // NOI18N
+        btnOpenTC.setEnabled(false);
+        pnlFooter.add(btnOpenTC, new java.awt.GridBagConstraints());
+
+        btnSend.setText(bundle.getString("send")); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        pnlFooter.add(btnSend, gridBagConstraints);
+
+        btnSave.setText(bundle.getString("save")); // NOI18N
+        pnlFooter.add(btnSave, new java.awt.GridBagConstraints());
+
+        add(pnlFooter, java.awt.BorderLayout.PAGE_END);
     }// </editor-fold>//GEN-END:initComponents
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnHeaders;
+    private javax.swing.JButton btnOpenTC;
+    private javax.swing.JButton btnSave;
+    private javax.swing.JButton btnSend;
+    private javax.swing.JComboBox<String> cmdEnv;
+    private javax.swing.JComboBox<String> cmdMethod;
+    private javax.swing.JLabel lblClose;
+    private javax.swing.JLabel lblCode;
+    private javax.swing.JLabel lblEnv;
+    private javax.swing.JLabel lblMethod;
+    private javax.swing.JLabel lblPath;
+    private javax.swing.JLabel lblStatusCode;
+    private javax.swing.JPanel pnlFooter;
+    private javax.swing.JPanel pnlTop;
+    private javax.swing.JScrollPane spnConsole;
+    private javax.swing.JScrollPane spnReqBody;
+    private javax.swing.JScrollPane spnResBody;
+    private javax.swing.JTabbedPane tabBody;
+    private javax.swing.JTextArea txtConsole;
+    private javax.swing.JTextField txtPath;
+    private javax.swing.JTextArea txtReqBody;
+    private javax.swing.JTextArea txtResBody;
     // End of variables declaration//GEN-END:variables
 }

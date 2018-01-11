@@ -1013,7 +1013,7 @@ public class Amphibia extends JFrame {
     private void mnuAboutActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuAboutActionPerformed
         ImageIcon logo = new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/logo_large.png"));
         ImageIcon resizeIcon = new ImageIcon(logo.getImage().getScaledInstance(40, 40, java.awt.Image.SCALE_DEFAULT));
-        JOptionPane.showMessageDialog(this, "Amphibia " + VERSION + "\n\nCopyright 2018. All rights reserved.\n\n", bundle.getString("mnuAbout"), JOptionPane.PLAIN_MESSAGE, resizeIcon);
+        JOptionPane.showMessageDialog(this, "Amphibia Lite Edition\n\nVersion: " + VERSION + "\n\nCopyright 2018. All rights reserved.\n\n", bundle.getString("mnuAbout"), JOptionPane.PLAIN_MESSAGE, resizeIcon);
     }//GEN-LAST:event_mnuAboutActionPerformed
 
     private void mnuHelpContentActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuHelpContentActionPerformed
@@ -1258,8 +1258,9 @@ public class Amphibia extends JFrame {
                     String content = IO.readFile(new File("../resources", "project_template.json"));
                     IO.write(content.replace("<% PROJECT_NAME %>", name), jc.getSelectedFile());
                     File dataDir = new File(jc.getSelectedFile().getParentFile(), "data");
-                    dataDir.mkdirs();
-                    IO.copy(new File("../resources", "runner_template.json"), new File(dataDir, "runner.json"));
+                    if (dataDir.mkdirs()) {
+                        IO.copy(new File("../resources", "runner_template.json"), new File(dataDir, "runner.json"));
+                    }
                     TreeCollection selectedProject = new TreeCollection();
                     selectedProject.setProjectFile(jc.getSelectedFile());
                     mainPanel.loadProject(selectedProject);

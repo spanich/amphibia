@@ -129,8 +129,6 @@ public final class MainPanel extends javax.swing.JPanel {
 
         editor.setMainPanel(this);
         runner = new Runner(this, editor);
-        
-        tabRight.setEnabledAt(1, false);
 
         final JTextArea errors = new JTextArea();
         final FontMetrics fm = getFontMetrics(errors.getFont());
