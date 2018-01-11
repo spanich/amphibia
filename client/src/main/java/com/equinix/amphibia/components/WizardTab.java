@@ -8,13 +8,14 @@ package com.equinix.amphibia.components;
 import java.awt.BorderLayout;
 import java.awt.Cursor;
 import java.awt.Dimension;
-import java.awt.Font;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.ResourceBundle;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -53,7 +54,9 @@ public class WizardTab extends javax.swing.JPanel {
 
         pnlTop = new JPanel();
         lblEnv = new JLabel();
+        pnlEnv = new JPanel();
         cmdEnv = new JComboBox<>();
+        btnEnvInfo = new JButton();
         lblMethod = new JLabel();
         pnlMethodURI = new JPanel();
         cmdMethod = new JComboBox<>();
@@ -71,7 +74,6 @@ public class WizardTab extends javax.swing.JPanel {
         pnlFooter = new JPanel();
         lblStatusCode = new JLabel();
         lblCode = new JLabel();
-        btnOpenTC = new JButton();
         btnSend = new JButton();
         btnSave = new JButton();
 
@@ -86,12 +88,20 @@ public class WizardTab extends javax.swing.JPanel {
         gridBagConstraints.anchor = GridBagConstraints.WEST;
         pnlTop.add(lblEnv, gridBagConstraints);
 
+        pnlEnv.setLayout(new FlowLayout(FlowLayout.LEFT));
+
         cmdEnv.setModel(envModel);
         cmdEnv.setPreferredSize(new Dimension(250, 20));
+        pnlEnv.add(cmdEnv);
+
+        btnEnvInfo.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/icon-16-info.png"))); // NOI18N
+        btnEnvInfo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnEnvInfo.setPreferredSize(new Dimension(30, 22));
+        pnlEnv.add(btnEnvInfo);
+
         gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.anchor = GridBagConstraints.WEST;
-        gridBagConstraints.insets = new Insets(5, 5, 5, 5);
-        pnlTop.add(cmdEnv, gridBagConstraints);
+        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
+        pnlTop.add(pnlEnv, gridBagConstraints);
 
         lblMethod.setText(bundle.getString("method")); // NOI18N
         gridBagConstraints = new GridBagConstraints();
@@ -165,16 +175,14 @@ public class WizardTab extends javax.swing.JPanel {
         gridBagConstraints.weightx = 1.0;
         pnlFooter.add(lblCode, gridBagConstraints);
 
-        btnOpenTC.setText(bundle.getString("openTestcase")); // NOI18N
-        btnOpenTC.setEnabled(false);
-        pnlFooter.add(btnOpenTC, new GridBagConstraints());
-
         btnSend.setText(bundle.getString("send")); // NOI18N
+        btnSend.setEnabled(false);
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.insets = new Insets(5, 5, 5, 5);
         pnlFooter.add(btnSend, gridBagConstraints);
 
         btnSave.setText(bundle.getString("save")); // NOI18N
+        btnSave.setEnabled(false);
         pnlFooter.add(btnSave, new GridBagConstraints());
 
         add(pnlFooter, BorderLayout.SOUTH);
@@ -182,8 +190,8 @@ public class WizardTab extends javax.swing.JPanel {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    JButton btnEnvInfo;
     JButton btnHeaders;
-    JButton btnOpenTC;
     JButton btnSave;
     JButton btnSend;
     JComboBox<String> cmdEnv;
@@ -194,6 +202,7 @@ public class WizardTab extends javax.swing.JPanel {
     JLabel lblPath;
     JLabel lblStatusCode;
     JLabel lblURI;
+    JPanel pnlEnv;
     JPanel pnlFooter;
     JPanel pnlMethodURI;
     JPanel pnlTop;

@@ -414,6 +414,7 @@ public class Amphibia extends JFrame {
         btnStop = new JButton();
         spr4 = new JToolBar.Separator();
         btnReport = new JButton();
+        btnOpenTestCase = new JButton();
         lpnLayer = new JLayeredPane();
         mainPanel = new MainPanel();
         mnbTop = new JMenuBar();
@@ -626,6 +627,19 @@ public class Amphibia extends JFrame {
             }
         });
         tlbTop.add(btnReport);
+
+        btnOpenTestCase.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/open_env_16.png"))); // NOI18N
+        btnOpenTestCase.setToolTipText(bundle.getString("openTestcase")); // NOI18N
+        btnOpenTestCase.setEnabled(false);
+        btnOpenTestCase.setFocusable(false);
+        btnOpenTestCase.setHorizontalTextPosition(SwingConstants.CENTER);
+        btnOpenTestCase.setVerticalTextPosition(SwingConstants.BOTTOM);
+        btnOpenTestCase.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                btnOpenTestCaseActionPerformed(evt);
+            }
+        });
+        tlbTop.add(btnOpenTestCase);
 
         getContentPane().add(tlbTop, BorderLayout.PAGE_START);
 
@@ -1276,6 +1290,10 @@ public class Amphibia extends JFrame {
         }
     }//GEN-LAST:event_mnuEmptyProjectActionPerformed
 
+    private void btnOpenTestCaseActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnOpenTestCaseActionPerformed
+        mainPanel.tabRight.setSelectedIndex(1);
+    }//GEN-LAST:event_btnOpenTestCaseActionPerformed
+
     public void export(String type) {
         Amphibia.setWaitOverlay(true);
         new Thread() {
@@ -1384,6 +1402,7 @@ public class Amphibia extends JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private JButton btnCreate;
+    public JButton btnOpenTestCase;
     public JToggleButton btnPause;
     private JButton btnReport;
     private JButton btnStop;

@@ -327,6 +327,7 @@ public final class MainPanel extends javax.swing.JPanel {
         editor.resetHistory();
         amphibia.enableSave(false);
         amphibia.tlbRun.setEnabled(false);
+        amphibia.btnOpenTestCase.setEnabled(false);
         treeNav.updateUI();
     }
 
@@ -389,6 +390,7 @@ public final class MainPanel extends javax.swing.JPanel {
         TreeCollection collection = node.getCollection();
         TreeIconNode debugNode = (node.debugNode != null) ? node.debugNode : collection.project.debugNode;
         editor.reset();
+        amphibia.btnOpenTestCase.setEnabled(node.getType() == TESTCASE);
         amphibia.tlbRun.setEnabled(true);
         treeNav.setSelectionPath(new TreePath(node.getPath()));
         debugTreeNav.setSelectionPath(new TreePath(debugNode.getPath()));
