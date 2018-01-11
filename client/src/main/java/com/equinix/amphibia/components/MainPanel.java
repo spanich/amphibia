@@ -706,26 +706,33 @@ public final class MainPanel extends javax.swing.JPanel {
                         }
 
                         final JSONObject testcaseJSON = new JSONObject();
-                        final JSONObject inheritedProperties = new JSONObject();
+                        final JSONObject testCaseInheritedProperties = new JSONObject();
                         info.properties.getProperty("Global").keySet().forEach((key) -> {
-                            inheritedProperties.put(key, "${#Global$" + key + "}");
+                            testCaseInheritedProperties.put(key, "${#Global$" + key + "}");
                         });
                         info.properties.getProperty("Project").keySet().forEach((key) -> {
-                            inheritedProperties.put(key, "${#Project$" + key + "}");
+                            testCaseInheritedProperties.put(key, "${#Project$" + key + "}");
                         });
                         info.properties.getProperty("TestSuite").keySet().forEach((key) -> {
-                            inheritedProperties.put(key, "${#TestSuite$" + key + "}");
+                            testCaseInheritedProperties.put(key, "${#TestSuite$" + key + "}");
                         });
                         info.properties.getProperty("TestCase").keySet().forEach((key) -> {
-                            inheritedProperties.put(key, "${#TestCase$" + key + "}");
+                            testCaseInheritedProperties.put(key, "${#TestCase$" + key + "}");
                         });
                         testCaseProperties.keySet().forEach((key) -> {
-                            inheritedProperties.put(key, "${#TestCase$" + key + "}");
+                            testCaseInheritedProperties.put(key, "${#TestCase$" + key + "}");
                         });
                         if (testcase.containsKey("transfer")) {
                             JSONObject transferProps = testcase.getJSONObject("transfer");
                             transferProps.keySet().forEach((key) -> {
-                                inheritedProperties.put(key, "${#TestCase:" + transferProps.get(key) + "}");
+                                String values;
+                                if (testCaseInheritedProperties.containsKey(key)) {
+                                    values = testCaseInheritedProperties.get(key) +
+                                            ", \n${#TestCase:" + transferProps.get(key) + "}";
+                                } else {
+                                    values = "${#TestCase:" + transferProps.get(key) + "}";
+                                }
+                                testCaseInheritedProperties.put(key, values);
                             });
                             testcaseJSON.element("transfer", transferProps);
                         }
@@ -740,7 +747,6 @@ public final class MainPanel extends javax.swing.JPanel {
                         testcaseJSON.element("headers", testCaseHeaders);
                         testcaseJSON.element("properties", testCaseProperties);
                         testcaseJSON.element("method", replace.getString("method"));
-                        testcaseJSON.element("inherited-properties", inheritedProperties);
                         testcaseJSON.element("url", url);
                         String tooltipURL = properties.replace(url).replaceAll("&amp;", "&");
                         TreeIconNode testcaseNode = collection.addTreeNode(testsuiteNode, testcase.getString("name"), TESTCASE, false)
@@ -760,6 +766,7 @@ public final class MainPanel extends javax.swing.JPanel {
                         debugSuiteNode.add(debugTestCaseNode);
 
                         JSONArray teststeps = new JSONArray();
+                        JSONObject inheritedProperties = JSONObject.fromObject(testCaseInheritedProperties);
                         testcase.getJSONArray("steps").forEach((item) -> {
                             JSONObject step = (JSONObject) item;
                             teststeps.add(step.getString("name"));
@@ -796,9 +803,24 @@ public final class MainPanel extends javax.swing.JPanel {
                             if (step.containsKey("transfer")) {
                                 JSONObject transferProps = step.getJSONObject("transfer");
                                 transferProps.keySet().forEach((key) -> {
-                                    stepInheritedProperties.put(key, "${#TestStep:" + transferProps.get(key) + "}");
+                                    String values;
+                                    if (stepInheritedProperties.containsKey(key)) {
+                                        values = stepInheritedProperties.get(key) + 
+                                                ", \n${#TestStep:" + transferProps.get(key) + "}";
+                                    } else {
+                                        values = "${#TestStep:" + transferProps.get(key) + "}";
+                                    }
+                                    stepInheritedProperties.put(key, values);
+                                    
+                                    if (testCaseInheritedProperties.containsKey(key)) {
+                                        values = testCaseInheritedProperties.get(key) + 
+                                                ", \n${#TestStep#" + step.getString("name") + ":" + transferProps.get(key) + "}";
+                                    } else {
+                                        values = "${#TestStep#" + step.getString("name") + ":" + transferProps.get(key) + "}";
+                                    }
+                                    testCaseInheritedProperties.put(key, values);                                    
                                 });
-                                testStepJSON.element("transfer", transferProps);
+                                testStepJSON.getJSONObject("response").element("transfer", transferProps);
                             }
                             
                             testStepJSON.element("inherited-properties", stepInheritedProperties);
@@ -821,6 +843,7 @@ public final class MainPanel extends javax.swing.JPanel {
                             debugTestCaseNode.add(new TreeIconNode(testStepNode, null).addJSON(step));
                         });
                         testcaseJSON.element("teststeps", teststeps);
+                        testcaseJSON.element("inherited-properties", testCaseInheritedProperties);
                         testcaseNode.addJSON(testcaseJSON);
                     }
                 }
