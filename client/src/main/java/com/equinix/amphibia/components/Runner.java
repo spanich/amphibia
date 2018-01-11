@@ -244,7 +244,7 @@ public final class Runner extends BaseTaskPane {
                     });
                 });
             });
-            mainPanel.history.saveNodeValue(runner);
+            mainPanel.saveNodeValue(runner);
         }
     }
 
@@ -267,7 +267,7 @@ public final class Runner extends BaseTaskPane {
         TreeCollection collection = MainPanel.selectedNode.getCollection();
         TreeIconNode runner = collection.runner;
         JSONArray testsuites = runner.jsonObject().getJSONArray("testsuites");
-        File dir = new File(collection.getProjectDir(), "reports");
+        File dir = IO.getFile(collection, "reports");
         if (!dir.exists()) {
             dir.mkdirs();
         }

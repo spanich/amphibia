@@ -157,7 +157,11 @@ public final class Editor extends BaseTaskPane {
             } else if (cellValue == VIEW) {
                 mainPanel.resourceEditDialog.openEditDialog(entry, value, false);
             } else if (cellValue == EDIT || cellValue == EDIT_LIMIT) {
-                mainPanel.resourceEditDialog.openEditDialog(entry, value, true);
+                if (entry.parent != null && entry.parent.type == TRANSFER) {
+                    mainPanel.transferDialog.openDialog(MainPanel.selectedNode, entry);
+                } else {
+                    mainPanel.resourceEditDialog.openEditDialog(entry, value, true);
+                }
             } else if (cellValue == ADD_RESOURCES) {
                 if (type == TESTSUITE) {
                     mainPanel.resourceAddDialog.showTestCaseDialog(node);
@@ -174,7 +178,7 @@ public final class Editor extends BaseTaskPane {
             } else if (cellValue == REFERENCE) {
                 mainPanel.referenceEditDialog.openViewDialog(collection, entry);
             } else if (cellValue == TRANSFER) {
-                mainPanel.transferDialog.openDialog(collection, entry);
+                mainPanel.transferDialog.openDialog(MainPanel.selectedNode, entry);
             }
         });
         treeTable.setAutoCreateColumnsFromModel(false);
@@ -562,7 +566,7 @@ public final class Editor extends BaseTaskPane {
         }
 
         public Entry add(JSON parentJson, String name, Object value, Object propType, Object[] props) {
-            boolean isleaf = !(propType == ADD || propType == ADD_RESOURCES || !(propType instanceof JTreeTable.EditValueRenderer.TYPE));
+            boolean isleaf = !(JTreeTable.isNotLeaf(propType) || !(propType instanceof JTreeTable.EditValueRenderer.TYPE));
             Entry entry = new Entry(this, parentJson, name, value, isleaf, false);
             if (propType instanceof JTreeTable.EditValueRenderer.TYPE) {
                 entry.type = (JTreeTable.EditValueRenderer.TYPE) propType;

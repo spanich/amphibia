@@ -180,7 +180,7 @@ public class HistoryManager {
             } else {
                 json.remove(entry.name);
             }
-        } else if (String.valueOf(source.get(entry.name)).equals(String.valueOf(entry.value))) {
+        } else if (source.containsKey(entry.name) && String.valueOf(source.get(entry.name)).equals(String.valueOf(entry.value))) {
             json.remove(entry.name);
         } else {
             json.element(entry.name, entry.value);

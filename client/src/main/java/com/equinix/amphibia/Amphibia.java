@@ -421,9 +421,13 @@ public class Amphibia extends JFrame {
         mnuNew = new JMenu();
         mnuNewProject = new JMenuItem();
         mnuRulesFile = new JMenuItem();
+        mnuEmptyProject = new JMenuItem();
         mnuOpenProject = new JMenuItem();
         menuRecentProject = new JMenu();
         sprProject = new JPopupMenu.Separator();
+        mnuImport = new JMenu();
+        mnuImportSoap = new JMenuItem();
+        mnuImportPostman = new JMenuItem();
         mnuSave = new JMenuItem();
         mnuSaveAs = new JMenuItem();
         sprExport = new JPopupMenu.Separator();
@@ -659,6 +663,16 @@ public class Amphibia extends JFrame {
         });
         mnuNew.add(mnuRulesFile);
 
+        mnuEmptyProject.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.CTRL_MASK));
+        mnuEmptyProject.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/project_new_16.png"))); // NOI18N
+        mnuEmptyProject.setText(bundle.getString("mnuNewEmptyProject")); // NOI18N
+        mnuEmptyProject.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                mnuEmptyProjectActionPerformed(evt);
+            }
+        });
+        mnuNew.add(mnuEmptyProject);
+
         mnuFile.add(mnuNew);
 
         mnuOpenProject.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.ALT_MASK));
@@ -675,10 +689,22 @@ public class Amphibia extends JFrame {
         mnuFile.add(menuRecentProject);
         mnuFile.add(sprProject);
 
+        mnuImport.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/import_16.png"))); // NOI18N
+        mnuImport.setText(bundle.getString("import")); // NOI18N
+
+        mnuImportSoap.setText(bundle.getString("importSoapUI")); // NOI18N
+        mnuImportSoap.setEnabled(false);
+        mnuImport.add(mnuImportSoap);
+
+        mnuImportPostman.setText(bundle.getString("importPostman")); // NOI18N
+        mnuImportPostman.setEnabled(false);
+        mnuImport.add(mnuImportPostman);
+
+        mnuFile.add(mnuImport);
+
         mnuSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.ALT_MASK));
         mnuSave.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/save_icon_16.png"))); // NOI18N
         mnuSave.setText(bundle.getString("mnuSave")); // NOI18N
-        mnuSave.setEnabled(false);
         mnuSave.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 mnuSaveActionPerformed(evt);
@@ -689,7 +715,6 @@ public class Amphibia extends JFrame {
         mnuSaveAs.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, InputEvent.ALT_MASK));
         mnuSaveAs.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/save_as_16.png"))); // NOI18N
         mnuSaveAs.setText(bundle.getString("mnuSaveAs")); // NOI18N
-        mnuSaveAs.setEnabled(false);
         mnuSaveAs.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 mnuSaveAsActionPerformed(evt);
@@ -1054,7 +1079,7 @@ public class Amphibia extends JFrame {
         int rVal = jc.showSaveDialog(null);
         if (rVal != JFileChooser.CANCEL_OPTION) {
             try {
-                IO.copy(new File("resources", "rules_properties_template.json"), jc.getSelectedFile());
+                IO.copy(new File("../resources", "rules_properties_template.json"), jc.getSelectedFile());
                 Desktop desktop = Desktop.getDesktop();
                 desktop.open(jc.getSelectedFile());
             } catch (IOException ex) {
@@ -1216,6 +1241,37 @@ public class Amphibia extends JFrame {
         mainPanel.reloadAll();
     }//GEN-LAST:event_inheritPropActionPerformed
 
+    private void mnuEmptyProjectActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuEmptyProjectActionPerformed
+        int count = mainPanel.treeNode.getChildCount();
+        String[] names = new String[count];
+        for (int i = 0; i < count; i++) {
+            names[i] = mainPanel.treeNode.getChildAt(i).toString();
+        }
+        String name = inputDialog("projectName", "", names);
+        if (name != null) {
+            JFileChooser jc = setFileChooserDir(new JFileChooser());
+            jc.setFileFilter(new FileNameExtensionFilter("Amphibia Project File", "json", "text"));
+            jc.setSelectedFile(new File(name + ".json"));
+            int rVal = jc.showSaveDialog(null);
+            if (rVal != JFileChooser.CANCEL_OPTION) {
+                try {
+                    String content = IO.readFile(new File("../resources", "project_template.json"));
+                    IO.write(content.replace("<% PROJECT_NAME %>", name), jc.getSelectedFile());
+                    File dataDir = new File(jc.getSelectedFile().getParentFile(), "data");
+                    dataDir.mkdirs();
+                    IO.copy(new File("../resources", "runner_template.json"), new File(dataDir, "runner.json"));
+                    TreeCollection selectedProject = new TreeCollection();
+                    selectedProject.setProjectFile(jc.getSelectedFile());
+                    mainPanel.loadProject(selectedProject);
+                    mainPanel.expandDefaultNodes(selectedProject);
+                    selectedProject.save();
+                } catch (IOException ex) {
+                    mainPanel.addError(ex);
+                }
+            }
+        }
+    }//GEN-LAST:event_mnuEmptyProjectActionPerformed
+
     public void export(String type) {
         Amphibia.setWaitOverlay(true);
         new Thread() {
@@ -1266,7 +1322,7 @@ public class Amphibia extends JFrame {
             GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
             for (GraphicsDevice gd : ge.getScreenDevices()) {
                 Rectangle b = gd.getDefaultConfiguration().getBounds();
-                if (r.x >= b.x && r.x < b.width && r.y >= b.y && r.y < b.height) {
+                if (r.x >= b.x && r.x < b.x + b.width && r.y >= b.y && r.y < b.y + b.height) {
                     comp.setBounds(r);
                     return;
                 }
@@ -1337,6 +1393,7 @@ public class Amphibia extends JFrame {
     public JMenuItem mnuClose;
     public JCheckBoxMenuItem mnuConsole;
     private JMenu mnuEdit;
+    private JMenuItem mnuEmptyProject;
     private JMenuItem mnuExit;
     private JRadioButtonMenuItem mnuExpert;
     private JMenu mnuExport;
@@ -1345,6 +1402,9 @@ public class Amphibia extends JFrame {
     private JMenu mnuHelp;
     private JMenuItem mnuHelpContent;
     private JCheckBoxMenuItem mnuHistory;
+    private JMenu mnuImport;
+    private JMenuItem mnuImportPostman;
+    private JMenuItem mnuImportSoap;
     private JMenuItem mnuJunit;
     private JMenuItem mnuMocha;
     private JMenu mnuNew;

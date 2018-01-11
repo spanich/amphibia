@@ -339,6 +339,10 @@ public final class MainPanel extends javax.swing.JPanel {
         editor.selectedTreeNode(collection.project);
         editor.reset();
     }
+    
+    public void saveNodeValue(TreeIconNode node) {
+        history.saveNodeValue(node);
+    }
 
     private void openCloseProject(TreeCollection collection, boolean isOpen) {
         collection.project.getTreeIconUserObject().setEnabled(isOpen);
@@ -699,31 +703,35 @@ public final class MainPanel extends javax.swing.JPanel {
                             });
                         }
 
+                        final JSONObject testcaseJSON = new JSONObject();
                         final JSONObject inheritedProperties = new JSONObject();
                         info.properties.getProperty("Global").keySet().forEach((key) -> {
-                            inheritedProperties.put(key, "${#Global#" + key + "}");
+                            inheritedProperties.put(key, "${#Global$" + key + "}");
                         });
                         info.properties.getProperty("Project").keySet().forEach((key) -> {
-                            inheritedProperties.put(key, "${#Project#" + key + "}");
+                            inheritedProperties.put(key, "${#Project$" + key + "}");
                         });
                         info.properties.getProperty("TestSuite").keySet().forEach((key) -> {
-                            inheritedProperties.put(key, "${#TestSuite#" + key + "}");
+                            inheritedProperties.put(key, "${#TestSuite$" + key + "}");
                         });
                         info.properties.getProperty("TestCase").keySet().forEach((key) -> {
-                            inheritedProperties.put(key, "${#TestCase#" + key + "}");
+                            inheritedProperties.put(key, "${#TestCase$" + key + "}");
                         });
-                        if (testcase.containsKey("inheritedProperties")) {
-                            JSONObject transferProps = testcase.getJSONObject("inheritedProperties");
+                        testCaseProperties.keySet().forEach((key) -> {
+                            inheritedProperties.put(key, "${#TestCase$" + key + "}");
+                        });
+                        if (testcase.containsKey("transfer")) {
+                            JSONObject transferProps = testcase.getJSONObject("transfer");
                             transferProps.keySet().forEach((key) -> {
-                                inheritedProperties.put(key, transferProps.get(key));
+                                inheritedProperties.put(key, "${#TestCase:" + transferProps.get(key) + "}");
                             });
+                            testcaseJSON.element("transfer", transferProps);
                         }
                         
                         JSONObject config = info.testCaseInfo.getJSONObject("config");
                         JSONObject replace = config.getJSONObject("replace");
                         String url = "${#Global#" + resource.getString("endpoint") + "}" + "/" + replace.getString("path");
-                        JSONObject testcaseJSON = new JSONObject();
-
+                        
                         testcaseJSON.element("name", testcase.getString("name"));
                         testcaseJSON.element("disabled", testcase.get("disabled") == Boolean.TRUE);
                         testcaseJSON.element("path", info.file.getAbsolutePath());
@@ -769,8 +777,28 @@ public final class MainPanel extends javax.swing.JPanel {
                             
                             JSONObject stepInheritedProperties = JSONObject.fromObject(inheritedProperties);
                             requestProp.keySet().forEach((key) -> {
-                                stepInheritedProperties.put(key, "${#TestStep#" + key + "}");
+                                stepInheritedProperties.put(key, "${#TestStep$" + key + "}");
                             });
+                            
+                            JSONObject responseProp = info.testStepInfo.getJSONObject("response").getJSONObject("properties");
+                            if (step.containsKey("response")) {
+                                responseProp = step.getJSONObject("response").getJSONObject("properties");
+                            }
+                            
+                            responseProp.keySet().forEach((key) -> {
+                                if (!stepInheritedProperties.containsKey(key)) {
+                                    stepInheritedProperties.put(key, "${#TestStep$" + key + "}");
+                                }
+                            });
+                            
+                            if (step.containsKey("transfer")) {
+                                JSONObject transferProps = step.getJSONObject("transfer");
+                                transferProps.keySet().forEach((key) -> {
+                                    stepInheritedProperties.put(key, "${#TestStep:" + transferProps.get(key) + "}");
+                                });
+                                testStepJSON.element("transfer", transferProps);
+                            }
+                            
                             testStepJSON.element("inherited-properties", stepInheritedProperties);
                             
                             String tootltip = info.properties.cloneProperties().setTestStep(requestProp).replace(url).replaceAll("&amp;", "&");
@@ -1031,7 +1059,7 @@ public final class MainPanel extends javax.swing.JPanel {
                 while (children.hasMoreElements()) {
                     TreeIconNode node = (TreeIconNode) children.nextElement();
                     if (node.info != null && node.info.states != null && node.info.states.getInt(TreeIconNode.STATE_DEBUG_EXPAND) == 1) {
-                        if (debugTreeNav.isExpanded(new TreePath(((TreeIconNode) node.getParent()).getPath()))) {
+                        if (node.getParent() != null && debugTreeNav.isExpanded(new TreePath(((TreeIconNode) node.getParent()).getPath()))) {
                             debugTreeNav.expandPath(new TreePath(node.getPath()));
                         }
                     }

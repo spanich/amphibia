@@ -20,6 +20,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
+import net.sf.json.JSONNull;
 import net.sf.json.JSONObject;
 import org.apache.commons.collections.map.ListOrderedMap;
 import org.apache.commons.io.FileUtils;
@@ -30,6 +31,19 @@ import org.apache.commons.io.IOUtils;
  * @author dgofman
  */
 public class IO {
+    
+    public static final JSONNull NULL = JSONNull.getInstance();
+    
+    public static boolean isNULL(Object value) {
+        if (value == null) {
+            return true;
+        } else if (value == NULL) {
+            return true;
+        } else if (value instanceof JSONObject) {
+            return ((JSONObject) value).isNullObject();
+        }
+        return false;
+    }
 
     public static JSON toJSON(String json) throws Exception {
         if (json.startsWith("[")) {

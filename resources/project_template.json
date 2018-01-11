@@ -1,0 +1,13 @@
+{
+	"name": "<% PROJECT_NAME %>",
+	"hosts": [
+	],
+	"globals": [
+	],
+	"interfaces": [
+	],
+	"properties": {
+	},
+	"projectResources": [
+	]
+}

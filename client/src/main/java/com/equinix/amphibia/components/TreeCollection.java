@@ -132,9 +132,9 @@ public final class TreeCollection {
         {"path", REFERENCE},
         {"method", VIEW},
         {"url", VIEW},
+        {"transfer", TRANSFER, EDIT},
         {"headers", ADD},
         {"properties", ADD},
-        {"transfer", TRANSFER, EDIT},
         {"inherited-properties", null, VIEW},
         {"teststeps", ADD_RESOURCES, REFERENCE_EDIT}
     };
@@ -151,11 +151,11 @@ public final class TreeCollection {
             {"schema", REFERENCE_EDIT}
         }},
         {"response", new Object[][]{
+            {"transfer", TRANSFER, EDIT},
             {"properties", ADD},
             {"body", REFERENCE},
             {"schema", REFERENCE_EDIT},
-            {"asserts", REFERENCE_EDIT},
-            {"transfer", TRANSFER, EDIT_LIMIT}
+            {"asserts", REFERENCE_EDIT}
         }},
         {"inherited-properties", null, VIEW}
     };

@@ -109,7 +109,7 @@ public class PreferenceDialog extends javax.swing.JPanel {
         });
     }
     
-    private boolean restart() {
+    private void restart(boolean clearHistory) {
         int value = JOptionPane.showConfirmDialog(this, bundle.getString("tip_restart_app"));
         if (value == JOptionPane.OK_OPTION) {
             Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -134,9 +134,16 @@ public class PreferenceDialog extends javax.swing.JPanel {
                     }
                 }
             });
+            if (clearHistory) {
+                try {
+                    userPreferences.clear();
+                    userPreferences.flush();
+                } catch (BackingStoreException ex) {
+                    logger.log(Level.SEVERE, null, ex);
+                }
+            }
             System.exit(0);
         }
-        return value == JOptionPane.OK_OPTION;
     }
     
     public void openDialog() {
@@ -350,7 +357,7 @@ public class PreferenceDialog extends javax.swing.JPanel {
     private void btnCloseActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnCloseActionPerformed
         if (cmbLanguage.getSelectedItem() != historySelection.get(Amphibia.P_LOCALE) ||
             themeModel.getSelectedItem() != historySelection.get(Amphibia.P_LOOKANDFEEL)) {
-            restart();
+            restart(false);
         }
         userPreferences.putInt(Amphibia.P_HISTORY, (int)sprHistory.getValue());
         userPreferences.putInt(Amphibia.P_CONN_TIMEOUT, (int) sprConnTimeout.getValue());
@@ -363,13 +370,7 @@ public class PreferenceDialog extends javax.swing.JPanel {
     }//GEN-LAST:event_cmbLanguageActionPerformed
 
     private void btnResetActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnResetActionPerformed
-        try {
-            if (restart()) {
-                userPreferences.clear();
-            }
-        } catch (BackingStoreException ex) {
-            logger.log(Level.SEVERE, null, ex);
-        }
+        restart(true);
     }//GEN-LAST:event_btnResetActionPerformed
 
     private void btnDeleteHistoryActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnDeleteHistoryActionPerformed

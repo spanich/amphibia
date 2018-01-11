@@ -406,22 +406,22 @@ public final class ProjectDialog extends javax.swing.JPanel {
 
         lblName.setText(bundle.getString("name")); // NOI18N
         pnlNext.add(lblName);
-        lblName.setBounds(10, 30, 60, 20);
+        lblName.setBounds(12, 33, 80, 14);
 
         lblNameError.setForeground(new Color(255, 51, 51));
         lblNameError.setText(bundle.getString("error_project_exists")); // NOI18N
         pnlNext.add(lblNameError);
-        lblNameError.setBounds(70, 50, 690, 14);
+        lblNameError.setBounds(90, 50, 670, 14);
         pnlNext.add(txtProjectName);
-        txtProjectName.setBounds(70, 30, 690, 21);
+        txtProjectName.setBounds(90, 30, 670, 21);
 
         lblLocation.setText(bundle.getString("location")); // NOI18N
         pnlNext.add(lblLocation);
-        lblLocation.setBounds(10, 70, 60, 20);
+        lblLocation.setBounds(10, 73, 80, 14);
 
         txtLocation.setEditable(false);
         pnlNext.add(txtLocation);
-        txtLocation.setBounds(70, 70, 590, 21);
+        txtLocation.setBounds(90, 70, 570, 21);
 
         btnLocation.setText(bundle.getString("browse")); // NOI18N
         btnLocation.addActionListener(new ActionListener() {
@@ -435,7 +435,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
         lblLocationError.setForeground(new Color(255, 51, 51));
         lblLocationError.setText(bundle.getString("error_open_json")); // NOI18N
         pnlNext.add(lblLocationError);
-        lblLocationError.setBounds(70, 90, 690, 14);
+        lblLocationError.setBounds(90, 90, 670, 14);
 
         lblResources.setFont(new Font("Tahoma", 1, 11)); // NOI18N
         lblResources.setText(bundle.getString("swaggers")); // NOI18N
@@ -832,7 +832,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
                     }
                 }
                 selectedProject.setProjectName(projectName);
-                selectedProject.setProjectFile(new File(selectedProject.getProjectDir(), projectName + ".json"));
+                selectedProject.setProjectFile(IO.getFile(selectedProject, projectName + ".json"));
             }
 
             txtLocation.setText(selectedProject.getProjectFile().getCanonicalPath());

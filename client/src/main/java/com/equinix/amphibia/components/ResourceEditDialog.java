@@ -90,22 +90,9 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
             }
             String dataType = cmbDataType.getSelectedItem().toString();
             try {
-                Object value = JSONNull.getInstance();
-                switch (dataType) {
-                    case "NULL":
-                        break;
-                    case "Number":
-                        value = NUMBER.parse(txtEditor.getText());
-                        break;
-                    case "Boolean":
-                        value = "true".equals(txtEditor.getText().trim());
-                        break;
-                    case "JSON":
-                        value = IO.prettyJson(txtEditor.getText());
-                        break;
-                    default:
-                        value = txtEditor.getText();
-                        break;
+                Object value = getValue(dataType, txtEditor.getText().trim());
+                if (value == null) {
+                    value = JSONNull.getInstance();
                 }
                 TreeIconNode node = MainPanel.selectedNode;
                 TreeCollection.TYPE type = node.getType();
@@ -231,8 +218,23 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
         lblError.setVisible(false);
         dialog.setVisible(true);
     }
+    
+    public static Object getValue(String dataType, String value) throws Exception {
+        switch (dataType) {
+            case "NULL":
+                return null;
+            case "Number":
+                return NUMBER.parse(value);
+            case "Boolean":
+                return "true".equals(value);
+            case "JSON":
+                return IO.prettyJson(value);
+            default:
+                return value;
+        }
+    }
 
-    public String getType(Object value) {
+    public static String getType(Object value) {
         if (value == null) {
             return "NULL";
         }

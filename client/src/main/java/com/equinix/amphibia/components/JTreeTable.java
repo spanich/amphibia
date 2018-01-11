@@ -133,6 +133,12 @@ public final class JTreeTable extends JTable {
     public JTree getTree() {
         return tree;
     }
+    
+    public static boolean isNotLeaf(Object value) {
+        return (value == EditValueRenderer.TYPE.ADD || 
+                value == EditValueRenderer.TYPE.ADD_RESOURCES || 
+                value == EditValueRenderer.TYPE.TRANSFER);
+    }
 
     static interface RowEventListener {
 
@@ -200,7 +206,7 @@ public final class JTreeTable extends JTable {
             if (isCurrent) {
                 currentValue = value;
             }
-            if (value == TYPE.ADD || value == TYPE.ADD_RESOURCES) {
+            if (isNotLeaf(value)) {
                 return label;
             } else if (value != null) {
                 editButton.getModel().setPressed(isCurrent);
