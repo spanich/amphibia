@@ -28,6 +28,7 @@ public class Wizard extends BaseTaskPane {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
+        pnlView = new javax.swing.JPanel();
         pnlTop = new javax.swing.JPanel();
         lblEnv = new javax.swing.JLabel();
         cmdEnv = new javax.swing.JComboBox<>();
@@ -50,9 +51,10 @@ public class Wizard extends BaseTaskPane {
         btnOpenTC = new javax.swing.JButton();
         btnSend = new javax.swing.JButton();
         btnSave = new javax.swing.JButton();
+        tabNav = new javax.swing.JTabbedPane();
 
-        setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        setLayout(new java.awt.BorderLayout());
+        pnlView.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        pnlView.setLayout(new java.awt.BorderLayout());
 
         pnlTop.setLayout(new java.awt.GridBagLayout());
 
@@ -111,7 +113,7 @@ public class Wizard extends BaseTaskPane {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHEAST;
         pnlTop.add(lblClose, gridBagConstraints);
 
-        add(pnlTop, java.awt.BorderLayout.NORTH);
+        pnlView.add(pnlTop, java.awt.BorderLayout.NORTH);
 
         txtReqBody.setColumns(20);
         txtReqBody.setRows(5);
@@ -131,7 +133,7 @@ public class Wizard extends BaseTaskPane {
 
         tabBody.addTab(bundle.getString("console"), spnConsole); // NOI18N
 
-        add(tabBody, java.awt.BorderLayout.CENTER);
+        pnlView.add(tabBody, java.awt.BorderLayout.CENTER);
 
         pnlFooter.setLayout(new java.awt.GridBagLayout());
 
@@ -156,7 +158,10 @@ public class Wizard extends BaseTaskPane {
         btnSave.setText(bundle.getString("save")); // NOI18N
         pnlFooter.add(btnSave, new java.awt.GridBagConstraints());
 
-        add(pnlFooter, java.awt.BorderLayout.PAGE_END);
+        pnlView.add(pnlFooter, java.awt.BorderLayout.SOUTH);
+
+        setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        setRightComponent(tabNav);
     }// </editor-fold>//GEN-END:initComponents
 
 
@@ -175,10 +180,12 @@ public class Wizard extends BaseTaskPane {
     private javax.swing.JLabel lblStatusCode;
     private javax.swing.JPanel pnlFooter;
     private javax.swing.JPanel pnlTop;
+    private javax.swing.JPanel pnlView;
     private javax.swing.JScrollPane spnConsole;
     private javax.swing.JScrollPane spnReqBody;
     private javax.swing.JScrollPane spnResBody;
     private javax.swing.JTabbedPane tabBody;
+    private javax.swing.JTabbedPane tabNav;
     private javax.swing.JTextArea txtConsole;
     private javax.swing.JTextField txtPath;
     private javax.swing.JTextArea txtReqBody;
