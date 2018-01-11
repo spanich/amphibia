@@ -160,7 +160,7 @@
 
               <Layout class="org.netbeans.modules.form.compat2.layouts.support.JSplitPaneSupportLayout"/>
             </Container>
-            <Container class="com.equinix.amphibia.components.Wizard" name="wizard">
+            <Component class="com.equinix.amphibia.components.Wizard" name="wizard">
               <AuxValues>
                 <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="0"/>
               </AuxValues>
@@ -176,9 +176,7 @@
                   </JTabbedPaneConstraints>
                 </Constraint>
               </Constraints>
-
-              <Layout class="org.netbeans.modules.form.compat2.layouts.support.JSplitPaneSupportLayout"/>
-            </Container>
+            </Component>
           </SubComponents>
         </Container>
       </SubComponents>
