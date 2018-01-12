@@ -17,7 +17,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 
 public class Builder {
 
@@ -33,13 +33,6 @@ public class Builder {
     public static final String ADD_ARGS = "args";
 
     private static Map<String, Object> results;
-
-    public static void main(String[] args) throws Exception {
-        execute(args);
-        if (results != null) {
-            System.out.println(String.join("\n", JSONArray.fromObject(results)));
-        }
-    }
 
     @SuppressWarnings("ResultOfObjectAllocationIgnored")
     public static Map<String, Object> execute(String[] args) throws Exception {

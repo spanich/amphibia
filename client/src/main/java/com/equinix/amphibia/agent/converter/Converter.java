@@ -50,13 +50,6 @@ public class Converter {
         errors
     };
 
-    public static void main(String[] args) throws Exception {
-        execute(args);
-        if (results != null) {
-            System.out.println(String.join("\n", JSONObject.fromObject(results).toString()));
-        }
-    }
-
     public static Map<RESOURCE_TYPE, Object> execute(String[] args) throws Exception {
         Options options = new Options();
         options.addOption(new Option("n", NAME, true, "Project name (Optional)"));
