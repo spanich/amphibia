@@ -12,6 +12,8 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
@@ -31,15 +33,18 @@ import javax.swing.JTextField;
  */
 public class WizardTab extends javax.swing.JPanel {
     
-    DefaultComboBoxModel envModel;
-
+    private Wizard wizard;
+    
     /**
      * Creates new form WizardTab
      */
     public WizardTab() {
-        envModel = new DefaultComboBoxModel();
-        
         initComponents();
+    }
+    
+    public void setWizard(Wizard wizard) {
+        this.wizard = wizard;
+        this.cmdEnv.setModel(wizard.envModel);
     }
 
     /**
@@ -90,13 +95,22 @@ public class WizardTab extends javax.swing.JPanel {
 
         pnlEnv.setLayout(new FlowLayout(FlowLayout.LEFT));
 
-        cmdEnv.setModel(envModel);
         cmdEnv.setPreferredSize(new Dimension(250, 20));
+        cmdEnv.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                cmdEnvActionPerformed(evt);
+            }
+        });
         pnlEnv.add(cmdEnv);
 
         btnEnvInfo.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/icon-16-info.png"))); // NOI18N
         btnEnvInfo.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnEnvInfo.setPreferredSize(new Dimension(30, 22));
+        btnEnvInfo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                btnEnvInfoActionPerformed(evt);
+            }
+        });
         pnlEnv.add(btnEnvInfo);
 
         gridBagConstraints = new GridBagConstraints();
@@ -138,6 +152,11 @@ public class WizardTab extends javax.swing.JPanel {
         pnlTop.add(txtPath, gridBagConstraints);
 
         btnHeaders.setText(bundle.getString("headers")); // NOI18N
+        btnHeaders.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                btnHeadersActionPerformed(evt);
+            }
+        });
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridy = 3;
         pnlTop.add(btnHeaders, gridBagConstraints);
@@ -177,16 +196,50 @@ public class WizardTab extends javax.swing.JPanel {
 
         btnSend.setText(bundle.getString("send")); // NOI18N
         btnSend.setEnabled(false);
+        btnSend.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                btnSendActionPerformed(evt);
+            }
+        });
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.insets = new Insets(5, 5, 5, 5);
         pnlFooter.add(btnSend, gridBagConstraints);
 
         btnSave.setText(bundle.getString("save")); // NOI18N
         btnSave.setEnabled(false);
+        btnSave.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                btnSaveActionPerformed(evt);
+            }
+        });
         pnlFooter.add(btnSave, new GridBagConstraints());
 
         add(pnlFooter, BorderLayout.SOUTH);
     }// </editor-fold>//GEN-END:initComponents
+
+    private void btnEnvInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEnvInfoActionPerformed
+        wizard.openEnvironmentPanel(this);
+    }//GEN-LAST:event_btnEnvInfoActionPerformed
+
+    private void cmdEnvActionPerformed(ActionEvent evt) {//GEN-FIRST:event_cmdEnvActionPerformed
+        if (cmdEnv.getSelectedIndex() > 1) {
+            
+        } else {
+            
+        }
+    }//GEN-LAST:event_cmdEnvActionPerformed
+
+    private void btnHeadersActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnHeadersActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btnHeadersActionPerformed
+
+    private void btnSendActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnSendActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btnSendActionPerformed
+
+    private void btnSaveActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnSaveActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btnSaveActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

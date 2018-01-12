@@ -362,14 +362,6 @@ public final class Editor extends BaseTaskPane {
         treeTable.updateUI();
     }
 
-    /**
-     * @param mainPanel
-     */
-    @Override
-    public void setMainPanel(MainPanel mainPanel) {
-        super.setMainPanel(mainPanel);
-    }
-
     @Override
     public void reset() {
         super.reset();

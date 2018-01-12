@@ -5,23 +5,128 @@
  */
 package com.equinix.amphibia.components;
 
+import com.equinix.amphibia.Amphibia;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.util.ResourceBundle;
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.table.DefaultTableModel;
+import net.sf.json.JSONObject;
 
 /**
  *
  * @author dgofman
  */
 public class Wizard extends javax.swing.JPanel {
+    
+    private ResourceBundle bundle;
+    private JOptionPane optionPane;
+    private JDialog dialog;
+    private JButton applyButton;
+    private JButton deleteButton;
+    private JButton cancelButton;
+    private TreeIconNode selectedNode;
+    
+    private final Object[] headerColumns;
+    
+    MainPanel mainPanel;
+    DefaultTableModel headersModel;
+    DefaultComboBoxModel envModel;
 
     /**
      * Creates new form Wizard
      */
     public Wizard() {
+        bundle = Amphibia.getBundle();
+
+        headerColumns = new String [] {
+            bundle.getString("key"),
+            bundle.getString("value")
+        };
+        
+        headersModel = new DefaultTableModel();
         initComponents();
+        
+        envModel = new DefaultComboBoxModel();
+        
+        wizardTab.setWizard(this);
+        
+        applyButton = new JButton(bundle.getString("apply"));
+        applyButton.addActionListener((ActionEvent evt) -> {
+            dialog.setVisible(false);
+        });
+        deleteButton = new JButton(bundle.getString("delete"));
+        deleteButton.addActionListener((ActionEvent evt) -> {
+            dialog.setVisible(false);
+        });
+        cancelButton = new JButton(bundle.getString("cancel"));
+        cancelButton.addActionListener((ActionEvent evt) -> {
+            dialog.setVisible(false);
+        });
+        
+        optionPane = new JOptionPane(pnlEnvironment);
+        dialog = Amphibia.createDialog(optionPane, true);
+        dialog.setSize(new Dimension(600, 500));
+    }
+    
+    public void setMainPanel(MainPanel mainPanel) {
+        this.mainPanel = mainPanel;
+        EventQueue.invokeLater(() -> {
+            dialog.setLocationRelativeTo(mainPanel);
+        });
+    }
+    
+    public void setSelectedNode(TreeIconNode node) {
+        selectedNode = node;
+        envModel.removeAllElements();
+        envModel.addElement(bundle.getString("newEnvironment"));
+        if (node != null) {
+            JSONObject json = node.getCollection().project.jsonObject();
+            if (json != null) {
+                json.getJSONArray("interfaces").forEach((item) -> {
+                    envModel.addElement(new ComboItem((JSONObject) item));
+                }); 
+            }
+        }
+    }
+    
+    public void openEnvironmentPanel(WizardTab tab) {
+        txtName.setText("");
+        txtEndpoint.setText("http://");
+        txtBasePath.setText("/");
+        Object [][] headerData = new Object [][] {
+            {null, null},
+            {null, null},
+            {null, null},
+            {null, null},
+            {null, null}
+        };
+        if (tab.cmdEnv.getSelectedIndex() != 0) {
+            optionPane.setOptions(new Object[]{applyButton, deleteButton, cancelButton});
+        } else {
+            optionPane.setOptions(new Object[]{applyButton, cancelButton});
+        }
+        headersModel.setDataVector(headerData, headerColumns);
+        dialog.setVisible(true);
     }
 
     /**
@@ -32,9 +137,97 @@ public class Wizard extends javax.swing.JPanel {
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
+        GridBagConstraints gridBagConstraints;
 
+        pnlEnvironment = new JPanel();
+        pnlEnvTop = new JPanel();
+        lblName = new JLabel();
+        txtName = new JTextField();
+        lblEndpoint = new JLabel();
+        txtEndpoint = new JTextField();
+        lblBasePath = new JLabel();
+        txtBasePath = new JTextField();
+        pnlEnvCenter = new JPanel();
+        lblEnvHeaders = new JLabel();
+        spnEnvHeaders = new JScrollPane();
+        tblEnvHeaders = new JTable();
+        pnlEnvFooter = new JPanel();
+        btnAddRow = new JButton();
+        btnDeleteRow = new JButton();
         tabNav = new JTabbedPane();
         wizardTab = new WizardTab();
+
+        pnlEnvironment.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        pnlEnvironment.setLayout(new BorderLayout());
+
+        pnlEnvTop.setLayout(new GridBagLayout());
+
+        ResourceBundle bundle = ResourceBundle.getBundle("com/equinix/amphibia/messages"); // NOI18N
+        lblName.setText(bundle.getString("name")); // NOI18N
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.anchor = GridBagConstraints.WEST;
+        pnlEnvTop.add(lblName, gridBagConstraints);
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new Insets(5, 5, 5, 5);
+        pnlEnvTop.add(txtName, gridBagConstraints);
+
+        lblEndpoint.setText(bundle.getString("endpoint")); // NOI18N
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.anchor = GridBagConstraints.WEST;
+        pnlEnvTop.add(lblEndpoint, gridBagConstraints);
+
+        txtEndpoint.setText("http://");
+        txtEndpoint.setToolTipText("");
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new Insets(5, 5, 5, 5);
+        pnlEnvTop.add(txtEndpoint, gridBagConstraints);
+
+        lblBasePath.setText(bundle.getString("basePath")); // NOI18N
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.anchor = GridBagConstraints.WEST;
+        pnlEnvTop.add(lblBasePath, gridBagConstraints);
+
+        txtBasePath.setText("/");
+        txtBasePath.setToolTipText("");
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new Insets(5, 5, 5, 5);
+        pnlEnvTop.add(txtBasePath, gridBagConstraints);
+
+        pnlEnvironment.add(pnlEnvTop, BorderLayout.NORTH);
+
+        pnlEnvCenter.setLayout(new BorderLayout());
+
+        lblEnvHeaders.setFont(new Font("Tahoma", 1, 11)); // NOI18N
+        lblEnvHeaders.setText(bundle.getString("headers")); // NOI18N
+        lblEnvHeaders.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        pnlEnvCenter.add(lblEnvHeaders, BorderLayout.PAGE_START);
+
+        tblEnvHeaders.setModel(this.headersModel);
+        spnEnvHeaders.setViewportView(tblEnvHeaders);
+
+        pnlEnvCenter.add(spnEnvHeaders, BorderLayout.CENTER);
+
+        pnlEnvFooter.setLayout(new BoxLayout(pnlEnvFooter, BoxLayout.LINE_AXIS));
+
+        btnAddRow.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/plus-icon.png"))); // NOI18N
+        btnAddRow.setToolTipText(bundle.getString("addRow")); // NOI18N
+        pnlEnvFooter.add(btnAddRow);
+
+        btnDeleteRow.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/remove_16.png"))); // NOI18N
+        btnDeleteRow.setToolTipText(bundle.getString("deleteRow")); // NOI18N
+        pnlEnvFooter.add(btnDeleteRow);
+
+        pnlEnvCenter.add(pnlEnvFooter, BorderLayout.PAGE_END);
+
+        pnlEnvironment.add(pnlEnvCenter, BorderLayout.CENTER);
 
         setBorder(BorderFactory.createLineBorder(new Color(0, 0, 0)));
         setLayout(new BorderLayout());
@@ -46,7 +239,38 @@ public class Wizard extends javax.swing.JPanel {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private JButton btnAddRow;
+    private JButton btnDeleteRow;
+    private JLabel lblBasePath;
+    private JLabel lblEndpoint;
+    private JLabel lblEnvHeaders;
+    private JLabel lblName;
+    private JPanel pnlEnvCenter;
+    private JPanel pnlEnvFooter;
+    private JPanel pnlEnvTop;
+    private JPanel pnlEnvironment;
+    private JScrollPane spnEnvHeaders;
     JTabbedPane tabNav;
+    private JTable tblEnvHeaders;
+    private JTextField txtBasePath;
+    private JTextField txtEndpoint;
+    private JTextField txtName;
     WizardTab wizardTab;
     // End of variables declaration//GEN-END:variables
+
+
+    class ComboItem {
+        String label;
+        JSONObject item;
+        
+        public ComboItem(JSONObject item) {
+            this.item = item;
+            this.label = item.getString("name");
+        }
+        
+        @Override
+        public String toString() {
+            return label;
+        }
+    }
 }
