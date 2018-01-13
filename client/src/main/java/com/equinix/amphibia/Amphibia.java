@@ -6,6 +6,7 @@
 package com.equinix.amphibia;
 
 import com.equinix.amphibia.components.FindDialog;
+import com.equinix.amphibia.components.GlobalVariableDialog;
 import com.equinix.amphibia.components.HelpDialog;
 import com.equinix.amphibia.components.MainPanel;
 import com.equinix.amphibia.components.PreferenceDialog;
@@ -20,6 +21,8 @@ import java.awt.Frame;
 import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
@@ -47,9 +50,11 @@ import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
@@ -64,6 +69,7 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
@@ -115,11 +121,16 @@ public class Amphibia extends JFrame {
     public static final String P_CONN_TIMEOUT = "ctimeout";
     public static final String P_READ_TIMEOUT = "rtimeout";
     public static final String P_CONTINUE_ON_ERROR = "onerror";
+    public static final String P_GLOBAL_VARS = "globals";
+    public static final String P_SELECTED_ENVIRONMENT = "environment";
 
     public static final int TAB_PROBLEMS = 0;
     public static final int TAB_RAW = 1;
     public static final int TAB_CONSOLE = 2;
-    public static final int TAB_HISTORY = 3;
+    public static final int TAB_SERVERS = 3;
+    public static final int TAB_HISTORY = 4;
+    
+    public static final String OPEN_TABS = "11111";
 
     public static final String VERSION = "1.0";
 
@@ -136,7 +147,7 @@ public class Amphibia extends JFrame {
 
     private ProjectDialog projectDialog;
     private PreferenceDialog preferenceDialog;
-
+    
     public static void main(String args[]) {
         System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tF %1$tT %4$s %5$s%6$s%n");
         java.awt.EventQueue.invokeLater(() -> {
@@ -158,13 +169,12 @@ public class Amphibia extends JFrame {
      * Creates new form NewJFrame
      */
     public void init() {
+        bundle = Amphibia.getBundle();
 
         String[] arr = userPreferences.get(P_LOCALE, "").split("_");
         if (arr.length == 2) {
             Locale.setDefault(new Locale(arr[0], arr[1]));
         }
-
-        bundle = Amphibia.getBundle();
 
         try {
             String userLF = userPreferences.get(Amphibia.P_LOOKANDFEEL, UIManager.getSystemLookAndFeelClassName());
@@ -180,7 +190,9 @@ public class Amphibia extends JFrame {
 
         initComponents();
 
-        String[] tabs = userPreferences.get(P_VIEW_TABS, "1111").split("");
+        resetEnvironmentModel();
+
+        String[] tabs = userPreferences.get(P_VIEW_TABS, OPEN_TABS).split("");
         for (int i = 0; i < tabs.length; i++) {
             showHideTab(i, "1".equals(tabs[i]));
         }
@@ -245,25 +257,25 @@ public class Amphibia extends JFrame {
     public void showHideTab(int index, boolean b) {
         switch (index) {
             case TAB_PROBLEMS:
-                mainPanel.editor.showHideTab(index, b);
                 mnuProblems.setSelected(b);
                 break;
             case TAB_RAW:
-                mainPanel.editor.showHideTab(index, b);
                 mnuRaw.setSelected(b);
                 break;
             case TAB_CONSOLE:
-                mainPanel.editor.showHideTab(index, b);
                 mnuConsole.setSelected(b);
                 break;
+            case TAB_SERVERS:
+                mnuServers.setSelected(b);
+                break;
             case TAB_HISTORY:
-                mainPanel.editor.showHideTab(index, b);
                 mnuHistory.setSelected(b);
                 break;
             default:
                 return;
         }
-        String[] tabs = userPreferences.get(P_VIEW_TABS, "1111111").split("");
+        mainPanel.editor.showHideTab(index, b);
+        String[] tabs = userPreferences.get(P_VIEW_TABS, OPEN_TABS).split("");
         tabs[index] = (b ? "1" : "0");
         userPreferences.put(P_VIEW_TABS, String.join("", tabs));
     }
@@ -385,6 +397,19 @@ public class Amphibia extends JFrame {
     public void openTipDialog(String msgKey, String preferenceKey) {
         tipDialog.openDialog(bundle.getString(msgKey), preferenceKey);
     }
+    
+    public void resetEnvironmentModel() {
+        String[] envNames = GlobalVariableDialog.getEnvironmentNames();
+        String[] items = new String[envNames.length + 2];
+        items[0] = bundle.getString("default");
+        items[items.length - 1] = bundle.getString("addEnvironment");
+        System.arraycopy(envNames, 0, items, 1, envNames.length);
+        cmbEnvironment.setModel(new DefaultComboBoxModel(items));
+        cmbEnvironment.setSelectedItem(userPreferences.get(P_SELECTED_ENVIRONMENT, null));
+        if (cmbEnvironment.getSelectedIndex() == -1) {
+            cmbEnvironment.setSelectedIndex(0);
+        }
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -415,6 +440,9 @@ public class Amphibia extends JFrame {
         spr4 = new JToolBar.Separator();
         btnReport = new JButton();
         btnOpenTestCase = new JButton();
+        pnlEnv = new JPanel();
+        lblEnvironment = new JLabel();
+        cmbEnvironment = new JComboBox<>();
         lpnLayer = new JLayeredPane();
         mainPanel = new MainPanel();
         mnbTop = new JMenuBar();
@@ -426,12 +454,15 @@ public class Amphibia extends JFrame {
         mnuOpenProject = new JMenuItem();
         menuRecentProject = new JMenu();
         sprProject = new JPopupMenu.Separator();
+        mnuGlobalVars = new JMenuItem();
+        mnuInterfaces = new JMenuItem();
         mnuImport = new JMenu();
         mnuImportSoap = new JMenuItem();
         mnuImportPostman = new JMenuItem();
+        sprOpen = new JPopupMenu.Separator();
         mnuSave = new JMenuItem();
         mnuSaveAs = new JMenuItem();
-        sprExport = new JPopupMenu.Separator();
+        sprRefesh = new JPopupMenu.Separator();
         mnuRefresh = new JMenuItem();
         mnuPreferences = new JMenuItem();
         sprExit = new JPopupMenu.Separator();
@@ -466,6 +497,7 @@ public class Amphibia extends JFrame {
         mnuProblems = new JCheckBoxMenuItem();
         mnuRaw = new JCheckBoxMenuItem();
         mnuConsole = new JCheckBoxMenuItem();
+        mnuServers = new JCheckBoxMenuItem();
         mnuHistory = new JCheckBoxMenuItem();
         mnuHelp = new JMenu();
         mnuHelpContent = new JMenuItem();
@@ -641,6 +673,21 @@ public class Amphibia extends JFrame {
         });
         tlbTop.add(btnOpenTestCase);
 
+        pnlEnv.setLayout(new FlowLayout(FlowLayout.RIGHT));
+
+        lblEnvironment.setFont(new Font("Tahoma", 1, 11)); // NOI18N
+        lblEnvironment.setText(bundle.getString("environment")); // NOI18N
+        pnlEnv.add(lblEnvironment);
+
+        cmbEnvironment.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                cmbEnvironmentActionPerformed(evt);
+            }
+        });
+        pnlEnv.add(cmbEnvironment);
+
+        tlbTop.add(pnlEnv);
+
         getContentPane().add(tlbTop, BorderLayout.PAGE_START);
 
         lpnLayer.setLayout(new OverlayLayout(lpnLayer));
@@ -703,6 +750,26 @@ public class Amphibia extends JFrame {
         mnuFile.add(menuRecentProject);
         mnuFile.add(sprProject);
 
+        mnuGlobalVars.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, InputEvent.ALT_MASK));
+        mnuGlobalVars.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/variable_16.png"))); // NOI18N
+        mnuGlobalVars.setText(bundle.getString("globalVars")); // NOI18N
+        mnuGlobalVars.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                mnuGlobalVarsActionPerformed(evt);
+            }
+        });
+        mnuFile.add(mnuGlobalVars);
+
+        mnuInterfaces.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, InputEvent.ALT_MASK));
+        mnuInterfaces.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/interface_16.png"))); // NOI18N
+        mnuInterfaces.setText(bundle.getString("interfaces")); // NOI18N
+        mnuInterfaces.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                mnuInterfacesActionPerformed(evt);
+            }
+        });
+        mnuFile.add(mnuInterfaces);
+
         mnuImport.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/import_16.png"))); // NOI18N
         mnuImport.setText(bundle.getString("import")); // NOI18N
 
@@ -715,6 +782,7 @@ public class Amphibia extends JFrame {
         mnuImport.add(mnuImportPostman);
 
         mnuFile.add(mnuImport);
+        mnuFile.add(sprOpen);
 
         mnuSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.ALT_MASK));
         mnuSave.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/save_icon_16.png"))); // NOI18N
@@ -735,7 +803,7 @@ public class Amphibia extends JFrame {
             }
         });
         mnuFile.add(mnuSaveAs);
-        mnuFile.add(sprExport);
+        mnuFile.add(sprRefesh);
 
         mnuRefresh.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, InputEvent.ALT_MASK));
         mnuRefresh.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/refresh_16.png"))); // NOI18N
@@ -983,6 +1051,15 @@ public class Amphibia extends JFrame {
             }
         });
         mnuView.add(mnuConsole);
+
+        mnuServers.setSelected(true);
+        mnuServers.setText(bundle.getString("servers")); // NOI18N
+        mnuServers.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                mnuServersActionPerformed(evt);
+            }
+        });
+        mnuView.add(mnuServers);
 
         mnuHistory.setSelected(true);
         mnuHistory.setText(bundle.getString("history")); // NOI18N
@@ -1294,6 +1371,25 @@ public class Amphibia extends JFrame {
         mainPanel.tabRight.setSelectedIndex(1);
     }//GEN-LAST:event_btnOpenTestCaseActionPerformed
 
+    private void cmbEnvironmentActionPerformed(ActionEvent evt) {//GEN-FIRST:event_cmbEnvironmentActionPerformed
+        if (cmbEnvironment.getSelectedIndex() == cmbEnvironment.getItemCount() - 1) {
+           mnuGlobalVarsActionPerformed(evt);
+        }
+    }//GEN-LAST:event_cmbEnvironmentActionPerformed
+
+    private void mnuGlobalVarsActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuGlobalVarsActionPerformed
+        mainPanel.globalVarsDialog.openDialog();
+        resetEnvironmentModel();
+    }//GEN-LAST:event_mnuGlobalVarsActionPerformed
+
+    private void mnuInterfacesActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuInterfacesActionPerformed
+        mainPanel.wizard.openDialog();
+    }//GEN-LAST:event_mnuInterfacesActionPerformed
+
+    private void mnuServersActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuServersActionPerformed
+        showHideTab(TAB_SERVERS, mnuServers.isSelected());
+    }//GEN-LAST:event_mnuServersActionPerformed
+
     public void export(String type) {
         Amphibia.setWaitOverlay(true);
         new Thread() {
@@ -1366,8 +1462,12 @@ public class Amphibia extends JFrame {
     }
 
     public String inputDialog(String bundleKey, String initValue, String[] exisitingName) {
+        return inputDialog(bundleKey, initValue, exisitingName, this);
+    }
+    
+    public String inputDialog(String bundleKey, String initValue, String[] exisitingName, Component owner) {
         final JOptionPane optionPane = new JOptionPane(
-                "", JOptionPane.QUESTION_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
+                bundle.getString(bundleKey), JOptionPane.QUESTION_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
         optionPane.setWantsInput(true);
         optionPane.setInitialSelectionValue(initValue);
         
@@ -1376,11 +1476,14 @@ public class Amphibia extends JFrame {
         error.setForeground(Color.red);
         optionPane.add(error, 1);
 
-        final JDialog dialog = new JDialog(this, bundle.getString(bundleKey), true);
+        final JDialog dialog = new JDialog((Frame)owner, bundle.getString("title"), true);
         dialog.setContentPane(optionPane);
         optionPane.addPropertyChangeListener((PropertyChangeEvent e) -> {
             if (optionPane.getValue().equals(JOptionPane.OK_OPTION)) {
                 error.setVisible(false);
+                if (optionPane.getInputValue() == null || optionPane.getInputValue().toString().trim().isEmpty()) {
+                    return;
+                }
                 for (String name : exisitingName) {
                     if (name.equals(optionPane.getInputValue())) {
                         error.setVisible(true);
@@ -1406,8 +1509,10 @@ public class Amphibia extends JFrame {
     public JToggleButton btnPause;
     private JButton btnReport;
     private JButton btnStop;
+    private JComboBox<String> cmbEnvironment;
     private JCheckBoxMenuItem inheritProp;
     private JLabel lblAnimation;
+    private JLabel lblEnvironment;
     private JLayeredPane lpnLayer;
     private MainPanel mainPanel;
     private JMenu menuRecentProject;
@@ -1422,12 +1527,14 @@ public class Amphibia extends JFrame {
     private JMenu mnuExport;
     private JMenu mnuFile;
     private JMenuItem mnuFind;
+    private JMenuItem mnuGlobalVars;
     private JMenu mnuHelp;
     private JMenuItem mnuHelpContent;
     private JCheckBoxMenuItem mnuHistory;
     private JMenu mnuImport;
     private JMenuItem mnuImportPostman;
     private JMenuItem mnuImportSoap;
+    private JMenuItem mnuInterfaces;
     private JMenuItem mnuJunit;
     private JMenuItem mnuMocha;
     private JMenu mnuNew;
@@ -1449,11 +1556,13 @@ public class Amphibia extends JFrame {
     private JMenuItem mnuRulesFile;
     private JMenuItem mnuSave;
     private JMenuItem mnuSaveAs;
+    private JCheckBoxMenuItem mnuServers;
     private JMenuItem mnuSoap;
     private JMenuItem mnuSwagger;
     private JMenuItem mnuUndo;
     private JRadioButtonMenuItem mnuUser;
     private JMenu mnuView;
+    private JPanel pnlEnv;
     private JPanel pnlWaitOverlay;
     private ButtonGroup rbgMnuView;
     private JToolBar.Separator spr1;
@@ -1465,9 +1574,10 @@ public class Amphibia extends JFrame {
     private JPopupMenu.Separator spr7;
     private JPopupMenu.Separator spr8;
     private JPopupMenu.Separator sprExit;
-    private JPopupMenu.Separator sprExport;
     private JPopupMenu.Separator sprFind;
+    private JPopupMenu.Separator sprOpen;
     private JPopupMenu.Separator sprProject;
+    private JPopupMenu.Separator sprRefesh;
     private JButton tlbFind;
     private JButton tlbOpen;
     private JButton tlbRedo;

@@ -84,11 +84,12 @@ public final class MainPanel extends javax.swing.JPanel {
     private Amphibia amphibia;
     private TreePopupMenuBuilder menuBuilder;
 
-    ResourceEditDialog resourceEditDialog;
-    ResourceOrderDialog resourceOrderDialog;
-    ReferenceDialog referenceEditDialog;
-    ResourceAddDialog resourceAddDialog;
-    TransferDialog transferDialog;
+    public ResourceEditDialog resourceEditDialog;
+    public ResourceOrderDialog resourceOrderDialog;
+    public ReferenceDialog referenceEditDialog;
+    public ResourceAddDialog resourceAddDialog;
+    public TransferDialog transferDialog;
+    public GlobalVariableDialog globalVarsDialog;
 
     private final Preferences userPreferences = getUserPreferences();
 
@@ -112,6 +113,7 @@ public final class MainPanel extends javax.swing.JPanel {
         resourceAddDialog = new ResourceAddDialog(this);
         resourceOrderDialog = new ResourceOrderDialog(this);
         transferDialog = new TransferDialog(this);
+        globalVarsDialog = new GlobalVariableDialog(this);
 
         spnMainPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, new PropertyChangeListener() {
             Timer timer = new Timer();
@@ -128,6 +130,7 @@ public final class MainPanel extends javax.swing.JPanel {
         history = new HistoryManager(this, editor);
 
         editor.setMainPanel(this);
+        wizard.setMainPanel(this);
         runner = new Runner(this, editor);
 
         final JTextArea errors = new JTextArea();
@@ -1188,6 +1191,6 @@ public final class MainPanel extends javax.swing.JPanel {
     public JTabbedPane tabLeft;
     public JTabbedPane tabRight;
     JTree treeNav;
-    Wizard wizard;
+    public Wizard wizard;
     // End of variables declaration//GEN-END:variables
 }

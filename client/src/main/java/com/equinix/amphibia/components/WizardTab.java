@@ -5,6 +5,7 @@
  */
 package com.equinix.amphibia.components;
 
+import com.equinix.amphibia.Amphibia;
 import java.awt.BorderLayout;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -33,7 +34,9 @@ import javax.swing.JTextField;
  */
 public class WizardTab extends javax.swing.JPanel {
     
+    private ResourceBundle bundle;
     private Wizard wizard;
+    private DefaultComboBoxModel interfacesModel;
     
     /**
      * Creates new form WizardTab
@@ -43,8 +46,12 @@ public class WizardTab extends javax.swing.JPanel {
     }
     
     public void setWizard(Wizard wizard) {
+        bundle = Amphibia.getBundle();
+        
         this.wizard = wizard;
-        this.cmdEnv.setModel(wizard.envModel);
+        this.cmdEndpoint.setModel(wizard.envModel);
+        interfacesModel = new DefaultComboBoxModel(new String[] {bundle.getString("none")});
+        cmdInterface.setModel(interfacesModel);
     }
 
     /**
@@ -58,10 +65,14 @@ public class WizardTab extends javax.swing.JPanel {
         GridBagConstraints gridBagConstraints;
 
         pnlTop = new JPanel();
-        lblEnv = new JLabel();
-        pnlEnv = new JPanel();
-        cmdEnv = new JComboBox<>();
-        btnEnvInfo = new JButton();
+        lblEndpoint = new JLabel();
+        pnlEndpoint = new JPanel();
+        cmdEndpoint = new JComboBox<>();
+        btnEndpointInfo = new JButton();
+        lblInterface = new JLabel();
+        pnlInterface = new JPanel();
+        cmdInterface = new JComboBox<>();
+        btnInterfaceInfo = new JButton();
         lblMethod = new JLabel();
         pnlMethodURI = new JPanel();
         cmdMethod = new JComboBox<>();
@@ -88,38 +99,69 @@ public class WizardTab extends javax.swing.JPanel {
         pnlTop.setLayout(new GridBagLayout());
 
         ResourceBundle bundle = ResourceBundle.getBundle("com/equinix/amphibia/messages"); // NOI18N
-        lblEnv.setText(bundle.getString("environment")); // NOI18N
+        lblEndpoint.setText(bundle.getString("endpoint")); // NOI18N
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.anchor = GridBagConstraints.WEST;
-        pnlTop.add(lblEnv, gridBagConstraints);
+        pnlTop.add(lblEndpoint, gridBagConstraints);
 
-        pnlEnv.setLayout(new FlowLayout(FlowLayout.LEFT));
+        pnlEndpoint.setLayout(new FlowLayout(FlowLayout.LEFT));
 
-        cmdEnv.setPreferredSize(new Dimension(250, 20));
-        cmdEnv.addActionListener(new ActionListener() {
+        cmdEndpoint.setPreferredSize(new Dimension(250, 20));
+        cmdEndpoint.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                cmdEnvActionPerformed(evt);
+                cmdEndpointActionPerformed(evt);
             }
         });
-        pnlEnv.add(cmdEnv);
+        pnlEndpoint.add(cmdEndpoint);
 
-        btnEnvInfo.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/icon-16-info.png"))); // NOI18N
-        btnEnvInfo.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnEnvInfo.setPreferredSize(new Dimension(30, 22));
-        btnEnvInfo.addActionListener(new ActionListener() {
+        btnEndpointInfo.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/icon-16-info.png"))); // NOI18N
+        btnEndpointInfo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnEndpointInfo.setPreferredSize(new Dimension(30, 22));
+        btnEndpointInfo.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                btnEnvInfoActionPerformed(evt);
+                btnEndpointInfoActionPerformed(evt);
             }
         });
-        pnlEnv.add(btnEnvInfo);
+        pnlEndpoint.add(btnEndpointInfo);
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-        pnlTop.add(pnlEnv, gridBagConstraints);
+        pnlTop.add(pnlEndpoint, gridBagConstraints);
+
+        lblInterface.setText(bundle.getString("interface")); // NOI18N
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.anchor = GridBagConstraints.WEST;
+        pnlTop.add(lblInterface, gridBagConstraints);
+
+        pnlInterface.setLayout(new FlowLayout(FlowLayout.LEFT));
+
+        cmdInterface.setPreferredSize(new Dimension(250, 20));
+        cmdInterface.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                cmdInterfaceActionPerformed(evt);
+            }
+        });
+        pnlInterface.add(cmdInterface);
+
+        btnInterfaceInfo.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/icon-16-info.png"))); // NOI18N
+        btnInterfaceInfo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnInterfaceInfo.setPreferredSize(new Dimension(30, 22));
+        btnInterfaceInfo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                btnInterfaceInfoActionPerformed(evt);
+            }
+        });
+        pnlInterface.add(btnInterfaceInfo);
+
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
+        pnlTop.add(pnlInterface, gridBagConstraints);
 
         lblMethod.setText(bundle.getString("method")); // NOI18N
         gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridy = 3;
         gridBagConstraints.anchor = GridBagConstraints.WEST;
         pnlTop.add(lblMethod, gridBagConstraints);
 
@@ -132,20 +174,18 @@ public class WizardTab extends javax.swing.JPanel {
         pnlMethodURI.add(lblURI, BorderLayout.CENTER);
 
         gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridy = 3;
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new Insets(5, 5, 5, 5);
         pnlTop.add(pnlMethodURI, gridBagConstraints);
 
         lblPath.setText(bundle.getString("path")); // NOI18N
         gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridy = 4;
         gridBagConstraints.anchor = GridBagConstraints.WEST;
         pnlTop.add(lblPath, gridBagConstraints);
-
-        txtPath.setEditable(false);
         gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridy = 4;
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new Insets(5, 5, 5, 5);
@@ -158,7 +198,7 @@ public class WizardTab extends javax.swing.JPanel {
             }
         });
         gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridy = 4;
         pnlTop.add(btnHeaders, gridBagConstraints);
 
         add(pnlTop, BorderLayout.NORTH);
@@ -169,12 +209,14 @@ public class WizardTab extends javax.swing.JPanel {
 
         tabBody.addTab(bundle.getString("requestBody"), spnReqBody); // NOI18N
 
+        txtResBody.setEditable(false);
         txtResBody.setColumns(20);
         txtResBody.setRows(5);
         spnResBody.setViewportView(txtResBody);
 
         tabBody.addTab(bundle.getString("responseBody"), spnResBody); // NOI18N
 
+        txtConsole.setEditable(false);
         txtConsole.setColumns(20);
         txtConsole.setRows(5);
         spnConsole.setViewportView(txtConsole);
@@ -217,17 +259,17 @@ public class WizardTab extends javax.swing.JPanel {
         add(pnlFooter, BorderLayout.SOUTH);
     }// </editor-fold>//GEN-END:initComponents
 
-    private void btnEnvInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEnvInfoActionPerformed
-        wizard.openEnvironmentPanel(this);
-    }//GEN-LAST:event_btnEnvInfoActionPerformed
+    private void btnEndpointInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEndpointInfoActionPerformed
+        wizard.mainPanel.globalVarsDialog.openDialog();
+    }//GEN-LAST:event_btnEndpointInfoActionPerformed
 
-    private void cmdEnvActionPerformed(ActionEvent evt) {//GEN-FIRST:event_cmdEnvActionPerformed
-        if (cmdEnv.getSelectedIndex() > 1) {
+    private void cmdEndpointActionPerformed(ActionEvent evt) {//GEN-FIRST:event_cmdEndpointActionPerformed
+        if (cmdEndpoint.getSelectedIndex() > 1) {
             
         } else {
             
         }
-    }//GEN-LAST:event_cmdEnvActionPerformed
+    }//GEN-LAST:event_cmdEndpointActionPerformed
 
     private void btnHeadersActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnHeadersActionPerformed
         // TODO add your handling code here:
@@ -241,22 +283,34 @@ public class WizardTab extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_btnSaveActionPerformed
 
+    private void cmdInterfaceActionPerformed(ActionEvent evt) {//GEN-FIRST:event_cmdInterfaceActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_cmdInterfaceActionPerformed
+
+    private void btnInterfaceInfoActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnInterfaceInfoActionPerformed
+        wizard.openInterfacePanel(this);
+    }//GEN-LAST:event_btnInterfaceInfoActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    JButton btnEnvInfo;
+    JButton btnEndpointInfo;
     JButton btnHeaders;
+    JButton btnInterfaceInfo;
     JButton btnSave;
     JButton btnSend;
-    JComboBox<String> cmdEnv;
+    JComboBox<String> cmdEndpoint;
+    JComboBox<String> cmdInterface;
     JComboBox<String> cmdMethod;
     JLabel lblCode;
-    JLabel lblEnv;
+    JLabel lblEndpoint;
+    JLabel lblInterface;
     JLabel lblMethod;
     JLabel lblPath;
     JLabel lblStatusCode;
     JLabel lblURI;
-    JPanel pnlEnv;
+    JPanel pnlEndpoint;
     JPanel pnlFooter;
+    JPanel pnlInterface;
     JPanel pnlMethodURI;
     JPanel pnlTop;
     JScrollPane spnConsole;

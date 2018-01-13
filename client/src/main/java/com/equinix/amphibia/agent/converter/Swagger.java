@@ -128,6 +128,7 @@ public final class Swagger {
                         {
                             put("name", "RestEndPoint" + index);
                             put("value", propertyGlobals.get(key));
+                            put("type", "endpoint");
                         }
                     });
                 }
@@ -138,6 +139,7 @@ public final class Swagger {
                 {
                     put("name", "RestEndPoint" + index);
                     put("value", hostVal);
+                    put("type", "endpoint");
                 }
             });
         }
