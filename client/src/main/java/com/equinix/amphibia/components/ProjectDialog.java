@@ -232,7 +232,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
         spr4 = new JSeparator();
         lblProject = new JLabel();
         lblName = new JLabel();
-        lblNameError = new JLabel();
+        lblResourceError = new JLabel();
         txtProjectName = new JTextField();
         lblLocation = new JLabel();
         txtLocation = new JTextField();
@@ -246,6 +246,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
         btnBack = new JButton();
         btnNextFinish = new JButton();
         btnNextCancel = new JButton();
+        lblNameError = new JLabel();
 
         pnlWaitOverlay.setBackground(Amphibia.OVERLAY_BG_COLOR);
         pnlWaitOverlay.setLayout(null);
@@ -408,10 +409,10 @@ public final class ProjectDialog extends javax.swing.JPanel {
         pnlNext.add(lblName);
         lblName.setBounds(12, 33, 80, 14);
 
-        lblNameError.setForeground(new Color(255, 51, 51));
-        lblNameError.setText(bundle.getString("error_project_exists")); // NOI18N
-        pnlNext.add(lblNameError);
-        lblNameError.setBounds(90, 50, 670, 14);
+        lblResourceError.setForeground(new Color(255, 51, 51));
+        lblResourceError.setText(bundle.getString("error_interface_name")); // NOI18N
+        pnlNext.add(lblResourceError);
+        lblResourceError.setBounds(145, 265, 330, 14);
         pnlNext.add(txtProjectName);
         txtProjectName.setBounds(90, 30, 670, 21);
 
@@ -468,7 +469,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
             }
         });
         pnlNext.add(btnBack);
-        btnBack.setBounds(470, 260, 90, 23);
+        btnBack.setBounds(480, 260, 90, 23);
 
         btnNextFinish.setText(bundle.getString("finish")); // NOI18N
         btnNextFinish.addActionListener(new ActionListener() {
@@ -477,7 +478,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
             }
         });
         pnlNext.add(btnNextFinish);
-        btnNextFinish.setBounds(570, 260, 90, 23);
+        btnNextFinish.setBounds(575, 260, 90, 23);
 
         btnNextCancel.setText(bundle.getString("cancel")); // NOI18N
         btnNextCancel.addActionListener(new ActionListener() {
@@ -487,6 +488,11 @@ public final class ProjectDialog extends javax.swing.JPanel {
         });
         pnlNext.add(btnNextCancel);
         btnNextCancel.setBounds(670, 260, 90, 23);
+
+        lblNameError.setForeground(new Color(255, 51, 51));
+        lblNameError.setText(bundle.getString("error_project_exists")); // NOI18N
+        pnlNext.add(lblNameError);
+        lblNameError.setBounds(90, 50, 670, 14);
 
         lpnLayer.add(pnlNext);
 
@@ -665,6 +671,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
 
     private void btnFinishActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnFinishActionPerformed
         try {
+            reset();
             if (txtProjectName.getText().isEmpty()) {
                 dialog.setVisible(false);
                 return;
@@ -682,9 +689,20 @@ public final class ProjectDialog extends javax.swing.JPanel {
 
             selectedProject.setProjectName(txtProjectName.getText().trim(), mainPanel.treeNav);
 
+            Map<Object,Object> interfaces = new HashMap<>();
             for (int r = 0; r < resourceModel.getRowCount(); r++) {
                 Object swagger = resourceModel.getValueAt(r, 0);
+                Object iName = resourceModel.getValueAt(r, 1);
                 Object rules = resourceModel.getValueAt(r, 2);
+                if (iName != null) {
+                    if (interfaces.containsKey(iName)) {
+                        lblResourceError.setText(bundle.getString("error_interface_name"));
+                        pnlSetup.setVisible(false);
+                        pnlNext.setVisible(true);
+                        return;
+                    }
+                    interfaces.put(iName, rules);
+                }
                 if (swagger == null || swagger.toString().isEmpty()) {
                     if (rules == null || rules.toString().isEmpty()) {
                         continue; //skip empty rows
@@ -851,7 +869,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
         }
     }
 
-    public void invalidateAll() {
+    public void reset() {
         txtSwaggerUrl.setBorder(DEFAULT_BORDER);
         txtSwaggerFile.setBorder(DEFAULT_BORDER);
         lblSwaggerUrlError.setText("");
@@ -859,7 +877,11 @@ public final class ProjectDialog extends javax.swing.JPanel {
         lblNameError.setText("");
         lblLocationError.setText("");
         lblRulesError.setText("");
-
+        lblResourceError.setText("");
+    }
+    
+    public void invalidateAll() {
+        reset();
         boolean isURL = SET_URL.equals(rbgSwagger.getSelection().getActionCommand());
         txtSwaggerUrl.setEnabled(isURL);
         btnSwaggerUrl.setEnabled(isURL);
@@ -895,6 +917,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
     private JLabel lblName;
     private JLabel lblNameError;
     private JLabel lblProject;
+    private JLabel lblResourceError;
     private JLabel lblResources;
     private JLabel lblRulesAndProperties;
     private JLabel lblRulesError;

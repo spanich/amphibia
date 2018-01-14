@@ -471,7 +471,6 @@ public class Amphibia extends JFrame {
         menuRecentProject = new JMenu();
         sprProject = new JPopupMenu.Separator();
         mnuGlobalVars = new JMenuItem();
-        mnuInterfaces = new JMenuItem();
         mnuImport = new JMenu();
         mnuImportSoap = new JMenuItem();
         mnuImportPostman = new JMenuItem();
@@ -491,6 +490,7 @@ public class Amphibia extends JFrame {
         mnuProject = new JMenu();
         mnuRename = new JMenuItem();
         mnuReload = new JMenuItem();
+        mnuInterfaces = new JMenuItem();
         mnuExport = new JMenu();
         mnuSoap = new JMenuItem();
         mnuReady = new JMenuItem();
@@ -776,16 +776,6 @@ public class Amphibia extends JFrame {
         });
         mnuFile.add(mnuGlobalVars);
 
-        mnuInterfaces.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, InputEvent.ALT_MASK));
-        mnuInterfaces.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/interface_16.png"))); // NOI18N
-        mnuInterfaces.setText(bundle.getString("interfaces")); // NOI18N
-        mnuInterfaces.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                mnuInterfacesActionPerformed(evt);
-            }
-        });
-        mnuFile.add(mnuInterfaces);
-
         mnuImport.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/import_16.png"))); // NOI18N
         mnuImport.setText(bundle.getString("import")); // NOI18N
 
@@ -892,6 +882,7 @@ public class Amphibia extends JFrame {
         mnbTop.add(mnuEdit);
 
         mnuProject.setText(bundle.getString("project")); // NOI18N
+        mnuProject.setEnabled(false);
 
         mnuRename.setText(bundle.getString("mnuRename")); // NOI18N
         mnuRename.addActionListener(new ActionListener() {
@@ -908,6 +899,14 @@ public class Amphibia extends JFrame {
             }
         });
         mnuProject.add(mnuReload);
+
+        mnuInterfaces.setText(bundle.getString("interfaces")); // NOI18N
+        mnuInterfaces.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                mnuInterfacesActionPerformed(evt);
+            }
+        });
+        mnuProject.add(mnuInterfaces);
 
         mnuExport.setText(bundle.getString("mnuExport")); // NOI18N
 
@@ -1376,6 +1375,7 @@ public class Amphibia extends JFrame {
                     if (mainPanel.tabRight.isEnabledAt(1)) {
                         mainPanel.tabRight.setSelectedIndex(1);
                     }
+                    mainPanel.selectNode(selectedProject.project);
                 } catch (IOException ex) {
                     mainPanel.addError(ex);
                 }
@@ -1402,7 +1402,9 @@ public class Amphibia extends JFrame {
     }//GEN-LAST:event_mnuGlobalVarsActionPerformed
 
     private void mnuInterfacesActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuInterfacesActionPerformed
-        mainPanel.wizard.openDialog();
+        if (MainPanel.selectedNode != null) {
+            mainPanel.wizard.openInterfaceDialog();
+        }
     }//GEN-LAST:event_mnuInterfacesActionPerformed
 
     private void mnuServersActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuServersActionPerformed
@@ -1563,7 +1565,7 @@ public class Amphibia extends JFrame {
     private JMenuItem mnuPostman;
     private JMenuItem mnuPreferences;
     public JCheckBoxMenuItem mnuProblems;
-    private JMenu mnuProject;
+    public JMenu mnuProject;
     private JCheckBoxMenuItem mnuRaw;
     private JMenuItem mnuReady;
     private JMenuItem mnuRedo;

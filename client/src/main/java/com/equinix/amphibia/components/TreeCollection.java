@@ -98,7 +98,7 @@ public final class TreeCollection {
 
     public static final Object[][] INTERFACE_PROPERTIES = new Object[][]{
         {"name", EDIT_LIMIT},
-        {"basePath", VIEW},
+        {"basePath", EDIT_LIMIT},
         {"type", VIEW},
         {"headers", ADD}
     };

@@ -98,13 +98,34 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
                 TreeCollection.TYPE type = node.getType();
                 if ("name".equals(entry.name)) {
                     value = value.toString().trim();
-                    Enumeration children = node.getParent().children();
-                    while (children.hasMoreElements()) {
-                        TreeIconNode child = (TreeIconNode) children.nextElement();
-                        if (child != node && child.getLabel().equals(value)) {
-                            lblError.setText(String.format(bundle.getString("tip_name_exists")));
-                            lblError.setVisible(true);
-                            return;
+                    if (type == TreeCollection.TYPE.INTERFACE) {
+                        JSONObject json = node.getCollection().project.jsonObject();
+                        JSONArray interfaces = json.getJSONArray("interfaces");
+                        JSONArray projectResources = json.getJSONArray("projectResources");
+                        String currentName = ((JSONObject)entry.json).getString("name");
+                        for (Object item : interfaces) {
+                            JSONObject itf = (JSONObject) item;
+                            if (itf.getString("name").equals(value) && !itf.toString().equals(entry.json.toString())) {
+                                lblError.setText(String.format(bundle.getString("tip_name_exists")));
+                                lblError.setVisible(true);
+                                return;
+                            }
+                        }
+                        for (Object item : projectResources) {
+                            JSONObject resource = (JSONObject) item;
+                            if (currentName.equals(resource.getString("interface"))) {
+                                resource.element("interface", value);
+                            }
+                        }
+                    } else {
+                        Enumeration children = node.getParent().children();
+                        while (children.hasMoreElements()) {
+                            TreeIconNode child = (TreeIconNode) children.nextElement();
+                            if (child != node && child.getLabel().equals(value)) {
+                                lblError.setText(String.format(bundle.getString("tip_name_exists")));
+                                lblError.setVisible(true);
+                                return;
+                            }
                         }
                     }
                     if (type == TreeCollection.TYPE.PROJECT || type == TreeCollection.TYPE.INTERFACE) {

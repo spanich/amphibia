@@ -111,7 +111,7 @@ public class Wizard extends javax.swing.JPanel {
         }
     }
     
-    public void openDialog() {
+    public void openInterfaceDialog() {
         txtBasePath.setText("/");
         Object [][] headerData = new Object [][] {
             {null, null},
@@ -130,7 +130,7 @@ public class Wizard extends javax.swing.JPanel {
         } else {
             optionPane.setOptions(new Object[]{applyButton, cancelButton});
         }
-        openDialog();
+        openInterfaceDialog();
     }
 
     /**
