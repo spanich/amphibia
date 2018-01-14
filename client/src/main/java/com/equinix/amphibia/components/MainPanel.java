@@ -391,6 +391,20 @@ public final class MainPanel extends javax.swing.JPanel {
     public void selectNode(TreeIconNode node) {
         MainPanel.selectedNode = node;
         TreeCollection collection = node.getCollection();
+        
+        debugTreeNode.removeAllChildren();
+        debugTreeNode.add(collection.project.debugNode);
+        debugTreeModel.reload(debugTreeNode);
+        Enumeration children = collection.project.debugNode.preorderEnumeration();
+        while (children.hasMoreElements()) {
+            TreeIconNode child = (TreeIconNode) children.nextElement();
+            if (child.info != null && child.info.states != null && child.info.states.getInt(TreeIconNode.STATE_DEBUG_EXPAND) == 1) {
+                if (child.getParent() != null && debugTreeNav.isExpanded(new TreePath(((TreeIconNode) child.getParent()).getPath()))) {
+                    debugTreeNav.expandPath(new TreePath(child.getPath()));
+                }
+            }
+        }
+                
         TreeIconNode debugNode = (node.debugNode != null) ? node.debugNode : collection.project.debugNode;
         editor.reset();
         amphibia.btnOpenTestCase.setEnabled(node.getType() == TESTCASE);
@@ -540,7 +554,6 @@ public final class MainPanel extends javax.swing.JPanel {
         collection.project.addJSON(projectJson);
         
         TreeIconNode debugProjectNode = new TreeIconNode(collection.project);
-        debugTreeNode.add(debugProjectNode);
 
         Properties projectProperties;
         try {
@@ -979,14 +992,6 @@ public final class MainPanel extends javax.swing.JPanel {
             }
         }
 
-        Enumeration children = debugTreeNode.children();
-        while (children.hasMoreElements()) {
-            TreeIconNode node = (TreeIconNode) children.nextElement();
-            if (node.getChildCount() == 0) {
-                node.removeFromParent();
-            }
-        }
- 
         amphibia.enableSave(true);
         treeModel.reload();
         debugTreeModel.reload();
@@ -1069,6 +1074,9 @@ public final class MainPanel extends javax.swing.JPanel {
     public void refreshCollection(TreeCollection collection) {
         if (collection.isOpen()) {
             try {
+                if (selectedNode != null) {
+                    selectNode(selectedNode);
+                }
                 JSONObject expandResources = collection.runner.jsonObject().getJSONObject("expandResources");
                 Enumeration children = collection.project.preorderEnumeration();
                 while (children.hasMoreElements()) {
@@ -1082,18 +1090,6 @@ public final class MainPanel extends javax.swing.JPanel {
                             treeNav.expandPath(new TreePath(node.getPath()));
                         }
                     }
-                }
-                children = collection.project.debugNode.preorderEnumeration();
-                while (children.hasMoreElements()) {
-                    TreeIconNode node = (TreeIconNode) children.nextElement();
-                    if (node.info != null && node.info.states != null && node.info.states.getInt(TreeIconNode.STATE_DEBUG_EXPAND) == 1) {
-                        if (node.getParent() != null && debugTreeNav.isExpanded(new TreePath(((TreeIconNode) node.getParent()).getPath()))) {
-                            debugTreeNav.expandPath(new TreePath(node.getPath()));
-                        }
-                    }
-                }
-                if (selectedNode != null) {
-                    selectNode(selectedNode);
                 }
             } catch (Exception e) {
                 logger.log(Level.SEVERE, e.toString(), e);

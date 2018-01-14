@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import javax.swing.border.Border;
 import javax.swing.BorderFactory;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -43,6 +44,7 @@ import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
 /**
@@ -54,19 +56,25 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
     private final MainPanel mainPanel;
     private final JDialog dialog;
     private final ResourceBundle bundle;
-    private final DefaultTableModel globalVarsModel;
-    
+    private final TableModel globalVarsModel;
+
     private final int firstColumnWidth = 20;
     private final int secondColumnWidth = 200;
     private final int defaultColumnWidth = 70;
     private final int borderGap = 50;
     private final int defaultWidth = 700;
-   
-    private static GlobalVarModel globalVarsSource;
+    private final int defaultColumnIndex = 2;
 
-    private static final NumberFormat NUMBER = NumberFormat.getInstance();
+    private GlobalVarModel globalVarsSource;
+
+    private static NumberFormat numberFormat = NumberFormat.getInstance();
     private static final Preferences userPreferences = Amphibia.getUserPreferences();
     private static final Logger logger = Logger.getLogger(GlobalVariableDialog.class.getName());
+
+    private static String[] originalColumns;
+    private Object[][] originalData;
+    private String[] defaultHadersNames;
+    private int cloneColumnIndex;
 
     /**
      * Creates new form GlobalVaraibleDialog
@@ -74,8 +82,11 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
     public GlobalVariableDialog(MainPanel mainPanel) {
         this.mainPanel = mainPanel;
 
+        cloneColumnIndex = defaultColumnIndex;
         bundle = Amphibia.getBundle();
-        
+
+        defaultHadersNames = new String[]{"", bundle.getString("name"), bundle.getString("default")};
+
         byte[] data = userPreferences.getByteArray(Amphibia.P_GLOBAL_VARS, null);
         if (data == null) {
             globalVarsSource = new GlobalVarModel();
@@ -87,11 +98,11 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
                 logger.log(Level.SEVERE, null, ex);
             }
         }
-        globalVarsSource.columns[1] = bundle.getString("name");
-        globalVarsSource.columns[2] = bundle.getString("default");
-
-        globalVarsModel = new DefaultTableModel(
-                globalVarsSource.data, globalVarsSource.columns) {
+        
+        originalColumns = globalVarsSource.columns;
+        originalData = globalVarsSource.data;
+    
+        globalVarsModel = new TableModel(globalVarsSource.data, globalVarsSource.columns) {
             @Override
             public boolean isCellEditable(int rowIndex, int columnIndex) {
                 return columnIndex > 1;
@@ -103,17 +114,18 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
         final ImageIcon closeIcon = new ImageIcon(Amphibia.class.getResource("/com/equinix/amphibia/icons/close_16.png"));
         final JLabel closeLabel = new JLabel();
         closeLabel.setIcon(closeIcon);
-        
+
         Font font = tblVars.getFont();
         JTableHeader header = tblVars.getTableHeader();
+        header.setReorderingAllowed(false);
         header.setFont(font.deriveFont(Font.BOLD));
         tblVars.getColumnModel().getColumn(0).setMinWidth(16);
         tblVars.getColumnModel().getColumn(0).setMaxWidth(16);
 
         tblVars.setAutoCreateColumnsFromModel(false);
+        tblVars.setColumnSelectionAllowed(true);
         tblVars.getColumnModel().getColumn(1).setPreferredWidth(secondColumnWidth);
-        tblVars.getColumnModel().getColumn(2).setPreferredWidth(defaultWidth - firstColumnWidth - secondColumnWidth - 
-                borderGap - ((globalVarsModel.getColumnCount() - 3) * defaultColumnWidth));
+        resizeThirdColumn();
         tblVars.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
         Border border = BorderFactory.createEmptyBorder(4, 5, 2, 5);
@@ -126,8 +138,9 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
             if (column == 0) {
                 return closeLabel;
             }
-            if (column == 1) {
-                int type = (int) globalVarsModel.getValueAt(row, 0);
+            Object val = globalVarsModel.getValueAt(row, 0);
+            if (val != null && column == 1) {
+                int type = (int) val;
                 label.setIcon(type == 0 ? btnAddEndPoint.getIcon() : btnAddVar.getIcon());
             } else {
                 label.setIcon(null);
@@ -136,53 +149,72 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
             return label;
         });
         tblVars.setRowHeight(20);
-        
-        for (int c = 0; c < tblVars.getColumnCount(); c++) {
-            TableCellRenderer headerRenderer = header.getDefaultRenderer();
-            tblVars.getColumnModel().getColumn(c).setHeaderRenderer((JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) -> {
-                JLabel label = (JLabel) headerRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                label.setToolTipText(value.toString());
-                if (column > 2) {
-                    label.setIcon(closeIcon);
-                }
-                return label;
-            });
-        }
-        
+
+        TableCellRenderer headerRenderer = header.getDefaultRenderer();
+        header.setDefaultRenderer((JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) -> {
+            Icon icon = null;
+            if (column < defaultHadersNames.length) {
+                value = defaultHadersNames[column];
+            } else {
+                icon = closeIcon;
+            }
+            JLabel label = (JLabel) headerRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            label.setToolTipText(value.toString());
+            label.setIcon(icon);
+            return label;
+        });
+
         tblVars.addMouseListener(new MouseAdapter() {
-         @Override
-         public void mouseReleased(MouseEvent me) {
-             int columnIndex = tblVars.columnAtPoint(me.getPoint());
-             if (columnIndex == 0) {
-                 int rowIndex = tblVars.rowAtPoint(me.getPoint());
-                 int n = JOptionPane.showConfirmDialog(dialog,
-                         String.format(bundle.getString("tip_delete_env_var"), globalVarsModel.getValueAt(rowIndex, 1)), bundle.getString("title"),
-                         JOptionPane.YES_NO_OPTION);
-                 if (n == JOptionPane.YES_OPTION) {
-                     globalVarsModel.removeRow(rowIndex);
-                 }
-             }
-         }
-      });
-        
+            @Override
+            public void mouseReleased(MouseEvent me) {
+                int columnIndex = tblVars.columnAtPoint(me.getPoint());
+                if (columnIndex == 0) {
+                    int rowIndex = tblVars.rowAtPoint(me.getPoint());
+                    int n = JOptionPane.showConfirmDialog(dialog,
+                            String.format(bundle.getString("tip_delete_env_var"), globalVarsModel.getValueAt(rowIndex, 1)), bundle.getString("title"),
+                            JOptionPane.YES_NO_OPTION);
+                    if (n == JOptionPane.YES_OPTION) {
+                        globalVarsModel.removeRow(rowIndex);
+                    }
+                }
+            }
+        });
 
         header.addMouseListener(new MouseAdapter() {
             @Override
+            @SuppressWarnings("UseOfObsoleteCollectionType")
             public void mouseClicked(MouseEvent evt) {
                 JTable table = ((JTableHeader) evt.getSource()).getTable();
                 TableColumnModel colModel = table.getColumnModel();
 
                 int index = colModel.getColumnIndexAtX(evt.getX());
+                if (index > 1) {
+                    cloneColumnIndex = index;
+                    table.setRowSelectionInterval(0, table.getRowCount()-1);
+                    table.setColumnSelectionInterval(index, index);
+                }
                 if (index < 3) {
                     return;
                 }
                 Rectangle headerRect = header.getHeaderRect(index);
                 if (headerRect.contains(evt.getX(), evt.getY()) && evt.getX() <= (headerRect.x + closeIcon.getIconWidth())) {
+                    String colName = globalVarsSource.columns[index];
                     int n = JOptionPane.showConfirmDialog(dialog,
-                        String.format(bundle.getString("tip_delete_env"), globalVarsSource.columns[index]), bundle.getString("title"),
-                        JOptionPane.YES_NO_OPTION);
+                            String.format(bundle.getString("tip_delete_env"), colName), bundle.getString("title"),
+                            JOptionPane.YES_NO_OPTION);
                     if (n == JOptionPane.YES_OPTION) {
-                        System.out.println("DELETE");
+                        String selectedEnv = userPreferences.get(Amphibia.P_SELECTED_ENVIRONMENT, null);
+                        if (colName.equals(selectedEnv)) {
+                            userPreferences.remove(Amphibia.P_SELECTED_ENVIRONMENT);
+                        }
+
+                        tblVars.removeColumn(tblVars.getColumnModel().getColumn(index));
+                        globalVarsModel.removeColumn(index);
+                        globalVarsSource.columns = globalVarsModel.getColumnNames();
+
+                        if (index == cloneColumnIndex) {
+                            cloneColumnIndex = defaultColumnIndex;
+                        }
                     }
                 }
             }
@@ -193,19 +225,42 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
         dialog.setSize(new Dimension(defaultWidth, 450));
         dialog.setMinimumSize(new Dimension(650, 300));
         java.awt.EventQueue.invokeLater(() -> {
-                dialog.setLocationRelativeTo(mainPanel);
-            }
+            dialog.setLocationRelativeTo(mainPanel);
+        }
         );
+    }
+    
+    private void resizeThirdColumn() {
+        tblVars.getColumnModel().getColumn(2).setPreferredWidth(defaultWidth - firstColumnWidth - tblVars.getColumnModel().getColumn(1).getPreferredWidth()
+            - borderGap - ((globalVarsModel.getColumnCount() - 3) * defaultColumnWidth));
     }
 
     public void openDialog() {
+        if (!String.join("~", originalColumns).equals(String.join("~", globalVarsSource.columns))) {
+            while(tblVars.getColumnModel().getColumnCount() != defaultHadersNames.length) {
+                tblVars.removeColumn(tblVars.getColumnModel().getColumn(defaultHadersNames.length));
+                globalVarsModel.removeColumn(defaultHadersNames.length);
+            }
+            for (int c = defaultHadersNames.length; c < originalColumns.length; c++) {
+                TableColumn col = new TableColumn(c);
+                col.setHeaderValue(originalColumns[c]);
+                tblVars.addColumn(col);
+                globalVarsModel.addColumn(originalColumns[c]);
+            }
+            globalVarsSource.columns = originalColumns = globalVarsModel.getColumnNames();
+            resizeThirdColumn();
+        }
+        
+        globalVarsSource.data = originalData;
+        globalVarsModel.setDataVector(globalVarsSource.data, globalVarsModel.getColumnNames());
+
         dialog.setVisible(true);
     }
 
     public static String[] getEnvironmentNames() {
-        return Arrays.copyOfRange(globalVarsSource.columns, 3, globalVarsSource.columns.length);
+        return Arrays.copyOfRange(originalColumns, 3, originalColumns.length);
     }
-    
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -307,33 +362,50 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
     private void btnAddEndPointActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnAddEndPointActionPerformed
         String name = Amphibia.instance.inputDialog("tip_add_var", "", new String[]{}, dialog.getParent());
         if (name != null) {
-            globalVarsModel.addRow(new Object[] {0, name, "http://"});
+            globalVarsModel.addRow(new Object[]{0, name, "http://"});
         }
     }//GEN-LAST:event_btnAddEndPointActionPerformed
 
     private void btnAddVarActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnAddVarActionPerformed
         String name = Amphibia.instance.inputDialog("tip_add_var", "", new String[]{}, dialog.getParent());
         if (name != null) {
-            globalVarsModel.addRow(new Object[] {1, name});
+            globalVarsModel.addRow(new Object[]{1, name});
         }
     }//GEN-LAST:event_btnAddVarActionPerformed
 
+    @SuppressWarnings("UseOfObsoleteCollectionType")
     private void btnAddEnvActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnAddEnvActionPerformed
-        String name = Amphibia.instance.inputDialog("tip_add_env", "", new String[]{}, dialog.getParent());
+        String name = Amphibia.instance.inputDialog("tip_add_env", "", globalVarsSource.columns, dialog.getParent());
         if (name != null) {
             userPreferences.put(Amphibia.P_SELECTED_ENVIRONMENT, name);
-            globalVarsModel.addRow(new Object[] {1, name});
+
+            java.util.Vector<java.util.Vector> rows = globalVarsModel.getDataVector();
+            Object[] defaultValues = new Object[rows.size()];
+            for (int r = 0; r < rows.size(); r++) {
+                defaultValues[r] = rows.get(r).get(cloneColumnIndex);
+            }
+
+            TableColumn col = new TableColumn(globalVarsModel.getColumnCount());
+            col.setHeaderValue(name);
+            tblVars.addColumn(col);
+            globalVarsModel.addColumn(name, defaultValues);
+            globalVarsSource.columns = globalVarsModel.getColumnNames();
+
+            javax.swing.SwingUtilities.invokeLater(() -> {
+                spnVars.getVerticalScrollBar().setValue(spnVars.getVerticalScrollBar().getMaximum());
+                spnVars.getHorizontalScrollBar().setValue(spnVars.getHorizontalScrollBar().getMaximum());
+            });
         }
     }//GEN-LAST:event_btnAddEnvActionPerformed
 
     @SuppressWarnings("UseOfObsoleteCollectionType")
     private void btnApplyActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnApplyActionPerformed
         try {
-            Object[][] data = new Object[globalVarsModel.getRowCount()][];
             java.util.Vector<java.util.Vector> rows = globalVarsModel.getDataVector();
+            Object[][] data = new Object[rows.size()][];
             for (int r = 0; r < rows.size(); r++) {
                 java.util.Vector row = rows.get(r);
-                Object[] colData = new Object[globalVarsSource.columns.length];
+                Object[] colData = new Object[row.size()];
                 for (int c = 0; c < row.size(); c++) {
                     colData[c] = row.get(c);
                     if (colData[c] instanceof String) {
@@ -341,19 +413,24 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
                             colData[c] = Boolean.getBoolean(colData[c].toString());
                         } else {
                             try {
-                                colData[c] = NUMBER.parse(String.valueOf(row.get(c)));
+                                colData[c] = numberFormat.parse(String.valueOf(row.get(c)));
                             } catch (ParseException e) {
                                 try {
                                     colData[c] = IO.prettyJson(colData[c].toString());
-                                } catch (Exception ex) {}
+                                } catch (Exception ex) {
+                                }
                             }
                         }
                     }
                 }
                 data[r] = colData;
             }
-            globalVarsSource.columns[1] = globalVarsSource.columns[2] = "";
             globalVarsSource.data = data;
+            globalVarsSource.columns = globalVarsModel.getColumnNames();
+            
+            originalColumns = globalVarsSource.columns;
+            originalData = globalVarsSource.data;
+        
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             ObjectOutputStream os = new ObjectOutputStream(out);
             os.writeObject(globalVarsSource);
@@ -384,6 +461,22 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
     private JScrollPane spnVars;
     private JTable tblVars;
     // End of variables declaration//GEN-END:variables
+
+    class TableModel extends DefaultTableModel {
+        
+        public TableModel(Object[][] data, Object[] columnNames) {
+            super(data, columnNames);
+        }
+        
+        public void removeColumn(int column) {
+            columnIdentifiers.remove(column);
+            fireTableStructureChanged();
+        }
+        
+        public String[] getColumnNames() {
+            return (String[]) columnIdentifiers.toArray(new String[columnIdentifiers.size()]);
+        }
+    }
 }
 
 final class GlobalVarModel implements Serializable {
@@ -392,9 +485,9 @@ final class GlobalVarModel implements Serializable {
     public Object[][] data;
 
     public GlobalVarModel() {
-        columns = new String[]{"", "", "", "TEST HELLO WORLD"};
+        columns = new String[]{"", "", ""};
         data = new Object[][]{
-            new Object[]{0, "EndPoint", "http://", "http://"}
+            new Object[]{0, "EndPoint", "http://"}
         };
     }
 }

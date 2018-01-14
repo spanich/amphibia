@@ -22,6 +22,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -40,7 +41,6 @@ import javax.swing.tree.TreePath;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
 
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Target;
@@ -624,10 +624,12 @@ public final class Runner extends BaseTaskPane {
             }
 
             info("HEADER:\n", true);
-            testCaseHeaders.keySet().forEach((key) -> {
-                info(key + ": " + testCaseHeaders.get(key) + "\n");
-                conn.setRequestProperty(key.toString().toLowerCase(), String.valueOf(testCaseHeaders.get(key)));
-            });
+            if (conn != null) {
+                testCaseHeaders.keySet().forEach((key) -> {
+                    info(key + ": " + testCaseHeaders.get(key) + "\n");
+                    conn.setRequestProperty(key.toString().toLowerCase(), String.valueOf(testCaseHeaders.get(key)));
+                });
+            }
 
             JSONObject request = node.info.testStepInfo.getJSONObject("request");
             String body = null;
@@ -643,19 +645,18 @@ public final class Runner extends BaseTaskPane {
             }
             info("BODY:\n", true).info(body + "\n");
 
-            if (body != null && !body.isEmpty()) {
+            if (conn != null && body != null && !body.isEmpty()) {
                 conn.getOutputStream().write(body.getBytes("UTF-8"));
             }
 
             InputStream content;
             try {
-                content = (InputStream) conn.getInputStream();
-            } catch (IOException e) {
                 if (conn == null) { //User pressed stop button
-                    result.content = "Connection aborted";
-                    result.addError(json, e);
+                    result.addError(json, new SocketTimeoutException(result.content = "Connection aborted"));
                     return result;
                 }
+                content = (InputStream) conn.getInputStream();
+            } catch (IOException e) {
                 result.addError(json, e);
                 content = (InputStream) conn.getErrorStream();
             }
@@ -706,7 +707,7 @@ public final class Runner extends BaseTaskPane {
             if (exception == null) {
                 exception = t;
                 String message = json.getString("name") + " (" + t.getMessage() + ")";
-                if (t instanceof java.net.UnknownHostException || t instanceof java.net.SocketTimeoutException) {
+                if (t instanceof java.net.UnknownHostException || t instanceof SocketTimeoutException) {
                     editor.addError(message);
                 } else {
                     editor.addError(t, message);
@@ -715,9 +716,23 @@ public final class Runner extends BaseTaskPane {
         }
 
         public String[] createError() {
+            List<String> sb = new ArrayList<>();
+            StackTraceElement[] stack = exception.getStackTrace();
+            for (int i = 0; i < stack.length; i++) {
+                String line = stack[i].toString();
+                if (line.startsWith("com.equinix.amphibia")) {
+                    if (i >= 4) {
+                        sb.add(line);
+                        break;
+                    }
+                }
+                if (i < 4) {
+                    sb.add(line);
+                }
+            }
             return new String[]{exception.getMessage(), 
                     exception.getClass().getName(), 
-                    StringUtils.join(exception.getStackTrace(), "\n\t", 0, 5), content != null ? content : ""};
+                    String.join("\n\t", sb), content != null ? content : ""};
         }
     }
 }
