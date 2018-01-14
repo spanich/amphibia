@@ -31,6 +31,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.InputEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
@@ -398,15 +400,30 @@ public class Amphibia extends JFrame {
     }
     
     public void resetEnvironmentModel() {
-        String[] envNames = GlobalVariableDialog.getEnvironmentNames();
-        String[] items = new String[envNames.length + 2];
-        items[0] = bundle.getString("default");
-        items[items.length - 1] = bundle.getString("addEnvironment");
-        System.arraycopy(envNames, 0, items, 1, envNames.length);
-        cmbEnvironment.setModel(new DefaultComboBoxModel(items));
-        cmbEnvironment.setSelectedItem(userPreferences.get(P_SELECTED_ENVIRONMENT, null));
-        if (cmbEnvironment.getSelectedIndex() == -1) {
-            cmbEnvironment.setSelectedIndex(0);
+        int columnIndex = 0;
+        int selectedIndex = 0;
+        int columnEnv = 2; //0 - column type, 1 - environment name
+        String selectedEnv = userPreferences.get(P_SELECTED_ENVIRONMENT, null);
+        String[] columns = GlobalVariableDialog.getGlobalVarColumns();
+        Object[][] data = GlobalVariableDialog.getGlobalVarData();
+        SelectedEnvironment[] model = new SelectedEnvironment[columns.length - columnEnv + 1];
+        model[columnIndex++] = new SelectedEnvironment(bundle.getString("default"), data, columnEnv);
+        for (int c = columnEnv + 1; c < columns.length; c++) {
+            if (columns[c].equals(selectedEnv)) {
+                selectedIndex = columnIndex;
+            }
+            model[columnIndex++] = new SelectedEnvironment(columns[c], data, c);
+        }
+        model[columnIndex++] = new SelectedEnvironment(bundle.getString("addEnvironment"), new Object[][]{}, -1);
+        cmbEnvironment.setModel(new DefaultComboBoxModel(model));
+        cmbEnvironment.setSelectedIndex(selectedIndex);
+        
+        SelectedEnvironment env = model[selectedIndex];
+        mainPanel.wizard.sharedEndPointModel.removeAllElements();
+        for (Object[] item : env.data) {
+            if (GlobalVariableDialog.ENDPOINT.equals(item[SelectedEnvironment.TYPE])) {
+                mainPanel.wizard.sharedEndPointModel.addElement(item[SelectedEnvironment.VALUE]);
+            }
         }
     }
 
@@ -1372,8 +1389,11 @@ public class Amphibia extends JFrame {
 
     private void cmbEnvironmentActionPerformed(ActionEvent evt) {//GEN-FIRST:event_cmbEnvironmentActionPerformed
         if (cmbEnvironment.getSelectedIndex() == cmbEnvironment.getItemCount() - 1) {
-           mnuGlobalVarsActionPerformed(evt);
+           mainPanel.globalVarsDialog.openDialog();
+        } else {
+            userPreferences.put(P_SELECTED_ENVIRONMENT, cmbEnvironment.getSelectedItem().toString());
         }
+        resetEnvironmentModel();
     }//GEN-LAST:event_cmbEnvironmentActionPerformed
 
     private void mnuGlobalVarsActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuGlobalVarsActionPerformed
@@ -1586,4 +1606,29 @@ public class Amphibia extends JFrame {
     private JToolBar tlbTop;
     private JButton tlbUndo;
     // End of variables declaration//GEN-END:variables
+}
+
+final class SelectedEnvironment {
+
+    public String column;
+    public Object[][] data;
+    
+    public static int TYPE = 0;
+    public static int NAME = 1;
+    public static int VALUE = 2;
+    
+    public SelectedEnvironment(String column, Object[][] data, int columnIndex) {
+        this.data = new Object[data.length][3];
+        this.column = column;
+        for (int r = 0; r < data.length; r++) {
+            this.data[r][TYPE] = data[r][0];
+            this.data[r][NAME] = data[r][1];
+            this.data[r][VALUE] = data[r][columnIndex];
+        }
+    }
+
+    @Override
+    public String toString() {
+        return column;
+    }
 }

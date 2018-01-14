@@ -25,7 +25,6 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.util.Arrays;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -65,16 +64,18 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
     private final int defaultWidth = 700;
     private final int defaultColumnIndex = 2;
 
-    private GlobalVarModel globalVarsSource;
-
-    private static NumberFormat numberFormat = NumberFormat.getInstance();
+    private static final GlobalVarSource globalVarsSource = new GlobalVarSource();
+    private static final NumberFormat numberFormat = NumberFormat.getInstance();
     private static final Preferences userPreferences = Amphibia.getUserPreferences();
     private static final Logger logger = Logger.getLogger(GlobalVariableDialog.class.getName());
 
-    private static String[] originalColumns;
+    private String[] originalColumns;
     private Object[][] originalData;
     private String[] defaultHadersNames;
     private int cloneColumnIndex;
+    
+    public static Object ENDPOINT = 0;
+    public static Object VARIABLE = 1;
 
     /**
      * Creates new form GlobalVaraibleDialog
@@ -88,13 +89,12 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
         defaultHadersNames = new String[]{"", bundle.getString("name"), bundle.getString("default")};
 
         byte[] data = userPreferences.getByteArray(Amphibia.P_GLOBAL_VARS, null);
-        if (data == null) {
-            globalVarsSource = new GlobalVarModel();
-        } else {
+        if (data != null) {
             try {
-                globalVarsSource = (GlobalVarModel) new ObjectInputStream(new ByteArrayInputStream(data)).readObject();
-            } catch (IOException | ClassNotFoundException ex) {
-                globalVarsSource = new GlobalVarModel();
+                GlobalVarSource gvm = (GlobalVarSource) new ObjectInputStream(new ByteArrayInputStream(data)).readObject();
+                globalVarsSource.data = gvm.data;
+                globalVarsSource.columns = gvm.columns;
+            } catch (ClassCastException | IOException | ClassNotFoundException ex) {
                 logger.log(Level.SEVERE, null, ex);
             }
         }
@@ -140,8 +140,7 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
             }
             Object val = globalVarsModel.getValueAt(row, 0);
             if (val != null && column == 1) {
-                int type = (int) val;
-                label.setIcon(type == 0 ? btnAddEndPoint.getIcon() : btnAddVar.getIcon());
+                label.setIcon(ENDPOINT.equals(val) ? btnAddEndPoint.getIcon() : btnAddVar.getIcon());
             } else {
                 label.setIcon(null);
             }
@@ -247,18 +246,23 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
                 tblVars.addColumn(col);
                 globalVarsModel.addColumn(originalColumns[c]);
             }
-            globalVarsSource.columns = originalColumns = globalVarsModel.getColumnNames();
+            originalColumns = globalVarsModel.getColumnNames();
             resizeThirdColumn();
         }
         
         globalVarsSource.data = originalData;
-        globalVarsModel.setDataVector(globalVarsSource.data, globalVarsModel.getColumnNames());
+        globalVarsSource.columns = originalColumns;
+        globalVarsModel.setDataVector(globalVarsSource.data, globalVarsSource.columns);
 
         dialog.setVisible(true);
     }
 
-    public static String[] getEnvironmentNames() {
-        return Arrays.copyOfRange(originalColumns, 3, originalColumns.length);
+    public static String[] getGlobalVarColumns() {
+        return globalVarsSource.columns;
+    }
+    
+    public static Object[][] getGlobalVarData() {
+        return globalVarsSource.data;
     }
 
     /**
@@ -362,14 +366,14 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
     private void btnAddEndPointActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnAddEndPointActionPerformed
         String name = Amphibia.instance.inputDialog("tip_add_var", "", new String[]{}, dialog.getParent());
         if (name != null) {
-            globalVarsModel.addRow(new Object[]{0, name, "http://"});
+            globalVarsModel.addRow(new Object[]{ENDPOINT, name, "http://"});
         }
     }//GEN-LAST:event_btnAddEndPointActionPerformed
 
     private void btnAddVarActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnAddVarActionPerformed
         String name = Amphibia.instance.inputDialog("tip_add_var", "", new String[]{}, dialog.getParent());
         if (name != null) {
-            globalVarsModel.addRow(new Object[]{1, name});
+            globalVarsModel.addRow(new Object[]{VARIABLE, name});
         }
     }//GEN-LAST:event_btnAddVarActionPerformed
 
@@ -479,12 +483,12 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
     }
 }
 
-final class GlobalVarModel implements Serializable {
+final class GlobalVarSource implements Serializable {
 
     public String[] columns;
     public Object[][] data;
 
-    public GlobalVarModel() {
+    public GlobalVarSource() {
         columns = new String[]{"", "", ""};
         data = new Object[][]{
             new Object[]{0, "EndPoint", "http://"}

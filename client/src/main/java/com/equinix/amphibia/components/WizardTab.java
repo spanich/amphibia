@@ -15,6 +15,8 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.ResourceBundle;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
@@ -40,18 +42,16 @@ public class WizardTab extends javax.swing.JPanel {
     
     /**
      * Creates new form WizardTab
+     * @param wizard the value of wizard
      */
-    public WizardTab() {
-        initComponents();
-    }
-    
-    public void setWizard(Wizard wizard) {
+    public WizardTab(Wizard wizard) {
+        this.wizard = wizard;
+        
         bundle = Amphibia.getBundle();
         
-        this.wizard = wizard;
-        this.cmdEndpoint.setModel(wizard.envModel);
         interfacesModel = new DefaultComboBoxModel(new String[] {bundle.getString("none")});
-        cmdInterface.setModel(interfacesModel);
+        
+        initComponents();
     }
 
     /**
@@ -106,7 +106,13 @@ public class WizardTab extends javax.swing.JPanel {
 
         pnlEndpoint.setLayout(new FlowLayout(FlowLayout.LEFT));
 
+        cmdEndpoint.setModel(wizard.sharedEndPointModel);
         cmdEndpoint.setPreferredSize(new Dimension(250, 20));
+        cmdEndpoint.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent evt) {
+                cmdEndpointItemStateChanged(evt);
+            }
+        });
         cmdEndpoint.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 cmdEndpointActionPerformed(evt);
@@ -116,6 +122,7 @@ public class WizardTab extends javax.swing.JPanel {
 
         btnEndpointInfo.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/icon-16-info.png"))); // NOI18N
         btnEndpointInfo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnEndpointInfo.setFocusPainted(false);
         btnEndpointInfo.setPreferredSize(new Dimension(30, 22));
         btnEndpointInfo.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
@@ -146,6 +153,7 @@ public class WizardTab extends javax.swing.JPanel {
 
         btnInterfaceInfo.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/icon-16-info.png"))); // NOI18N
         btnInterfaceInfo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnInterfaceInfo.setFocusPainted(false);
         btnInterfaceInfo.setPreferredSize(new Dimension(30, 22));
         btnInterfaceInfo.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
@@ -248,7 +256,6 @@ public class WizardTab extends javax.swing.JPanel {
         pnlFooter.add(btnSend, gridBagConstraints);
 
         btnSave.setText(bundle.getString("save")); // NOI18N
-        btnSave.setEnabled(false);
         btnSave.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 btnSaveActionPerformed(evt);
@@ -261,6 +268,7 @@ public class WizardTab extends javax.swing.JPanel {
 
     private void btnEndpointInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEndpointInfoActionPerformed
         wizard.mainPanel.globalVarsDialog.openDialog();
+        Amphibia.instance.resetEnvironmentModel();
     }//GEN-LAST:event_btnEndpointInfoActionPerformed
 
     private void cmdEndpointActionPerformed(ActionEvent evt) {//GEN-FIRST:event_cmdEndpointActionPerformed
@@ -290,6 +298,15 @@ public class WizardTab extends javax.swing.JPanel {
     private void btnInterfaceInfoActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnInterfaceInfoActionPerformed
         wizard.openInterfacePanel(this);
     }//GEN-LAST:event_btnInterfaceInfoActionPerformed
+
+    private void cmdEndpointItemStateChanged(ItemEvent evt) {//GEN-FIRST:event_cmdEndpointItemStateChanged
+        btnSend.setEnabled(cmdEndpoint.getSelectedItem() != null);
+        if (btnSend.isEnabled()) {
+            lblURI.setText(cmdEndpoint.getSelectedItem().toString());
+        } else {
+            lblURI.setText("http://");
+        }
+    }//GEN-LAST:event_cmdEndpointItemStateChanged
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

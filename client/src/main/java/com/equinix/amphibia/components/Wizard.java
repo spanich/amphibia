@@ -53,6 +53,8 @@ public class Wizard extends javax.swing.JPanel {
     MainPanel mainPanel;
     DefaultTableModel headersModel;
     DefaultComboBoxModel envModel;
+    
+    public final DefaultComboBoxModel sharedEndPointModel = new DefaultComboBoxModel();
 
     /**
      * Creates new form Wizard
@@ -69,8 +71,6 @@ public class Wizard extends javax.swing.JPanel {
         initComponents();
         
         envModel = new DefaultComboBoxModel();
-        
-        wizardTab.setWizard(this);
         
         applyButton = new JButton(bundle.getString("apply"));
         applyButton.addActionListener((ActionEvent evt) -> {
@@ -158,7 +158,7 @@ public class Wizard extends javax.swing.JPanel {
         btnAddRow = new JButton();
         btnDeleteRow = new JButton();
         tabNav = new JTabbedPane();
-        wizardTab = new WizardTab();
+        wizardTab = new WizardTab(this);
 
         pnlInterface.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         pnlInterface.setLayout(new BorderLayout());
