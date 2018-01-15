@@ -44,7 +44,7 @@ public final class JTreeTable extends JTable {
     /**
      * A subclass of JTree.
      */
-    protected TreeTableCellRenderer tree;
+    private final TreeTableCellRenderer tree;
 
     public JTreeTable(AbstractTreeTableModel treeTableModel, RowEventListener listener) {
         super();

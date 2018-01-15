@@ -239,7 +239,7 @@ public final class TreeCollection {
     }
 
     public TreeIconNode.TreeIconUserObject getUserObject(TreeNode node) {
-        if (node != null) {
+        if (node instanceof TreeIconNode) {
             return ((TreeIconNode) node).getTreeIconUserObject();
         }
         return null;

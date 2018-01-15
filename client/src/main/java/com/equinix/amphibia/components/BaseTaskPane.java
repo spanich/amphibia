@@ -15,6 +15,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -168,17 +169,14 @@ public class BaseTaskPane extends javax.swing.JSplitPane {
             activateTab(Amphibia.TAB_PROBLEMS, Amphibia.instance.mnuProblems);
         }
         DefaultMutableTreeNode node = new DefaultMutableTreeNode(value);
-        try {
-            parent.add(node);
-            tree.expandPath(new TreePath(parent.getPath()));
-            if (parent.getChildCount() > 0) {
-                treeProblemsModel.nodesWereInserted(parent, new int[]{parent.getChildCount() - 1});
-            }
-            java.awt.EventQueue.invokeLater(() -> {
-                tree.updateUI();
-            });
-        } catch (Exception e) {
+        parent.add(node);
+        tree.expandPath(new TreePath(parent.getPath()));
+        if (parent.getChildCount() > 0) {
+            treeProblemsModel.nodesWereInserted(parent, new int[]{parent.getChildCount() - 1});
         }
+        java.awt.EventQueue.invokeLater(() -> {
+            tree.updateUI();
+        });
         return node;
     }
 

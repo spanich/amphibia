@@ -62,7 +62,7 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
     static {
         byte[] data = userPreferences.getByteArray(Amphibia.P_SELECTED_NODE, null);
         if (data != null) {
-            selectedUIDName = new String(data);
+            setSelectedUIDName(new String(data));
         }
         runIcon = new ImageIcon(TreeIconNode.class.getResource("/com/equinix/amphibia/icons/testcase_run_16.png"));
         runningIcon = new ImageIcon(TreeIconNode.class.getResource("/com/equinix/amphibia/icons/testcase_running_16.png"));
@@ -179,7 +179,7 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
         super.setParent(newParent);
         String path = getNodePath();
         if (getUID(path).equals(selectedUIDName)) {
-            MainPanel.selectedNode = this;
+            MainPanel.setSelectedNode(this);
         }
     }
 
@@ -188,7 +188,7 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
     }
     
     public void saveSelection() {
-        selectedUIDName = getUID(getNodePath());
+        setSelectedUIDName(getUID(getNodePath()));
         userPreferences.putByteArray(Amphibia.P_SELECTED_NODE, selectedUIDName.getBytes());
     }
 
@@ -208,6 +208,10 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
 
     public TreeIconNode getSource() {
         return source;
+    }
+    
+    private static void setSelectedUIDName(String name) {
+        selectedUIDName = name;
     }
 
     static public class ResourceInfo {
@@ -239,6 +243,7 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
             this.testCaseInfo = testCaseInfo;
             this.testCaseHeaders = testCaseHeaders;
             this.testStepInfo = testStepInfo;
+            this.testStep = null;
         }
 
         public ResourceInfo clone(JSONObject testCase) {

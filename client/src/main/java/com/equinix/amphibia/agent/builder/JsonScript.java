@@ -22,6 +22,8 @@ public class JsonScript extends ProjectAbstract {
 
     public JsonScript(CommandLine cmd) throws Exception {
         super(cmd);
+        outputFile = null;
+        jsonOutput = null;
     }
 
     @Override

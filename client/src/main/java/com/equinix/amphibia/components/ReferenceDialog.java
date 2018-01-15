@@ -201,7 +201,7 @@ public final class ReferenceDialog extends javax.swing.JPanel {
                     dirPath = String.format(dirPath, "schemas", "requests");
                     break;
                 default:
-                    return null;
+                    return new Object[]{};
             }
         } else {
             switch (entry.name) {

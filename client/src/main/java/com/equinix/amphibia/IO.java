@@ -128,7 +128,7 @@ public class IO {
         } catch (Exception ex) {
             pane.addError(ex);
         }
-        return null;
+        return new String[] {};
     }
 
     public static String[] write(TreeIconNode node) throws Exception {

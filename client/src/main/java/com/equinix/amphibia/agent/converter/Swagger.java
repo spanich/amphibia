@@ -28,11 +28,11 @@ import net.sf.json.JSONObject;
 
 public final class Swagger {
 
-    protected CommandLine cmd;
-    protected JSONObject doc;
-    protected JSONObject output;
-    protected JSONObject swaggerProperties;
-    protected Runner runner;
+    private final CommandLine cmd;
+    private final JSONObject doc;
+    private final JSONObject output;
+    private final JSONObject swaggerProperties;
+    private final Runner runner;
 
     public static final JSONObject asserts = new JSONObject();
     public static final JSONNull NULL = JSONNull.getInstance();

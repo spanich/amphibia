@@ -36,7 +36,7 @@ public final class TreePopupMenuBuilder implements ActionListener {
 
     private TreeIconNode selectedNode;
     
-    protected final Preferences userPreferences = getUserPreferences();
+    private final Preferences userPreferences = getUserPreferences();
     
     private static final Logger logger = Logger.getLogger(TreePopupMenuBuilder.class.getName());
 
@@ -92,7 +92,6 @@ public final class TreePopupMenuBuilder implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         JMenuItem menuitem = (JMenuItem) e.getSource();
         String[] commands = menuitem.getActionCommand().split(":");
-        String cmdType = commands.length > 1 ? commands[1] : null;
         TreeCollection collection = selectedNode.getCollection();
         switch (commands[0]) {
             case "RENAME":

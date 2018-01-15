@@ -388,9 +388,13 @@ public final class MainPanel extends javax.swing.JPanel {
     public void expandParendNode(TreeIconNode parent) {
         parent.getCollection().expandNode(treeNav, parent);
     }
+    
+    public static void setSelectedNode(TreeIconNode node) {
+        selectedNode = node;
+    }
 
     public void selectNode(TreeIconNode node) {
-        MainPanel.selectedNode = node;
+        setSelectedNode(node);
         TreeCollection collection = node.getCollection();
         
         debugTreeNode.removeAllChildren();

@@ -336,7 +336,12 @@ public class Amphibia extends JFrame {
 
     public static JDialog createDialog(JOptionPane optionPane, boolean isResizable) {
         JDialog dialog = optionPane.createDialog(null, UIManager.getString("OptionPane.title"));
-        Frame frame = (Frame) dialog.getParent();
+        Frame frame;
+        if (dialog.getParent() instanceof Frame) {
+            frame = (Frame) dialog.getParent();
+        } else {
+            frame = Amphibia.instance;
+        }
         frame.setIconImage(Amphibia.instance.icon.getImage());
         dialog.setResizable(isResizable);
         return dialog;
@@ -1495,7 +1500,12 @@ public class Amphibia extends JFrame {
         error.setForeground(Color.red);
         optionPane.add(error, 1);
 
-        final JDialog dialog = new JDialog((Frame)owner, bundle.getString("title"), true);
+        JDialog dialog;
+        if (owner instanceof Frame) {
+            dialog = new JDialog((Frame)owner, bundle.getString("title"), true);
+        } else {
+            dialog = new JDialog(Amphibia.instance, bundle.getString("title"), true);
+        }
         dialog.setContentPane(optionPane);
         optionPane.addPropertyChangeListener((PropertyChangeEvent e) -> {
             if (optionPane.getValue().equals(JOptionPane.OK_OPTION)) {

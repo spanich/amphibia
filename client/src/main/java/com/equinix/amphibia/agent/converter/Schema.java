@@ -18,11 +18,11 @@ import net.sf.json.JSONObject;
 
 public final class Schema {
 
-    protected Swagger swagger;
-    protected JSONObject docDefinitions;
-    protected Map<Object, Object> fields;
-    protected Map<Object, Object> definitions;
-    protected Map<Object, Object> schema;
+    private final Swagger swagger;
+    private JSONObject docDefinitions;
+    private Map<Object, Object> fields;
+    private Map<Object, Object> definitions;
+    private Map<Object, Object> schema;
 
     public static final String OUTPUT_DIR = Runner.DATA_DIR + "/schemas";
     public static final Map<String, String> schemas = new LinkedHashMap<String, String>();

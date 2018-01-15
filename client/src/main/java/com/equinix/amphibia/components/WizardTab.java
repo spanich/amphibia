@@ -113,11 +113,6 @@ public class WizardTab extends javax.swing.JPanel {
                 cmdEndpointItemStateChanged(evt);
             }
         });
-        cmdEndpoint.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                cmdEndpointActionPerformed(evt);
-            }
-        });
         pnlEndpoint.add(cmdEndpoint);
 
         btnEndpointInfo.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/icon-16-info.png"))); // NOI18N
@@ -271,14 +266,6 @@ public class WizardTab extends javax.swing.JPanel {
         wizard.mainPanel.globalVarsDialog.openDialog();
         Amphibia.instance.resetEnvironmentModel();
     }//GEN-LAST:event_btnEndpointInfoActionPerformed
-
-    private void cmdEndpointActionPerformed(ActionEvent evt) {//GEN-FIRST:event_cmdEndpointActionPerformed
-        if (cmdEndpoint.getSelectedIndex() > 1) {
-            
-        } else {
-            
-        }
-    }//GEN-LAST:event_cmdEndpointActionPerformed
 
     private void btnHeadersActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnHeadersActionPerformed
         // TODO add your handling code here:

@@ -20,14 +20,14 @@ import net.sf.json.JSON;
  */
 public final class JSONTableModel extends JTreeTable.AbstractTreeTableModel {
 
-    protected final Editor.Entry rootEntry;
-    protected JSON json;
-    protected Object[][] properties;
+    private final Editor.Entry rootEntry;
+    private JSON json;
+    private Object[][] properties;
 
-    protected final ResourceBundle bundle;
-    protected final String[] columns;
+    private final ResourceBundle bundle;
+    private final String[] columns;
 
-    protected final Class[] cTypes = {JTree.class, String.class, JTreeTable.EditValueRenderer.class};
+    private final Class[] cTypes = {JTree.class, String.class, JTreeTable.EditValueRenderer.class};
 
     public JSONTableModel() {
         super(null);

@@ -233,7 +233,6 @@ public final class ResourceOrderDialog extends javax.swing.JPanel {
     }//GEN-LAST:event_btnRemoveActionPerformed
 
     private void btnCloneActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnCloneActionPerformed
-        JSONArray elements = new JSONArray();
         int index = lstResource.getSelectedIndex();
         JSONObject json = ((ResourceItem) resourceModel.getElementAt(index)).json;
         source.add(json);
