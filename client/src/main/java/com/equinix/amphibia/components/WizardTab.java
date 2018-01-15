@@ -143,10 +143,11 @@ public class WizardTab extends javax.swing.JPanel {
 
         pnlInterface.setLayout(new FlowLayout(FlowLayout.LEFT));
 
+        cmdInterface.setModel(wizard.interfaceBasePathModel);
         cmdInterface.setPreferredSize(new Dimension(250, 20));
-        cmdInterface.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                cmdInterfaceActionPerformed(evt);
+        cmdInterface.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent evt) {
+                cmdInterfaceItemStateChanged(evt);
             }
         });
         pnlInterface.add(cmdInterface);
@@ -291,22 +292,26 @@ public class WizardTab extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_btnSaveActionPerformed
 
-    private void cmdInterfaceActionPerformed(ActionEvent evt) {//GEN-FIRST:event_cmdInterfaceActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_cmdInterfaceActionPerformed
-
     private void btnInterfaceInfoActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnInterfaceInfoActionPerformed
-        wizard.openInterfacePanel(this);
+        wizard.openInterfacePanel();
     }//GEN-LAST:event_btnInterfaceInfoActionPerformed
 
     private void cmdEndpointItemStateChanged(ItemEvent evt) {//GEN-FIRST:event_cmdEndpointItemStateChanged
         btnSend.setEnabled(cmdEndpoint.getSelectedItem() != null);
         if (btnSend.isEnabled()) {
-            lblURI.setText(cmdEndpoint.getSelectedItem().toString());
+            String basePath = "/";
+            if (cmdInterface.getSelectedItem() != null) {
+                basePath = ((Wizard.ComboItem)cmdInterface.getSelectedItem()).json.getString("basePath");
+            }
+            lblURI.setText(cmdEndpoint.getSelectedItem().toString() + basePath);
         } else {
             lblURI.setText("http://");
         }
     }//GEN-LAST:event_cmdEndpointItemStateChanged
+
+    private void cmdInterfaceItemStateChanged(ItemEvent evt) {//GEN-FIRST:event_cmdInterfaceItemStateChanged
+        cmdEndpointItemStateChanged(evt);
+    }//GEN-LAST:event_cmdInterfaceItemStateChanged
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

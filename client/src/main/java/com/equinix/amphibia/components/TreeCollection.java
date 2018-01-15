@@ -53,6 +53,7 @@ public final class TreeCollection {
 
     public final TreeIconNode project;
     public final TreeIconNode swaggers;
+    public final TreeIconNode interfaces;
     public final TreeIconNode runner;
     public final TreeIconNode testsuites;
     public final TreeIconNode tests;
@@ -76,6 +77,7 @@ public final class TreeCollection {
         RESPONSES,
         RESPONSE_ITEM,
         RUNNERS,
+        INTERFACES,
         INTERFACE,
         SWAGGER,
         RULES,
@@ -89,6 +91,15 @@ public final class TreeCollection {
         {"interfaces", null, VIEW},
         {"globals", null, VIEW},
         {"properties", ADD}
+    };
+    
+    public static final Object[][] INTERFACES_PROPERTIES = new Object[][]{
+        {null, new Object[][] {
+            {"type", VIEW},
+            {"name", VIEW},
+            {"basePath", VIEW},
+            {"headers", null, VIEW},
+        }}
     };
 
     public static final Object[][] DOCUMENT_PROPERTIES = new Object[][]{
@@ -218,6 +229,7 @@ public final class TreeCollection {
         ResourceBundle bundle = Amphibia.getBundle();
         project = new TreeIconNode(this, bundle.getString("project"), PROJECT, false, PROJECT_PROPERTIES);
         swaggers = new TreeIconNode(this, bundle.getString("swaggers"), SWAGGERS, false, DOCUMENT_PROPERTIES);
+        interfaces = new TreeIconNode(this, bundle.getString("interfaces"), INTERFACES, false, INTERFACES_PROPERTIES);
         runner = new TreeIconNode(this, "", RUNNERS, false, RUNNERS_PROPERTIES);
         testsuites = new TreeIconNode(this, bundle.getString("testcases"), TESTCASES, false);
         tests = new TreeIconNode(this, bundle.getString("tests"), TESTS, false);
@@ -260,6 +272,7 @@ public final class TreeCollection {
     public void reset(DefaultTreeModel treeModel) {
         removeAllChildren(treeModel, swaggers);
         removeAllChildren(treeModel, runner);
+        removeAllChildren(treeModel, interfaces);
         removeAllChildren(treeModel, testsuites);
         removeAllChildren(treeModel, tests);
         removeAllChildren(treeModel, schemas);

@@ -31,8 +31,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.InputEvent;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
@@ -1403,7 +1401,7 @@ public class Amphibia extends JFrame {
 
     private void mnuInterfacesActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuInterfacesActionPerformed
         if (MainPanel.selectedNode != null) {
-            mainPanel.wizard.openInterfaceDialog();
+            mainPanel.wizard.openInterfacePanel();
         }
     }//GEN-LAST:event_mnuInterfacesActionPerformed
 

@@ -416,14 +416,15 @@ public final class MainPanel extends javax.swing.JPanel {
         Object raw = node.getCollection().runner.jsonObject();
         switch (node.getType()) {
             case PROJECT:
-            case INTERFACE:
                 raw = node.getCollection().project.jsonObject();
                 break;
+            case INTERFACES:
+            case INTERFACE:
             case RULES:
             case REQUEST_ITEM:
             case RESPONSE_ITEM:
             case SCHEMA_ITEM:
-                raw = node.jsonObject();
+                raw = node.getTreeIconUserObject().json;
                 break;
             case TEST_ITEM:
                 raw = node.info.testStepInfo;
@@ -507,6 +508,7 @@ public final class MainPanel extends javax.swing.JPanel {
         if (node.getCollection().isOpen()) {
             editor.selectedTreeNode(node);
         }
+        wizard.selectNode(node);
     }
 
     public void addError(Exception ex) {
@@ -571,6 +573,7 @@ public final class MainPanel extends javax.swing.JPanel {
 
         treeNode.add(collection.project);
         collection.project.add(collection.swaggers);
+        collection.project.add(collection.interfaces);
         collection.project.add(collection.runner);
         collection.project.add(collection.testsuites);
 
@@ -589,6 +592,18 @@ public final class MainPanel extends javax.swing.JPanel {
         JSONArray interfacesJSON = projectJson.getJSONArray("interfaces");
         JSONArray resources = json.getJSONArray("resources");
         JSONArray testsuites = json.getJSONArray("testsuites");
+        
+        JSONObject interfacesMap = new JSONObject();
+        interfacesJSON.forEach((item) -> {
+            JSONObject interfaceJSON = (JSONObject) item;
+            interfacesMap.element(interfaceJSON.getString("name"), interfaceJSON);
+            collection.addTreeNode(collection.interfaces, interfaceJSON.getString("name"), INTERFACE, false)
+                    .addProperties(INTERFACE_PROPERTIES)
+                    .addTooltip(interfaceJSON.getString("basePath"))
+                    .addJSON(interfaceJSON);
+        });
+        collection.interfaces.addJSON(interfacesJSON);
+        
         testsuites.forEach((item) -> {
             JSONObject testsuite = (JSONObject) item;
             int resourceIndex = testsuite.getInt("resources");
@@ -603,7 +618,10 @@ public final class MainPanel extends javax.swing.JPanel {
                     JSONArray testcases = testSuiteInfo.getJSONArray("testcases");
                     for (int i = 0; i < testcases.size(); i++) {
                         JSONObject testCaseInfo = testcases.getJSONObject(i);
-                        JSONObject interfaceJSON = interfacesJSON.getJSONObject(resourceIndex);
+                        JSONObject interfaceJSON = new JSONObject();
+                        if (resource.containsKey("interface") && !resource.getString("interface").isEmpty()) {
+                            interfaceJSON = interfacesMap.getJSONObject(resource.getString("interface"));
+                        }
                         JSONObject testCaseHeaders = JSONObject.fromObject(interfaceJSON.getJSONObject("headers").toString());
                         if (testCaseInfo.containsKey("headers")) {
                             JSONObject headers = testCaseInfo.getJSONObject("headers");
@@ -1029,6 +1047,7 @@ public final class MainPanel extends javax.swing.JPanel {
             states = new JSONObject();
             states.element("project", new int[]{1,1,0});
             states.element("swaggers", new int[]{0});
+            states.element("interfaces", new int[]{0});
             states.element("testsuites", new int[]{1});
             states.element("tests", new int[]{0});
             states.element("schemas", new int[]{0});
@@ -1040,6 +1059,7 @@ public final class MainPanel extends javax.swing.JPanel {
         }
         collection.project.info = new TreeIconNode.ResourceInfo(states.getJSONArray("project"));
         collection.swaggers.info = new TreeIconNode.ResourceInfo(states.getJSONArray("swaggers"));
+        collection.interfaces.info = new TreeIconNode.ResourceInfo(states.getJSONArray("interfaces"));
         collection.testsuites.info = new TreeIconNode.ResourceInfo(states.getJSONArray("testsuites"));
         collection.tests.info = new TreeIconNode.ResourceInfo(states.getJSONArray("tests"));
         collection.schemas.info = new TreeIconNode.ResourceInfo(states.getJSONArray("schemas"));

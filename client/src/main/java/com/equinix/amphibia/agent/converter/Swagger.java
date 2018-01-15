@@ -172,9 +172,9 @@ public final class Swagger {
         final JSONObject hs = headers;
         interfaces.add(new HashMap<String, Object>() {
             {
+                put("type", "rest");
                 put("name", name);
                 put("basePath", interfaceBasePath);
-                put("type", "rest");
                 put("headers", hs);
             }
         });

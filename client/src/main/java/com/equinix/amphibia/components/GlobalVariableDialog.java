@@ -365,14 +365,14 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
 
     private void btnAddEndPointActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnAddEndPointActionPerformed
         String name = Amphibia.instance.inputDialog("tip_add_var", "", new String[]{}, dialog.getParent());
-        if (name != null) {
+        if (name != null && !name.isEmpty()) {
             globalVarsModel.addRow(new Object[]{ENDPOINT, name, "http://"});
         }
     }//GEN-LAST:event_btnAddEndPointActionPerformed
 
     private void btnAddVarActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnAddVarActionPerformed
         String name = Amphibia.instance.inputDialog("tip_add_var", "", new String[]{}, dialog.getParent());
-        if (name != null) {
+        if (name != null && !name.isEmpty()) {
             globalVarsModel.addRow(new Object[]{VARIABLE, name});
         }
     }//GEN-LAST:event_btnAddVarActionPerformed
@@ -380,7 +380,7 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
     @SuppressWarnings("UseOfObsoleteCollectionType")
     private void btnAddEnvActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnAddEnvActionPerformed
         String name = Amphibia.instance.inputDialog("tip_add_env", "", globalVarsSource.columns, dialog.getParent());
-        if (name != null) {
+        if (name != null && !name.isEmpty()) {
             userPreferences.put(Amphibia.P_SELECTED_ENVIRONMENT, name);
 
             java.util.Vector<java.util.Vector> rows = globalVarsModel.getDataVector();
