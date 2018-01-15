@@ -214,7 +214,15 @@ public class Wizard extends javax.swing.JPanel {
     }
     
     public void openHeadersPanel() {
+        lblHeadersBottomError.setVisible(false);
         headersDialog.setVisible(true);
+    }
+    
+    public void openTestCase() {
+        TreeIconNode node = MainPanel.selectedNode;
+        WizardTab newTab = new WizardTab(this);
+        tabNav.addTab(node.getLabel(), node.getTreeIconUserObject().getIcon(), newTab);
+        tabNav.setSelectedIndex(tabNav.getTabCount() - 1);
     }
     
     /**
@@ -245,19 +253,18 @@ public class Wizard extends javax.swing.JPanel {
         lblError = new JLabel();
         pnlHeaders = new JPanel();
         sptHeaders = new JSplitPane();
-        pnlEnvCenter1 = new JPanel();
-        lblEnvHeaders1 = new JLabel();
-        spnEnvHeaders1 = new JScrollPane();
-        tblEnvHeaders1 = new JTable();
-        pnlEnvFooter1 = new JPanel();
-        pnlEnvCenter2 = new JPanel();
-        lblEnvHeaders2 = new JLabel();
-        spnEnvHeaders2 = new JScrollPane();
-        tblEnvHeaders2 = new JTable();
-        pnlEnvFooter2 = new JPanel();
-        btnAddRow2 = new JButton();
-        btnDeleteRow2 = new JButton();
-        lblError2 = new JLabel();
+        pnlHeadersTop = new JPanel();
+        lblHeadersTop = new JLabel();
+        spnHeadersTop = new JScrollPane();
+        tblHeadersTop = new JTable();
+        pnlHeadersBottom = new JPanel();
+        lblHeadersBottom = new JLabel();
+        spnHeadersBottom = new JScrollPane();
+        tblHeadersBottom = new JTable();
+        pnlHeadersBottomFooter = new JPanel();
+        btnHeadersBottomAdd = new JButton();
+        btnHeadersBottomDelete = new JButton();
+        lblHeadersBottomError = new JLabel();
         tabNav = new JTabbedPane();
 
         pnlInterface.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -367,64 +374,59 @@ public class Wizard extends javax.swing.JPanel {
         sptHeaders.setDividerSize(3);
         sptHeaders.setOrientation(JSplitPane.VERTICAL_SPLIT);
 
-        pnlEnvCenter1.setLayout(new BorderLayout());
+        pnlHeadersTop.setLayout(new BorderLayout());
 
-        lblEnvHeaders1.setFont(new Font("Tahoma", 1, 11)); // NOI18N
-        lblEnvHeaders1.setText(bundle.getString("sharedHeaders")); // NOI18N
-        lblEnvHeaders1.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
-        pnlEnvCenter1.add(lblEnvHeaders1, BorderLayout.PAGE_START);
+        lblHeadersTop.setFont(new Font("Tahoma", 1, 11)); // NOI18N
+        lblHeadersTop.setText(bundle.getString("sharedHeaders")); // NOI18N
+        lblHeadersTop.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        pnlHeadersTop.add(lblHeadersTop, BorderLayout.PAGE_START);
 
-        tblEnvHeaders1.setModel(this.headersModel);
-        tblEnvHeaders1.setEnabled(false);
-        spnEnvHeaders1.setViewportView(tblEnvHeaders1);
+        tblHeadersTop.setEnabled(false);
+        spnHeadersTop.setViewportView(tblHeadersTop);
 
-        pnlEnvCenter1.add(spnEnvHeaders1, BorderLayout.CENTER);
+        pnlHeadersTop.add(spnHeadersTop, BorderLayout.CENTER);
 
-        pnlEnvFooter1.setLayout(new BoxLayout(pnlEnvFooter1, BoxLayout.LINE_AXIS));
-        pnlEnvCenter1.add(pnlEnvFooter1, BorderLayout.PAGE_END);
+        sptHeaders.setLeftComponent(pnlHeadersTop);
 
-        sptHeaders.setLeftComponent(pnlEnvCenter1);
+        pnlHeadersBottom.setLayout(new BorderLayout());
 
-        pnlEnvCenter2.setLayout(new BorderLayout());
+        lblHeadersBottom.setFont(new Font("Tahoma", 1, 11)); // NOI18N
+        lblHeadersBottom.setText(bundle.getString("headers")); // NOI18N
+        lblHeadersBottom.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        pnlHeadersBottom.add(lblHeadersBottom, BorderLayout.PAGE_START);
 
-        lblEnvHeaders2.setFont(new Font("Tahoma", 1, 11)); // NOI18N
-        lblEnvHeaders2.setText(bundle.getString("headers")); // NOI18N
-        lblEnvHeaders2.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
-        pnlEnvCenter2.add(lblEnvHeaders2, BorderLayout.PAGE_START);
+        spnHeadersBottom.setViewportView(tblHeadersBottom);
 
-        tblEnvHeaders2.setModel(this.headersModel);
-        spnEnvHeaders2.setViewportView(tblEnvHeaders2);
+        pnlHeadersBottom.add(spnHeadersBottom, BorderLayout.CENTER);
 
-        pnlEnvCenter2.add(spnEnvHeaders2, BorderLayout.CENTER);
+        pnlHeadersBottomFooter.setLayout(new BoxLayout(pnlHeadersBottomFooter, BoxLayout.LINE_AXIS));
 
-        pnlEnvFooter2.setLayout(new BoxLayout(pnlEnvFooter2, BoxLayout.LINE_AXIS));
-
-        btnAddRow2.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/plus-icon.png"))); // NOI18N
-        btnAddRow2.setToolTipText(bundle.getString("addRow")); // NOI18N
-        btnAddRow2.addActionListener(new ActionListener() {
+        btnHeadersBottomAdd.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/plus-icon.png"))); // NOI18N
+        btnHeadersBottomAdd.setToolTipText(bundle.getString("addRow")); // NOI18N
+        btnHeadersBottomAdd.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                btnAddRow2ActionPerformed(evt);
+                btnHeadersBottomAddActionPerformed(evt);
             }
         });
-        pnlEnvFooter2.add(btnAddRow2);
+        pnlHeadersBottomFooter.add(btnHeadersBottomAdd);
 
-        btnDeleteRow2.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/remove_16.png"))); // NOI18N
-        btnDeleteRow2.setToolTipText(bundle.getString("deleteRow")); // NOI18N
-        btnDeleteRow2.addActionListener(new ActionListener() {
+        btnHeadersBottomDelete.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/remove_16.png"))); // NOI18N
+        btnHeadersBottomDelete.setToolTipText(bundle.getString("deleteRow")); // NOI18N
+        btnHeadersBottomDelete.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                btnDeleteRow2ActionPerformed(evt);
+                btnHeadersBottomDeleteActionPerformed(evt);
             }
         });
-        pnlEnvFooter2.add(btnDeleteRow2);
+        pnlHeadersBottomFooter.add(btnHeadersBottomDelete);
 
-        lblError2.setForeground(Color.red);
-        lblError2.setText(bundle.getString("tip_key_exists")); // NOI18N
-        lblError2.setBorder(BorderFactory.createEmptyBorder(1, 10, 1, 10));
-        pnlEnvFooter2.add(lblError2);
+        lblHeadersBottomError.setForeground(Color.red);
+        lblHeadersBottomError.setText(bundle.getString("tip_key_exists")); // NOI18N
+        lblHeadersBottomError.setBorder(BorderFactory.createEmptyBorder(1, 10, 1, 10));
+        pnlHeadersBottomFooter.add(lblHeadersBottomError);
 
-        pnlEnvCenter2.add(pnlEnvFooter2, BorderLayout.PAGE_END);
+        pnlHeadersBottom.add(pnlHeadersBottomFooter, BorderLayout.PAGE_END);
 
-        sptHeaders.setRightComponent(pnlEnvCenter2);
+        sptHeaders.setRightComponent(pnlHeadersBottom);
 
         pnlHeaders.add(sptHeaders, BorderLayout.CENTER);
 
@@ -504,47 +506,46 @@ public class Wizard extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_cmdNameItemStateChanged
 
-    private void btnAddRow2ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnAddRow2ActionPerformed
+    private void btnHeadersBottomAddActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnHeadersBottomAddActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_btnAddRow2ActionPerformed
+    }//GEN-LAST:event_btnHeadersBottomAddActionPerformed
 
-    private void btnDeleteRow2ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnDeleteRow2ActionPerformed
+    private void btnHeadersBottomDeleteActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnHeadersBottomDeleteActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_btnDeleteRow2ActionPerformed
+    }//GEN-LAST:event_btnHeadersBottomDeleteActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private JButton btnAddRow;
-    private JButton btnAddRow2;
     private JButton btnClone;
     private JButton btnDelete;
     private JButton btnDeleteRow;
-    private JButton btnDeleteRow2;
+    private JButton btnHeadersBottomAdd;
+    private JButton btnHeadersBottomDelete;
     private JComboBox<String> cmdName;
     private JLabel lblBasePath;
     private JLabel lblEnvHeaders;
-    private JLabel lblEnvHeaders1;
-    private JLabel lblEnvHeaders2;
     private JLabel lblError;
-    private JLabel lblError2;
+    private JLabel lblHeadersBottom;
+    private JLabel lblHeadersBottomError;
+    private JLabel lblHeadersTop;
     private JLabel lblName;
     private JPanel pnlEnvCenter;
-    private JPanel pnlEnvCenter1;
-    private JPanel pnlEnvCenter2;
     private JPanel pnlEnvFooter;
-    private JPanel pnlEnvFooter1;
-    private JPanel pnlEnvFooter2;
     private JPanel pnlEnvTop;
     private JPanel pnlHeaders;
+    private JPanel pnlHeadersBottom;
+    private JPanel pnlHeadersBottomFooter;
+    private JPanel pnlHeadersTop;
     private JPanel pnlInterface;
     private JScrollPane spnEnvHeaders;
-    private JScrollPane spnEnvHeaders1;
-    private JScrollPane spnEnvHeaders2;
+    private JScrollPane spnHeadersBottom;
+    private JScrollPane spnHeadersTop;
     private JSplitPane sptHeaders;
     JTabbedPane tabNav;
     private JTable tblEnvHeaders;
-    private JTable tblEnvHeaders1;
-    private JTable tblEnvHeaders2;
+    private JTable tblHeadersBottom;
+    private JTable tblHeadersTop;
     private JTextField txtBasePath;
     // End of variables declaration//GEN-END:variables
 
