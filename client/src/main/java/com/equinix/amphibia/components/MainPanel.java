@@ -545,6 +545,9 @@ public final class MainPanel extends javax.swing.JPanel {
             }
             collection.project.addTooltip(projectFile.getAbsolutePath());
 
+            JSONObject projectJson = (JSONObject) IO.getJSON(collection.getProjectFile(), editor);
+            globalVarsDialog.mergeVariables(projectJson.getJSONArray("globals"));
+            
             success = reloadProject(collection);
             if (success && MainPanel.selectedNode == null && collection.project.info != null) {
                 MainPanel.selectedNode = collection.project;

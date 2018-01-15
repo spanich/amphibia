@@ -40,6 +40,7 @@ import java.nio.IntBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -128,6 +129,10 @@ public class Amphibia extends JFrame {
     public static final int TAB_CONSOLE = 2;
     public static final int TAB_SERVERS = 3;
     public static final int TAB_HISTORY = 4;
+    
+    public static int TYPE = 0;
+    public static int NAME = 1;
+    public static int VALUE = 2;
     
     public static final String OPEN_TABS = "11111";
 
@@ -423,9 +428,12 @@ public class Amphibia extends JFrame {
         
         SelectedEnvironment env = model[selectedIndex];
         mainPanel.wizard.sharedEndPointModel.removeAllElements();
+        Map<Object, Boolean> endpoints = new HashMap<>();
         for (Object[] item : env.data) {
-            if (GlobalVariableDialog.ENDPOINT.equals(item[SelectedEnvironment.TYPE])) {
-                mainPanel.wizard.sharedEndPointModel.addElement(item[SelectedEnvironment.VALUE]);
+            if (GlobalVariableDialog.ENDPOINT.equals(item[TYPE]) && !endpoints.containsKey(item[VALUE]) && 
+                    item[VALUE] != null && !item[VALUE].toString().isEmpty()) {
+                mainPanel.wizard.sharedEndPointModel.addElement(item[VALUE]);
+                endpoints.put(item[VALUE], true);
             }
         }
     }
@@ -1622,18 +1630,14 @@ final class SelectedEnvironment {
 
     public String column;
     public Object[][] data;
-    
-    public static int TYPE = 0;
-    public static int NAME = 1;
-    public static int VALUE = 2;
-    
+        
     public SelectedEnvironment(String column, Object[][] data, int columnIndex) {
         this.data = new Object[data.length][3];
         this.column = column;
         for (int r = 0; r < data.length; r++) {
-            this.data[r][TYPE] = data[r][0];
-            this.data[r][NAME] = data[r][1];
-            this.data[r][VALUE] = data[r][columnIndex];
+            this.data[r][Amphibia.TYPE] = data[r][0];
+            this.data[r][Amphibia.NAME] = data[r][1];
+            this.data[r][Amphibia.VALUE] = data[r][columnIndex];
         }
     }
 

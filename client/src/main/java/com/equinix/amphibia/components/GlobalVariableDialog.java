@@ -25,6 +25,8 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,6 +47,8 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 
 /**
  *
@@ -255,6 +259,35 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
         globalVarsModel.setDataVector(globalVarsSource.data, globalVarsSource.columns);
 
         dialog.setVisible(true);
+    }
+    
+    @SuppressWarnings("UseOfObsoleteCollectionType")
+    public void mergeVariables(JSONArray variables) {
+        Map<Object, Boolean> names = new HashMap<>();
+        for (int r = 0; r < globalVarsModel.getRowCount(); r++) {
+            names.put(globalVarsModel.getValueAt(r, Amphibia.NAME), true);
+        }
+        
+        variables.forEach((item) -> {
+            JSONObject vars = (JSONObject) item;
+            Object type = VARIABLE;
+            if ("endpoint".equals(vars.getOrDefault("type", null))) {
+                type = ENDPOINT;
+            }
+            if (!names.containsKey(vars.getString("name"))) {
+                globalVarsModel.addRow(new Object[]{type, vars.getString("name"), vars.get("value")});
+            }
+        });
+        
+        Object[][] data = new Object[globalVarsModel.getRowCount()][];
+        for (int r = 0; r < globalVarsModel.getRowCount(); r++) {
+            data[r] = new Object[globalVarsSource.columns.length];
+            for (int c = 0; c < globalVarsSource.columns.length; c++) {
+                data[r][c] = globalVarsModel.getValueAt(r, c);
+            }
+        }
+        
+        globalVarsSource.data = originalData = data;
     }
 
     public static String[] getGlobalVarColumns() {
