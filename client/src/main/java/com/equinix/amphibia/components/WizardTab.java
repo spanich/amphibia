@@ -268,7 +268,7 @@ public class WizardTab extends javax.swing.JPanel {
     }//GEN-LAST:event_btnEndpointInfoActionPerformed
 
     private void btnHeadersActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnHeadersActionPerformed
-        // TODO add your handling code here:
+        wizard.openHeadersPanel();
     }//GEN-LAST:event_btnHeadersActionPerformed
 
     private void btnSendActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnSendActionPerformed

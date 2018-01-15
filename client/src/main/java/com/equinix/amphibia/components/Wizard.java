@@ -31,6 +31,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
@@ -45,10 +46,13 @@ import net.sf.json.JSONObject;
 public class Wizard extends javax.swing.JPanel {
     
     private ResourceBundle bundle;
-    private JDialog dialog;
-    private JButton applyButton;
-    private JButton addButton;
-    private JButton cancelButton;
+    private JDialog headersDialog;
+    private JDialog interfaceDialog;
+    private JButton applyInterfaceButton;
+    private JButton addInterfaceButton;
+    private JButton cancelInterfaceButton;
+    private JButton applyHeadersButton;
+    private JButton cancelHeadersButton;
     private WizardTab wizardTab;
     private int headerSaveIndex;
     
@@ -78,8 +82,8 @@ public class Wizard extends javax.swing.JPanel {
         
         initComponents();
 
-        applyButton = new JButton(bundle.getString("apply"));
-        applyButton.addActionListener((ActionEvent evt) -> {
+        applyInterfaceButton = new JButton(bundle.getString("apply"));
+        applyInterfaceButton.addActionListener((ActionEvent evt) -> {
             TreeIconNode node = MainPanel.selectedNode.getCollection().project;
             JSONArray interfaces = new JSONArray();
             for (int i = 0; i < projectInterfaces.getSize(); i++) {
@@ -87,29 +91,45 @@ public class Wizard extends javax.swing.JPanel {
             }
             node.jsonObject().element("interfaces", interfaces);
             mainPanel.saveNodeValue(node);
-            dialog.setVisible(false);
+            interfaceDialog.setVisible(false);
         });
-        addButton = new JButton(bundle.getString("newInterface"));
-        addButton.addActionListener((ActionEvent evt) -> {
+        addInterfaceButton = new JButton(bundle.getString("newInterface"));
+        addInterfaceButton.addActionListener((ActionEvent evt) -> {
             JSONObject json = new JSONObject();
             json.element("type", "rest");
             if(newInterface(json)) {
                 reset();
             }
         });
-        cancelButton = new JButton(bundle.getString("cancel"));
-        cancelButton.addActionListener((ActionEvent evt) -> {
-            dialog.setVisible(false);
+        cancelInterfaceButton = new JButton(bundle.getString("cancel"));
+        cancelInterfaceButton.addActionListener((ActionEvent evt) -> {
+            interfaceDialog.setVisible(false);
         });
 
-        dialog = Amphibia.createDialog(pnlInterface, new Object[]{addButton, applyButton, cancelButton}, true);
-        dialog.setSize(new Dimension(600, 500));
+        interfaceDialog = Amphibia.createDialog(pnlInterface, new Object[]{addInterfaceButton, applyInterfaceButton, cancelInterfaceButton}, true);
+        interfaceDialog.setSize(new Dimension(600, 500));
+
+        applyHeadersButton = new JButton(bundle.getString("apply"));
+        applyHeadersButton.addActionListener((ActionEvent evt) -> {
+            
+            headersDialog.setVisible(false);
+        });
+        cancelHeadersButton = new JButton(bundle.getString("cancel"));
+        cancelHeadersButton.addActionListener((ActionEvent evt) -> {
+            headersDialog.setVisible(false);
+        });
+        
+        headersDialog = Amphibia.createDialog(pnlHeaders, new Object[]{applyHeadersButton, cancelHeadersButton}, true);
+        headersDialog.setSize(new Dimension(600, 700));
     }
     
     public void setMainPanel(MainPanel mainPanel) {
         this.mainPanel = mainPanel;
         EventQueue.invokeLater(() -> {
-            dialog.setLocationRelativeTo(mainPanel);
+            interfaceDialog.setLocationRelativeTo(mainPanel);
+        });
+        EventQueue.invokeLater(() -> {
+            headersDialog.setLocationRelativeTo(mainPanel);
         });
     }
     
@@ -137,7 +157,7 @@ public class Wizard extends javax.swing.JPanel {
             for (int i = 0; i < projectInterfaces.getSize(); i++) {
                 names[i] = projectInterfaces.getElementAt(i).toString();
             }
-            String name = Amphibia.instance.inputDialog("newInterfaceName", "", names, dialog.getParent());
+            String name = Amphibia.instance.inputDialog("newInterfaceName", "", names, interfaceDialog.getParent());
             b = name != null && !name.isEmpty();
             if (b) {
                 json.element("name", name);
@@ -190,7 +210,11 @@ public class Wizard extends javax.swing.JPanel {
     public void openInterfacePanel() {
         reset();
         cmdNameItemStateChanged(null);
-        dialog.setVisible(true);
+        interfaceDialog.setVisible(true);
+    }
+    
+    public void openHeadersPanel() {
+        headersDialog.setVisible(true);
     }
     
     /**
@@ -219,6 +243,21 @@ public class Wizard extends javax.swing.JPanel {
         btnAddRow = new JButton();
         btnDeleteRow = new JButton();
         lblError = new JLabel();
+        pnlHeaders = new JPanel();
+        sptHeaders = new JSplitPane();
+        pnlEnvCenter1 = new JPanel();
+        lblEnvHeaders1 = new JLabel();
+        spnEnvHeaders1 = new JScrollPane();
+        tblEnvHeaders1 = new JTable();
+        pnlEnvFooter1 = new JPanel();
+        pnlEnvCenter2 = new JPanel();
+        lblEnvHeaders2 = new JLabel();
+        spnEnvHeaders2 = new JScrollPane();
+        tblEnvHeaders2 = new JTable();
+        pnlEnvFooter2 = new JPanel();
+        btnAddRow2 = new JButton();
+        btnDeleteRow2 = new JButton();
+        lblError2 = new JLabel();
         tabNav = new JTabbedPane();
 
         pnlInterface.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -321,6 +360,74 @@ public class Wizard extends javax.swing.JPanel {
 
         pnlInterface.add(pnlEnvCenter, BorderLayout.CENTER);
 
+        pnlHeaders.setLayout(new BorderLayout());
+
+        sptHeaders.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
+        sptHeaders.setDividerLocation(150);
+        sptHeaders.setDividerSize(3);
+        sptHeaders.setOrientation(JSplitPane.VERTICAL_SPLIT);
+
+        pnlEnvCenter1.setLayout(new BorderLayout());
+
+        lblEnvHeaders1.setFont(new Font("Tahoma", 1, 11)); // NOI18N
+        lblEnvHeaders1.setText(bundle.getString("sharedHeaders")); // NOI18N
+        lblEnvHeaders1.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        pnlEnvCenter1.add(lblEnvHeaders1, BorderLayout.PAGE_START);
+
+        tblEnvHeaders1.setModel(this.headersModel);
+        tblEnvHeaders1.setEnabled(false);
+        spnEnvHeaders1.setViewportView(tblEnvHeaders1);
+
+        pnlEnvCenter1.add(spnEnvHeaders1, BorderLayout.CENTER);
+
+        pnlEnvFooter1.setLayout(new BoxLayout(pnlEnvFooter1, BoxLayout.LINE_AXIS));
+        pnlEnvCenter1.add(pnlEnvFooter1, BorderLayout.PAGE_END);
+
+        sptHeaders.setLeftComponent(pnlEnvCenter1);
+
+        pnlEnvCenter2.setLayout(new BorderLayout());
+
+        lblEnvHeaders2.setFont(new Font("Tahoma", 1, 11)); // NOI18N
+        lblEnvHeaders2.setText(bundle.getString("headers")); // NOI18N
+        lblEnvHeaders2.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        pnlEnvCenter2.add(lblEnvHeaders2, BorderLayout.PAGE_START);
+
+        tblEnvHeaders2.setModel(this.headersModel);
+        spnEnvHeaders2.setViewportView(tblEnvHeaders2);
+
+        pnlEnvCenter2.add(spnEnvHeaders2, BorderLayout.CENTER);
+
+        pnlEnvFooter2.setLayout(new BoxLayout(pnlEnvFooter2, BoxLayout.LINE_AXIS));
+
+        btnAddRow2.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/plus-icon.png"))); // NOI18N
+        btnAddRow2.setToolTipText(bundle.getString("addRow")); // NOI18N
+        btnAddRow2.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                btnAddRow2ActionPerformed(evt);
+            }
+        });
+        pnlEnvFooter2.add(btnAddRow2);
+
+        btnDeleteRow2.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/remove_16.png"))); // NOI18N
+        btnDeleteRow2.setToolTipText(bundle.getString("deleteRow")); // NOI18N
+        btnDeleteRow2.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                btnDeleteRow2ActionPerformed(evt);
+            }
+        });
+        pnlEnvFooter2.add(btnDeleteRow2);
+
+        lblError2.setForeground(Color.red);
+        lblError2.setText(bundle.getString("tip_key_exists")); // NOI18N
+        lblError2.setBorder(BorderFactory.createEmptyBorder(1, 10, 1, 10));
+        pnlEnvFooter2.add(lblError2);
+
+        pnlEnvCenter2.add(pnlEnvFooter2, BorderLayout.PAGE_END);
+
+        sptHeaders.setRightComponent(pnlEnvCenter2);
+
+        pnlHeaders.add(sptHeaders, BorderLayout.CENTER);
+
         setBorder(BorderFactory.createLineBorder(new Color(0, 0, 0)));
         setLayout(new BorderLayout());
 
@@ -361,7 +468,7 @@ public class Wizard extends javax.swing.JPanel {
     }//GEN-LAST:event_btnDeleteRowActionPerformed
 
     private void btnDeleteActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
-        int n = JOptionPane.showConfirmDialog(dialog,
+        int n = JOptionPane.showConfirmDialog(interfaceDialog,
                     String.format(bundle.getString("tip_delete_interface"), cmdName.getSelectedItem()), bundle.getString("title"),
                     JOptionPane.YES_NO_OPTION);
             if (n == JOptionPane.YES_OPTION) {
@@ -397,24 +504,47 @@ public class Wizard extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_cmdNameItemStateChanged
 
+    private void btnAddRow2ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnAddRow2ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btnAddRow2ActionPerformed
+
+    private void btnDeleteRow2ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnDeleteRow2ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btnDeleteRow2ActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private JButton btnAddRow;
+    private JButton btnAddRow2;
     private JButton btnClone;
     private JButton btnDelete;
     private JButton btnDeleteRow;
+    private JButton btnDeleteRow2;
     private JComboBox<String> cmdName;
     private JLabel lblBasePath;
     private JLabel lblEnvHeaders;
+    private JLabel lblEnvHeaders1;
+    private JLabel lblEnvHeaders2;
     private JLabel lblError;
+    private JLabel lblError2;
     private JLabel lblName;
     private JPanel pnlEnvCenter;
+    private JPanel pnlEnvCenter1;
+    private JPanel pnlEnvCenter2;
     private JPanel pnlEnvFooter;
+    private JPanel pnlEnvFooter1;
+    private JPanel pnlEnvFooter2;
     private JPanel pnlEnvTop;
+    private JPanel pnlHeaders;
     private JPanel pnlInterface;
     private JScrollPane spnEnvHeaders;
+    private JScrollPane spnEnvHeaders1;
+    private JScrollPane spnEnvHeaders2;
+    private JSplitPane sptHeaders;
     JTabbedPane tabNav;
     private JTable tblEnvHeaders;
+    private JTable tblEnvHeaders1;
+    private JTable tblEnvHeaders2;
     private JTextField txtBasePath;
     // End of variables declaration//GEN-END:variables
 
