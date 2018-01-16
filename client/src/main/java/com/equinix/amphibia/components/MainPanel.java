@@ -273,6 +273,10 @@ public final class MainPanel extends javax.swing.JPanel {
                     if (selectedNode.getCollection().isOpen()) {
                         selectNode(selectedNode);
                     }
+                    
+                    if(e.getClickCount() == 2 && selectedUserObject.getType() == TESTCASE) {
+                        wizard.openTestCase();
+                    }
                 }
             }
         });

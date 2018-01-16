@@ -1384,7 +1384,6 @@ public class Amphibia extends JFrame {
     }//GEN-LAST:event_mnuEmptyProjectActionPerformed
 
     private void btnOpenTestCaseActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnOpenTestCaseActionPerformed
-        mainPanel.tabRight.setSelectedIndex(1);
         mainPanel.wizard.openTestCase();
     }//GEN-LAST:event_btnOpenTestCaseActionPerformed
 

@@ -6,23 +6,18 @@
 package com.equinix.amphibia.components;
 
 import com.equinix.amphibia.Amphibia;
+import com.equinix.amphibia.HttpConnection;
+import com.equinix.amphibia.IHttpConnection;
 import com.equinix.amphibia.IO;
 import java.awt.Color;
 import java.awt.Desktop;
 
 import java.awt.EventQueue;
 import java.awt.Rectangle;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.URL;
-import java.net.HttpURLConnection;
-import java.net.SocketTimeoutException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -52,7 +47,7 @@ import org.apache.tools.ant.types.FileSet;
  *
  * @author dgofman
  */
-public final class Runner extends BaseTaskPane {
+public final class Runner extends BaseTaskPane implements IHttpConnection {
 
     private boolean isRunning;
     private boolean includeSkippedTests;
@@ -61,14 +56,12 @@ public final class Runner extends BaseTaskPane {
     private Thread currentThread;
     private TreeIconNode selectedNode;
     private DefaultTreeModel treeModel;
-    private HttpURLConnection conn;
+    private HttpConnection connection;
     private Map<Thread, Boolean> threads;
     private boolean continueOnError;
     private int lineIndex;
 
     private final SimpleDateFormat reportDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-
-    public static int DEFAULT_TIMEOUT = 60;
     public static Color GREEN = new Color(40, 130, 10);
 
     public Runner(MainPanel mainPanel, Editor editor) {
@@ -78,6 +71,7 @@ public final class Runner extends BaseTaskPane {
         this.tree = mainPanel.debugTreeNav;
         this.treeModel = mainPanel.debugTreeModel;
         this.threads = new HashMap<>();
+        this.connection = new HttpConnection(this);
     }
 
     @Override
@@ -135,10 +129,12 @@ public final class Runner extends BaseTaskPane {
         return addToConsole("\n" + dateMediumFormat.print(new Date().getTime()) + "\n\n", Color.black, true);
     }
 
+    @Override
     public Runner info(String text) {
         return info(text, false);
     }
 
+    @Override
     public Runner info(String text, boolean isBool) {
         return addToConsole(text, Color.BLUE, isBool);
     }
@@ -208,9 +204,8 @@ public final class Runner extends BaseTaskPane {
         if (selectedNode == null) {
             return;
         }
-        if (conn != null) {
-            conn.disconnect();
-            conn = null;
+        if (connection.urlConnection() != null) {
+            connection.disconnect();
         }
         threads.clear();
 
@@ -516,17 +511,17 @@ public final class Runner extends BaseTaskPane {
                 node.setReportState(TreeIconNode.REPORT_RUNNING_STATE);
                 treeModel.nodeStructureChanged(node);
                 JSONObject json = node.jsonObject();
-                Result result = new Result();
-                long startTime = new Date().getTime();
+                JSONObject sourceJSON = node.source.jsonObject();
+                HttpConnection.Result result = new HttpConnection.Result();
                 int startIndex = lineIndex;
+                String name = sourceJSON.getString("name");
                 try {
                     date();
-                    result = request(node.source);
+                    result = connection.request(name, sourceJSON.getString("method"), node.source);
                 } catch (Exception e) {
-                    result.addError(node.source.jsonObject(), e);
+                    connection.addError(result, name, e);
                 }
                 node.info.consoleLine = Math.max(0, startIndex - 16);
-                result.time = new Date().getTime() - startTime;
                 json.element("time", result.time);
                 json.element("line", node.info.consoleLine);
 
@@ -588,151 +583,5 @@ public final class Runner extends BaseTaskPane {
             treeModel.nodeStructureChanged(node);
         });
         return resultState;
-    }
-
-    private Result request(TreeIconNode node) throws Exception {
-        conn = null;
-        Result result = new Result();
-        BufferedReader in;
-        JSONObject json = node.jsonObject();
-        info("NAME: ", true).info(json.getString("name") + "\n");
-        try {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            String url = node.getTreeIconUserObject().getTooltip();
-            info(json.getString("method") + ": ", true).info(url + "\n");
-            conn = (HttpURLConnection) new URL(url).openConnection();
-            conn.setConnectTimeout(userPreferences.getInt(Amphibia.P_CONN_TIMEOUT, DEFAULT_TIMEOUT) * 1000);
-            conn.setReadTimeout(userPreferences.getInt(Amphibia.P_READ_TIMEOUT, DEFAULT_TIMEOUT) * 1000);
-
-            conn.setDoInput(true);
-            conn.setDoOutput(true);
-            conn.setRequestMethod(json.getString("method"));
-            conn.setRequestProperty("Accept", "*/*");
-
-            final JSONObject testCaseHeaders = JSONObject.fromObject(node.info.testCaseHeaders);
-            if (node.info.testCase != null && node.info.testCase.containsKey("headers")) {
-                JSONObject headers = node.info.testCase.getJSONObject("headers");
-                headers.keySet().forEach((key) -> {
-                    Object header = headers.get(key);
-                    if (header instanceof JSONObject && ((JSONObject) header).isNullObject()) {
-                        testCaseHeaders.remove(key);
-                    } else {
-                        testCaseHeaders.put(key, header);
-                    }
-                });
-            }
-
-            info("HEADER:\n", true);
-            if (conn != null) {
-                testCaseHeaders.keySet().forEach((key) -> {
-                    info(key + ": " + testCaseHeaders.get(key) + "\n");
-                    conn.setRequestProperty(key.toString().toLowerCase(), String.valueOf(testCaseHeaders.get(key)));
-                });
-            }
-
-            JSONObject request = node.info.testStepInfo.getJSONObject("request");
-            String body = null;
-            if (request.get("body") instanceof String) {
-                body = request.getString("body");
-                try {
-                    body = IO.readFile(node.getCollection(), body);
-                    body = IO.prettyJson(body);
-                    body = node.info.properties.cloneProperties().setTestStep(request.getJSONObject("properties")).replace(body);
-                } catch (Exception ex) {
-                    logger.log(Level.SEVERE, null, ex);
-                }
-            }
-            info("BODY:\n", true).info(body + "\n");
-
-            if (conn != null && body != null && !body.isEmpty()) {
-                conn.getOutputStream().write(body.getBytes("UTF-8"));
-            }
-
-            InputStream content;
-            try {
-                if (conn == null) { //User pressed stop button
-                    result.addError(json, new SocketTimeoutException(result.content = "Connection aborted"));
-                    return result;
-                }
-                content = (InputStream) conn.getInputStream();
-            } catch (IOException e) {
-                result.addError(json, e);
-                content = (InputStream) conn.getErrorStream();
-            }
-            if (content != null) {
-                in = new BufferedReader(new InputStreamReader(content));
-                String line;
-                while ((line = in.readLine()) != null) {
-                    pw.println(line);
-                }
-                in.close();
-
-                try {
-                    result.content = IO.prettyJson(sw.toString());
-                } catch (Exception e) {
-                    result.content = sw.toString();
-                }
-            }
-        } catch (IOException e) {
-            result.addError(json, e);
-        } finally {
-            if (conn != null) {
-                try {
-                    result.statusCode = conn.getResponseCode();
-                    int expected = node.info.testCaseInfo.getJSONObject("properties").getInt("HTTPStatusCode");
-                    if (result.statusCode != expected) {
-                        throw new AssertionError("StatusCode expected " + result.statusCode + " to equal " + expected);
-                    }
-                } catch (AssertionError | IOException e) {
-                    result.addError(json, e);
-                }
-                result.headers = conn.getHeaderFields();
-                conn.disconnect();
-            }
-        }
-        conn = null;
-        return result;
-    }
-
-    class Result {
-
-        Throwable exception = null;
-        Map<String, List<String>> headers;
-        String content;
-        int statusCode;
-        long time;
-
-        public void addError(JSONObject json, Throwable t) {
-            if (exception == null) {
-                exception = t;
-                String message = json.getString("name") + " (" + t.getMessage() + ")";
-                if (t instanceof java.net.UnknownHostException || t instanceof SocketTimeoutException) {
-                    editor.addError(message);
-                } else {
-                    editor.addError(t, message);
-                }
-            }
-        }
-
-        public String[] createError() {
-            List<String> sb = new ArrayList<>();
-            StackTraceElement[] stack = exception.getStackTrace();
-            for (int i = 0; i < stack.length; i++) {
-                String line = stack[i].toString();
-                if (line.startsWith("com.equinix.amphibia")) {
-                    if (i >= 4) {
-                        sb.add(line);
-                        break;
-                    }
-                }
-                if (i < 4) {
-                    sb.add(line);
-                }
-            }
-            return new String[]{exception.getMessage(), 
-                    exception.getClass().getName(), 
-                    String.join("\n\t", sb), content != null ? content : ""};
-        }
     }
 }

@@ -6,7 +6,10 @@
 package com.equinix.amphibia.components;
 
 import com.equinix.amphibia.Amphibia;
+import com.equinix.amphibia.HttpConnection;
+import com.equinix.amphibia.IHttpConnection;
 import com.equinix.amphibia.IO;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
@@ -44,7 +47,13 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
+import javax.swing.tree.DefaultMutableTreeNode;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -52,7 +61,7 @@ import net.sf.json.JSONObject;
  *
  * @author dgofman
  */
-public final class WizardTab extends javax.swing.JPanel {
+public final class WizardTab extends javax.swing.JPanel implements IHttpConnection {
     
     private ResourceBundle bundle;
     private Wizard wizard;
@@ -245,16 +254,18 @@ public final class WizardTab extends javax.swing.JPanel {
         txtPath = new JTextField();
         btnHeaders = new JButton();
         btnClose = new JButton();
-        tabBody = new JTabbedPane();
+        tabNav = new JTabbedPane();
         spnReqBody = new JScrollPane();
         txtReqBody = new JTextArea();
         spnResBody = new JScrollPane();
         txtResBody = new JTextArea();
         spnConsole = new JScrollPane();
-        txtConsole = new JTextArea();
+        txtConsole = new JTextPane();
         pnlFooter = new JPanel();
         lblStatusCode = new JLabel();
         lblCode = new JLabel();
+        lblTime = new JLabel();
+        lblTimeValue = new JLabel();
         btnSend = new JButton();
         btnSave = new JButton();
 
@@ -472,33 +483,39 @@ public final class WizardTab extends javax.swing.JPanel {
         txtReqBody.setRows(5);
         spnReqBody.setViewportView(txtReqBody);
 
-        tabBody.addTab(bundle.getString("requestBody"), spnReqBody); // NOI18N
+        tabNav.addTab(bundle.getString("requestBody"), spnReqBody); // NOI18N
 
         txtResBody.setColumns(20);
         txtResBody.setRows(5);
         spnResBody.setViewportView(txtResBody);
 
-        tabBody.addTab(bundle.getString("responseBody"), spnResBody); // NOI18N
+        tabNav.addTab(bundle.getString("responseBody"), spnResBody); // NOI18N
 
         txtConsole.setEditable(false);
-        txtConsole.setColumns(20);
-        txtConsole.setRows(5);
         spnConsole.setViewportView(txtConsole);
 
-        tabBody.addTab(bundle.getString("console"), spnConsole); // NOI18N
+        tabNav.addTab(bundle.getString("console"), spnConsole); // NOI18N
 
-        add(tabBody, BorderLayout.CENTER);
+        add(tabNav, BorderLayout.CENTER);
 
         pnlFooter.setLayout(new GridBagLayout());
 
         lblStatusCode.setText(bundle.getString("statusCode")); // NOI18N
         pnlFooter.add(lblStatusCode, new GridBagConstraints());
 
-        lblCode.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+        lblCode.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 100));
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.weightx = 1.0;
         pnlFooter.add(lblCode, gridBagConstraints);
+
+        lblTime.setText(bundle.getString("time")); // NOI18N
+        pnlFooter.add(lblTime, new GridBagConstraints());
+
+        lblTimeValue.setBorder(BorderFactory.createEmptyBorder(1, 5, 1, 5));
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.anchor = GridBagConstraints.WEST;
+        gridBagConstraints.weightx = 1.0;
+        pnlFooter.add(lblTimeValue, gridBagConstraints);
 
         btnSend.setText(bundle.getString("send")); // NOI18N
         btnSend.setEnabled(false);
@@ -544,7 +561,30 @@ public final class WizardTab extends javax.swing.JPanel {
     }//GEN-LAST:event_btnHeadersActionPerformed
 
     private void btnSendActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnSendActionPerformed
-        // TODO add your handling code here:
+        HttpConnection.Result result = new HttpConnection.Result();
+        txtConsole.setText("");
+        txtResBody.setText("");
+        lblCode.setText("");
+        lblTimeValue.setText("");
+        try {
+            HttpConnection con = new HttpConnection(this);
+            String name = testCaseNode != null ? testCaseNode.jsonObject().getString("name") : bundle.getString("wizard");
+            result = con.request(name, cmdMethod.getSelectedItem().toString(), lblURI.getText(), new JSONObject(), txtReqBody.getText());
+            txtResBody.setText(result.content);
+            info("STATUS: ", true).info(result.statusCode + "\n");
+            info("TIME: ", true).info(result.time + " ms\n");
+            info("RESULT:\n", true);
+            info(result.content);
+            tabNav.setSelectedIndex(1);
+        } catch (Exception ex) {
+            logger.log(Level.SEVERE, null, ex);
+            info("ERROR\n", true);
+            txtResBody.setText(result.content + "\n\n");
+            info(ex.toString());
+            tabNav.setSelectedIndex(2);
+        }
+        lblTimeValue.setText(String.valueOf(result.time) + " ms");
+        lblCode.setText(String.valueOf(result.statusCode));
     }//GEN-LAST:event_btnSendActionPerformed
 
     private void btnSaveActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnSaveActionPerformed
@@ -610,6 +650,8 @@ public final class WizardTab extends javax.swing.JPanel {
     JLabel lblMethod;
     JLabel lblPath;
     JLabel lblStatusCode;
+    JLabel lblTime;
+    JLabel lblTimeValue;
     JLabel lblURI;
     JPanel pnlEndpoint;
     JPanel pnlFooter;
@@ -627,12 +669,40 @@ public final class WizardTab extends javax.swing.JPanel {
     JScrollPane spnReqBody;
     JScrollPane spnResBody;
     JSplitPane sptHeaders;
-    JTabbedPane tabBody;
+    JTabbedPane tabNav;
     JTable tblHeadersBottom;
     JTable tblHeadersTop;
-    JTextArea txtConsole;
+    JTextPane txtConsole;
     JTextField txtPath;
     JTextArea txtReqBody;
     JTextArea txtResBody;
     // End of variables declaration//GEN-END:variables
+
+    @Override
+    public IHttpConnection info(String text) {
+        return info(text, false);
+    }
+
+    @Override
+    public IHttpConnection info(String text, boolean isBold) {
+        StyledDocument doc = txtConsole.getStyledDocument();
+        SimpleAttributeSet attr = new SimpleAttributeSet();
+        StyleConstants.setBold(attr, isBold);
+        try {
+            doc.insertString(doc.getLength(), text, attr);
+        } catch (BadLocationException ex) {
+            logger.log(Level.SEVERE, null, ex);
+        }
+        return this;
+    }
+
+    @Override
+    public DefaultMutableTreeNode addError(String error) {
+        return wizard.mainPanel.editor.addError(error);
+    }
+
+    @Override
+    public DefaultMutableTreeNode addError(Throwable t, String error) {
+        return wizard.mainPanel.editor.addError(t, error);
+    }
 }
