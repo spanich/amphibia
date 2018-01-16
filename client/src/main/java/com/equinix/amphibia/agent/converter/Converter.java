@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -130,11 +131,12 @@ public class Converter {
                     pis = new FileInputStream(propertiesFile);
                 }
             }
-            runner.addResource(inputParam, isURL, propertiesFile);
+            String resourceId = UUID.randomUUID().toString();
+            runner.addResource(resourceId, inputParam, isURL, propertiesFile);
 
-            Swagger swagger = new Swagger(cmd, is, pis, output, runner);
+            Swagger swagger = new Swagger(cmd, resourceId, is, pis, output, runner);
             runner.setSwagger(swagger);
-            name = swagger.init(name, i);
+            name = swagger.init(name, i, resourceId);
             IOUtils.closeQuietly(is);
         }
 

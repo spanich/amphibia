@@ -73,6 +73,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     private JButton applyTestCaseButton;
     private JButton cancelButton;
     private DefaultTableModel testCaseHeaders;
+    private DefaultComboBoxModel testSuitesModel;
     private Object[][] lastSavedDataModel;
 
     private static final Logger logger = Logger.getLogger(WizardTab.class.getName());
@@ -93,6 +94,8 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         
         lastSavedDataModel = new Object[][]{};
         testCaseHeaders = new DefaultTableModel(lastSavedDataModel, wizard.headerColumns);
+        
+        testSuitesModel = new DefaultComboBoxModel();
         
         initComponents();
         
@@ -122,6 +125,11 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
                 }
             }
             txtReqBody.setText(json);
+            
+            txtTestCase.setText(node.jsonObject().getString("name"));
+            txtTestCase.setEditable(false);
+            txtSummary.setText(node.jsonObject().getString("summary"));
+            txtSummary.setText(node.jsonObject().getJSONObject("config").getString("operationId"));
         } else {
             btnClose.setVisible(false);
         }
@@ -390,7 +398,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         lblTestSuite.setText(bundle.getString("testsuite")); // NOI18N
         pnlTestsuite.add(lblTestSuite, BorderLayout.WEST);
 
-        cmbTestSuite.setModel(new DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        cmbTestSuite.setModel(testSuitesModel);
         pnlTestsuite.add(cmbTestSuite, BorderLayout.CENTER);
 
         btnAddTestSuite.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/plus-icon.png"))); // NOI18N

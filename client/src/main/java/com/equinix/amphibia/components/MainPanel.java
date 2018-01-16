@@ -605,6 +605,12 @@ public final class MainPanel extends javax.swing.JPanel {
         JSONArray resources = json.getJSONArray("resources");
         JSONArray testsuites = json.getJSONArray("testsuites");
         
+        JSONObject resourceMap = new JSONObject();
+        projectResources.forEach((item) -> {
+            JSONObject resource = (JSONObject)item;
+            resourceMap.element(resource.getString("resourceId"), resource);
+        });
+        
         JSONObject interfacesMap = new JSONObject();
         interfacesJSON.forEach((item) -> {
             JSONObject interfaceJSON = (JSONObject) item;
@@ -618,8 +624,8 @@ public final class MainPanel extends javax.swing.JPanel {
         
         testsuites.forEach((item) -> {
             JSONObject testsuite = (JSONObject) item;
-            int resourceIndex = testsuite.getInt("resources");
-            JSONObject resource = projectResources.getJSONObject(resourceIndex);
+            String resourceId = testsuite.getString("resource");
+            JSONObject resource = resourceMap.getJSONObject(resourceId);
             JSONObject testSuiteInfo = resource.getJSONObject("testsuites").getJSONObject(testsuite.getString("name"));
             String dirPath = "data/tests/" + testsuite.getString("name");
             File dir = IO.getFile(collection, dirPath);
@@ -686,8 +692,8 @@ public final class MainPanel extends javax.swing.JPanel {
         for (int i = 0; i < testsuites.size(); i++) {
             JSONObject testsuite = testsuites.getJSONObject(i);
             String name = testsuite.getString("name");
-            int resourceIndex = testsuite.getInt("resources");
-            JSONObject resource = projectResources.getJSONObject(resourceIndex);
+            String resourceId = testsuite.getString("resource");
+            JSONObject resource = resourceMap.getJSONObject(resourceId);
 
             File dir = IO.getFile(collection, "data/tests/" + Swagger.stripName(name));
             JSONObject testsuiteJSON = new JSONObject();

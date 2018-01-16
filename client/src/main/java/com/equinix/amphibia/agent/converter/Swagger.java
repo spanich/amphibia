@@ -1,5 +1,7 @@
 package com.equinix.amphibia.agent.converter;
 
+import com.equinix.amphibia.agent.converter.Converter.RESOURCE_TYPE;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,7 +21,6 @@ import javax.script.ScriptEngineManager;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.io.IOUtils;
 
-import com.equinix.amphibia.agent.converter.Converter.RESOURCE_TYPE;
 import java.util.HashMap;
 
 import net.sf.json.JSONArray;
@@ -37,7 +38,7 @@ public final class Swagger {
     public static final JSONObject asserts = new JSONObject();
     public static final JSONNull NULL = JSONNull.getInstance();
 
-    public Swagger(CommandLine cmd, InputStream input, InputStream properties, JSONObject output, Runner runner)
+    public Swagger(CommandLine cmd, String resourceId, InputStream input, InputStream properties, JSONObject output, Runner runner)
             throws Exception {
         this.cmd = cmd;
         this.doc = getContent(input);
@@ -46,7 +47,7 @@ public final class Swagger {
         this.runner = runner;
     }
 
-    public String init(String name, int index) throws Exception {
+    public String init(String name, int index, String resourceId) throws Exception {
         if (name == null) {
             JSONObject info = doc.getJSONObject("info");
             if (!info.isNullObject()) {
@@ -60,7 +61,7 @@ public final class Swagger {
             output.accumulate("name", name);
         }
         runner.setDefinition(doc);
-        parse(index);
+        parse(index, resourceId);
         return name;
     }
 
@@ -89,7 +90,7 @@ public final class Swagger {
         return output;
     }
 
-    protected void parse(int index) throws Exception {
+    protected void parse(int index, String resourceId) throws Exception {
         JSONArray schemes = new JSONArray();
         if (doc.containsKey("schemes")) {
             schemes = doc.getJSONArray("schemes");
@@ -182,8 +183,8 @@ public final class Swagger {
 
         JSONArray projectResources = output.containsKey("projectResources") ? output.getJSONArray("projectResources") : new JSONArray();
         JSONObject testsuites = output.containsKey("testsuites") ? output.getJSONObject("testsuites") : new JSONObject();
-
-        addTestSuite(index, interfaceName, interfaceBasePath, testsuites);
+        
+        addTestSuite(index, resourceId, interfaceName, interfaceBasePath, testsuites);
 
         JSONObject properties = output.containsKey("properties") ? output.getJSONObject("properties") : new JSONObject();
         if (swaggerProperties != null) {
@@ -209,6 +210,7 @@ public final class Swagger {
         final String iName = interfaceName;
         projectResources.add(new HashMap<String, Object>() {
             {
+                put("resourceId", resourceId);
                 put("endpoint", "RestEndPoint" + index);
                 put("interface", iName);
                 put("testsuites", testsuites);
@@ -217,7 +219,7 @@ public final class Swagger {
         output.element("projectResources", projectResources);
     }
 
-    protected void addTestSuite(int index, String interfaceName, String interfaceBasePath, JSONObject testsuites) throws Exception {
+    protected void addTestSuite(int index, String resourceId, String interfaceName, String interfaceBasePath, JSONObject testsuites) throws Exception {
         JSONObject paths = doc.getJSONObject("paths");
         Map<String, List<ApiInfo>> testSuiteMap = new TreeMap<>();
         paths.keySet().forEach((path) -> {
@@ -264,7 +266,7 @@ public final class Swagger {
             });
         }
 
-        this.runner.addTestCases(index, interfaceName, testSuiteMap);
+        this.runner.addTestCases(index, resourceId, interfaceName, testSuiteMap);
     }
 
     protected void addTestCases(int index, JSONArray testcases, List<ApiInfo> apiList) throws Exception {

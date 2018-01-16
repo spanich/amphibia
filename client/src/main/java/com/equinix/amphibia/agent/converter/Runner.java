@@ -1,5 +1,9 @@
 package com.equinix.amphibia.agent.converter;
 
+import com.equinix.amphibia.agent.builder.ProjectAbstract;
+import com.equinix.amphibia.agent.converter.Converter.RESOURCE_TYPE;
+import com.equinix.amphibia.agent.converter.Swagger.ApiInfo;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
@@ -8,9 +12,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.equinix.amphibia.agent.builder.ProjectAbstract;
-import com.equinix.amphibia.agent.converter.Converter.RESOURCE_TYPE;
-import com.equinix.amphibia.agent.converter.Swagger.ApiInfo;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -57,9 +58,10 @@ public class Runner {
         this.definitions = doc.getJSONObject("definitions");
     }
 
-    public void addResource(String swagger, boolean isURL, String propertiesFile) {
+    public void addResource(String resourceId, String swagger, boolean isURL, String propertiesFile) {
         resources.add(
                 new HashMap<Object, Object>() {{
+                        put("id", resourceId);
                         put("swagger", swagger);
                         put("isURL", isURL);
                         put("properties", propertiesFile);
@@ -106,14 +108,14 @@ public class Runner {
     }
 
     @SuppressWarnings("NonPublicExported")
-    public void addTestCases(int documentIndex, String interfaceName, Map<String, List<ApiInfo>> testSuiteMap) throws Exception {
+    public void addTestCases(int index, String resourceId, String interfaceName, Map<String, List<ApiInfo>> testSuiteMap) throws Exception {
         for (String testSuiteName : testSuiteMap.keySet()) {
             List<ApiInfo> testcases = testSuiteMap.get(testSuiteName);
             List<Map<Object, Object>> tests = new ArrayList<>();
 
             Map<String, Object> testcase = new LinkedHashMap<>();
             testcase.put("name", testSuiteName);
-            testcase.put("resources", documentIndex);
+            testcase.put("resource", resourceId);
             for (ApiInfo info : testcases) {
                 String fileName = info.apiName;
                 String testFile = Swagger.stripName(testSuiteName) + "/" + info.methodName + "_" + fileName + ".json";
