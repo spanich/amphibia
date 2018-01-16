@@ -538,7 +538,7 @@ public class Amphibia extends JFrame {
         tlbTop.setRollover(true);
 
         btnCreate.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/new_16.png"))); // NOI18N
-        btnCreate.setToolTipText(bundle.getString("mnuCloseProject")); // NOI18N
+        btnCreate.setToolTipText(bundle.getString("mnuNewProject")); // NOI18N
         btnCreate.setFocusable(false);
         btnCreate.setHorizontalTextPosition(SwingConstants.CENTER);
         btnCreate.setVerticalTextPosition(SwingConstants.BOTTOM);

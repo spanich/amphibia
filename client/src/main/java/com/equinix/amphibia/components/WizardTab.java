@@ -26,9 +26,11 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.BorderFactory;
@@ -49,6 +51,7 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
+import javax.swing.border.Border;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
@@ -75,6 +78,11 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     private DefaultTableModel testCaseHeaders;
     private DefaultComboBoxModel testSuitesModel;
     private Object[][] lastSavedDataModel;
+    
+    private final Border DEFAULT_BORDER;
+    private final Border ERROR_BORDER = BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.RED),
+            BorderFactory.createEmptyBorder(2, 2, 2, 2));
 
     private static final Logger logger = Logger.getLogger(WizardTab.class.getName());
     
@@ -99,6 +107,8 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         
         initComponents();
         
+        DEFAULT_BORDER = txtTestCase.getBorder();
+                
         if (testCaseNode != null) {
             cmdInterface.setEnabled(false);
             cmdMethod.setEnabled(false);
@@ -126,10 +136,14 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
             }
             txtReqBody.setText(json);
             
+            testSuitesModel.addElement(node.info.testSuite.getString("name"));
+            cmbTestSuite.setEnabled(false);
+            btnAddTestSuite.setEnabled(false);
+            
             txtTestCase.setText(node.jsonObject().getString("name"));
             txtTestCase.setEditable(false);
-            txtSummary.setText(node.jsonObject().getString("summary"));
-            txtSummary.setText(node.jsonObject().getJSONObject("config").getString("operationId"));
+            txtSummary.setText(node.info.testCaseInfo.getString("summary"));
+            txtTestCaseFuncName.setText(node.info.testCaseInfo.getJSONObject("config").getString("operationId"));
         } else {
             btnClose.setVisible(false);
         }
@@ -158,7 +172,90 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         });
         
         applyTestCaseButton = new JButton(bundle.getString("apply"));
-        applyHeadersButton.addActionListener((ActionEvent evt) -> {
+        applyTestCaseButton.addActionListener((ActionEvent evt) -> {
+            String testCaseName = txtTestCase.getText().trim();
+            if (testCaseName.isEmpty()) {
+                txtTestCase.setBorder(ERROR_BORDER);
+                return;
+            }
+            
+            TreeIconNode project = MainPanel.selectedNode.getCollection().project;
+            JSONArray projectResources = project.jsonObject().getJSONArray("projectResources");
+            String interfaceName = "";
+            JSONObject resource = null;
+            if (testCaseNode != null) {
+                for (int i = 0; i < projectResources.size(); i++) {
+                    JSONObject item = projectResources.getJSONObject(i);
+                    if (item.getString("resourceId").equals(testCaseNode.info.resource.getString("resourceId"))) {
+                        resource = item;
+                        break;
+                    }
+                }
+            } else if (cmdInterface.getSelectedIndex() > 0) {
+                interfaceName = cmdInterface.getSelectedItem().toString();
+                for (int i = 0; i < projectResources.size(); i++) {
+                    JSONObject item = projectResources.getJSONObject(i);
+                    if (item.getString("interface").equals(interfaceName)) {
+                        resource = item;
+                        break;
+                    }
+                }
+            }
+            if (resource == null) {
+                resource = new JSONObject();
+                resource.element("resourceId", UUID.randomUUID().toString());
+                resource.element("endpoint", ((EndPoint)cmdEndpoint.getSelectedItem()).endPointName);
+                resource.element("interface", interfaceName);
+                resource.element("testsuites", new JSONObject());
+                projectResources.add(resource);
+            }
+            
+            String testSuiteName = cmbTestSuite.getSelectedItem().toString();
+            JSONObject testsuite;
+            if (resource.containsKey(testSuiteName)) {
+                testsuite = resource.getJSONObject(testSuiteName);
+            } else {
+                testsuite = new JSONObject();
+                testsuite.element("testcases", new JSONArray());
+                testsuite.element("properties", new JSONObject());
+                resource.element(testSuiteName, testsuite);
+            }
+
+            JSONArray testcases = testsuite.getJSONArray("testcases");
+            JSONObject testcase = null;
+            for (Object item : testcases) {
+                if (((JSONObject) item).getString("name").equals(testCaseName)) {
+                    testcase = (JSONObject) item;
+                    break;
+                }
+            }
+            if (testcase == null) {
+                testcase = new JSONObject();
+                testcase.element("summary", "");
+                testcase.element("name", testCaseName);
+                testcase.element("type", "restrequest");
+                testcase.element("config", JSONObject.fromObject("{\"replace\": {}}"));
+                testcase.element("properties", new JSONObject());
+                testcases.add(testcase);
+            }
+            testcase.element("summary", txtSummary.getText());
+            /*
+                JCheckBox ckbReqSchema;
+    JCheckBox ckbResSchema;
+    JCheckBox ckbSaveExample;
+    JCheckBox ckbStatusAssert;
+            */
+            JSONObject config = testcase.getJSONObject("config");
+            if (ckbStatusAssert.isSelected()) {
+                testcase.getJSONObject("properties").element("HTTPStatusCode", Integer.valueOf(lblCode.getText()));
+                config.element("assertions", JSONObject.fromObject("[{\"replace\": {\"value\": \"${#HTTPStatusCode}\"},\"type\": \"ValidHTTPStatusCodes\"}]"));
+            }
+            config.element("operationId", txtTestCaseFuncName.getText());
+            
+            JSONObject replace = testcase.getJSONObject("replace");
+            
+            
+            wizard.mainPanel.saveNodeValue(project);
             saveTestCase.setVisible(false);
         });
         
@@ -171,7 +268,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         headersDialog = Amphibia.createDialog(pnlHeaders, new Object[]{applyHeadersButton, cancelButton}, true);
         headersDialog.setSize(new Dimension(500, 500));
         
-        saveTestCase = Amphibia.createDialog(pnlSaveTestCase, new Object[]{applyHeadersButton, cancelButton}, true);
+        saveTestCase = Amphibia.createDialog(pnlSaveTestCase, new Object[]{applyTestCaseButton, cancelButton}, true);
         saveTestCase.setSize(new Dimension(500, 400));
         
         EventQueue.invokeLater(() -> {
@@ -187,7 +284,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
             if (cmdInterface.getSelectedItem() != null) {
                 basePath = ((Wizard.ComboItem)cmdInterface.getSelectedItem()).json.getString("basePath");
             }
-            lblURI.setText(cmdEndpoint.getSelectedItem().toString() + basePath + 
+            lblURI.setText(((EndPoint)cmdEndpoint.getSelectedItem()).endPointValue + basePath + 
                     (txtPath.getText().startsWith("/")  ? "" : "/") + txtPath.getText());
         } else {
             lblURI.setText("http://");
@@ -224,13 +321,48 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         }
     }
     
-    public void updateEndPoints(String[] endpoints) {
+    public void updateEndPoints(Map<Object, Object> endpoints) {
         Object selected = cmdEndpoint.getSelectedItem();
-        cmdEndpoint.setModel(new DefaultComboBoxModel<>(endpoints));
+        DefaultComboBoxModel model = new DefaultComboBoxModel<>();
+        endpoints.keySet().forEach((name) -> {
+            model.addElement(new EndPoint(name, endpoints.get(name)));
+        });
+        cmdEndpoint.setModel(model);
         cmdEndpoint.setSelectedItem(selected);
         if (cmdEndpoint.getSelectedIndex() == -1) {
             cmdEndpoint.setSelectedIndex(0);
         }
+    }
+    
+    public void openTestCaseDialog() {
+        txtTestCase.setBorder(DEFAULT_BORDER);
+        if (testCaseNode == null) {
+            TreeIconNode testsuites = MainPanel.selectedNode.getCollection().testsuites;
+            testSuitesModel.removeAllElements();
+            Enumeration children = testsuites.children();
+            while (children.hasMoreElements()) {
+                testSuitesModel.addElement(children.nextElement().toString());
+            }
+            txtTestCase.setEnabled(testSuitesModel.getSize() > 0);
+            txtTestCase.setText("");
+            txtTestCaseFuncName.setText("");
+            txtSummary.setText("");
+        }
+        String reqBodyJson;
+        String resBodyJson;
+        try {
+            reqBodyJson = IO.prettyJson(txtReqBody.getText());
+        } catch (Exception ex) {
+            ckbReqSchema.setEnabled(false);
+        }
+        try {
+            resBodyJson = IO.prettyJson(txtResBody.getText());
+        } catch (Exception ex) {
+            ckbResSchema.setEnabled(false);
+            ckbSaveExample.setEnabled(false);
+        }
+        
+        saveTestCase.setVisible(true);
     }
 
     /**
@@ -270,8 +402,8 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         pnlOptions = new JPanel();
         ckbReqSchema = new JCheckBox();
         ckbResSchema = new JCheckBox();
-        ckbStatusAssert = new JCheckBox();
         ckbSaveExample = new JCheckBox();
+        ckbStatusAssert = new JCheckBox();
         pnlTestCaseFooter = new JPanel();
         lblTestCaseFuncName = new JLabel();
         txtTestCaseFuncName = new JTextField();
@@ -402,6 +534,12 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         pnlTestsuite.add(cmbTestSuite, BorderLayout.CENTER);
 
         btnAddTestSuite.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/plus-icon.png"))); // NOI18N
+        btnAddTestSuite.setMargin(new Insets(2, 4, 2, 4));
+        btnAddTestSuite.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                btnAddTestSuiteActionPerformed(evt);
+            }
+        });
         pnlTestsuite.add(btnAddTestSuite, BorderLayout.EAST);
 
         pnlTestCase.setLayout(new BorderLayout(0, 5));
@@ -426,13 +564,13 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         ckbResSchema.setText(bundle.getString("resultBodySchema")); // NOI18N
         pnlOptions.add(ckbResSchema);
 
-        ckbStatusAssert.setSelected(true);
-        ckbStatusAssert.setText(bundle.getString("assertionStatus")); // NOI18N
-        pnlOptions.add(ckbStatusAssert);
-
         ckbSaveExample.setSelected(true);
         ckbSaveExample.setText(bundle.getString("saveResultExample")); // NOI18N
         pnlOptions.add(ckbSaveExample);
+
+        ckbStatusAssert.setSelected(true);
+        ckbStatusAssert.setText(bundle.getString("assertionStatus")); // NOI18N
+        pnlOptions.add(ckbStatusAssert);
 
         pnlSaveTestCase.add(pnlOptions, BorderLayout.CENTER);
 
@@ -481,7 +619,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
 
         pnlEndpoint.setLayout(new FlowLayout(FlowLayout.LEFT));
 
-        cmdEndpoint.setPreferredSize(new Dimension(250, 20));
+        cmdEndpoint.setPreferredSize(new Dimension(450, 20));
         cmdEndpoint.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent evt) {
                 cmdEndpointItemStateChanged(evt);
@@ -512,7 +650,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
 
         pnlInterface.setLayout(new FlowLayout(FlowLayout.LEFT));
 
-        cmdInterface.setPreferredSize(new Dimension(250, 20));
+        cmdInterface.setPreferredSize(new Dimension(450, 20));
         cmdInterface.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent evt) {
                 cmdInterfaceItemStateChanged(evt);
@@ -707,7 +845,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     }//GEN-LAST:event_btnSendActionPerformed
 
     private void btnSaveActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnSaveActionPerformed
-        saveTestCase.setVisible(true);
+        openTestCaseDialog();
     }//GEN-LAST:event_btnSaveActionPerformed
 
     private void btnInterfaceInfoActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnInterfaceInfoActionPerformed
@@ -745,6 +883,20 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
             }
         }
     }//GEN-LAST:event_btnCloseActionPerformed
+
+    private void btnAddTestSuiteActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnAddTestSuiteActionPerformed
+        int length = testSuitesModel.getSize();
+        String[] names = new String[length];
+        for (int i = 0; i < length; i++) {
+            names[i] = testSuitesModel.getElementAt(i).toString();
+        }
+        String name = Amphibia.instance.inputDialog("testsuite", "", names, saveTestCase.getParent());
+        if (name != null && !name.isEmpty()) {
+            testSuitesModel.addElement(name);
+            cmbTestSuite.setSelectedIndex(length);
+            txtTestCase.setEnabled(true);
+        }
+    }//GEN-LAST:event_btnAddTestSuiteActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -841,5 +993,20 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     @Override
     public DefaultMutableTreeNode addError(Throwable t, String error) {
         return wizard.mainPanel.editor.addError(t, error);
+    }
+    
+    class EndPoint {
+        Object endPointName;
+        Object endPointValue;
+        
+        public EndPoint(Object name, Object value) {
+            endPointName = name;
+            endPointValue = value;
+        }
+        
+        @Override
+        public String toString() {
+            return endPointName + ": " + endPointValue;
+        }
     }
 }

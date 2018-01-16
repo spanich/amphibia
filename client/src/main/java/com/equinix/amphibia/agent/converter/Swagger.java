@@ -297,6 +297,26 @@ public final class Swagger {
     protected JSONObject getConfig(int index, Map<String, Object> properties, ApiInfo info) throws Exception {
         JSONObject api = info.api;
         JSONObject config = new JSONObject();
+        String path = info.path;
+        
+        Definition definition = new Definition(doc, this);
+        parseDefinition(info, definition, info.apis, properties);
+        parseDefinition(info, definition, api, properties);
+        JSONObject body = api.getJSONObject("example");
+        if (body.isNullObject()) {
+            body = definition.getExample();
+        }
+        
+        final String replacePath = info.interfaceBasePath.substring(1) + path + definition.getQueries();
+        final Object replaceBody = body == null ? NULL : body;
+        config.accumulate("replace",
+                new HashMap<String, Object>() {
+            {
+                put("method", info.methodName);
+                put("path", replacePath);
+                put("body", replaceBody);
+            }
+        });
 
         JSONArray assertions = new JSONArray();
         JSONObject responses = api.getJSONObject("responses");
@@ -353,15 +373,6 @@ public final class Swagger {
             }
         }
 
-        Definition definition = new Definition(doc, this);
-        parseDefinition(info, definition, info.apis, properties);
-        parseDefinition(info, definition, api, properties);
-        JSONObject body = api.getJSONObject("example");
-        if (body.isNullObject()) {
-            body = definition.getExample();
-        }
-
-        String path = info.path;
         for (String name : definition.getParameters().keySet()) {
             String paramValue = definition.getParameters().get(name);
             if (paramValue != null) {
@@ -374,16 +385,6 @@ public final class Swagger {
             config.accumulate("definition", definition.ref.split("#/definitions/")[1]);
         }
 
-        final String replacePath = info.interfaceBasePath.substring(1) + path + definition.getQueries();
-        final Object replaceBody = body == null ? NULL : body;
-        config.accumulate("replace",
-                new HashMap<String, Object>() {
-            {
-                put("method", info.methodName);
-                put("path", replacePath);
-                put("body", replaceBody);
-            }
-        });
         return config;
     }
 

@@ -16,9 +16,12 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -33,9 +36,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.BorderFactory;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JLabel;
@@ -47,6 +53,7 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
+import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.JTree;
 import javax.swing.ListSelectionModel;
@@ -56,6 +63,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.StyledDocument;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import net.sf.json.JSONArray;
@@ -78,6 +87,7 @@ public final class Editor extends BaseTaskPane {
     private  JTreeTable treeTable;
     private  JSONTableModel defaultModel;
     private  DefaultTableModel historyModel;
+    private DefaultComboBoxModel serversModel;
 
     private RandomAccessFile historyWriter;
     private JSONTableModel jsonModel;
@@ -90,6 +100,8 @@ public final class Editor extends BaseTaskPane {
     @SuppressWarnings("OverridableMethodCallInConstructor")
     public Editor() {
         super();
+        
+        serversModel = new DefaultComboBoxModel<>(new String[] { bundle.getString("mockServer") });
 
         historyModel = new DefaultTableModel(
                 new Object[][]{},
@@ -413,12 +425,12 @@ public final class Editor extends BaseTaskPane {
         spnConsole = new JScrollPane();
         txtConsole = new JTextPane();
         pnlServers = new JPanel();
-        tbrServers = new JToolBar();
-        lblServerName = new JLabel();
-        btnStart = new JButton();
+        pnlServersTop = new JPanel();
+        cmbServers = new JComboBox<>();
+        btnStart = new JToggleButton();
         btnStop = new JButton();
         spnServers = new JScrollPane();
-        txtServers = new JTextArea();
+        txtServers = new JTextPane();
         splHistory = new JScrollPane();
         tblHistory = new JTable();
         pnlTabRightButtons = new JPanel();
@@ -474,31 +486,37 @@ public final class Editor extends BaseTaskPane {
 
         pnlServers.setLayout(new BorderLayout());
 
-        tbrServers.setRollover(true);
+        pnlServersTop.setLayout(new FlowLayout(FlowLayout.LEFT));
 
-        lblServerName.setFont(new Font("Tahoma", 1, 11)); // NOI18N
-        lblServerName.setText(bundle.getString("mockServer")); // NOI18N
-        tbrServers.add(lblServerName);
+        cmbServers.setFont(new Font("Tahoma", 1, 11)); // NOI18N
+        cmbServers.setModel(serversModel);
+        cmbServers.setPreferredSize(new Dimension(200, 24));
+        pnlServersTop.add(cmbServers);
 
         btnStart.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/run_16.png"))); // NOI18N
         btnStart.setToolTipText(bundle.getString("start")); // NOI18N
         btnStart.setFocusable(false);
-        btnStart.setHorizontalTextPosition(SwingConstants.CENTER);
-        btnStart.setVerticalTextPosition(SwingConstants.BOTTOM);
-        tbrServers.add(btnStart);
+        btnStart.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                btnStartActionPerformed(evt);
+            }
+        });
+        pnlServersTop.add(btnStart);
 
         btnStop.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/stop-16.png"))); // NOI18N
         btnStop.setToolTipText(bundle.getString("stop")); // NOI18N
         btnStop.setFocusable(false);
         btnStop.setHorizontalTextPosition(SwingConstants.CENTER);
         btnStop.setVerticalTextPosition(SwingConstants.BOTTOM);
-        tbrServers.add(btnStop);
+        btnStop.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                btnStopActionPerformed(evt);
+            }
+        });
+        pnlServersTop.add(btnStop);
 
-        pnlServers.add(tbrServers, BorderLayout.NORTH);
+        pnlServers.add(pnlServersTop, BorderLayout.NORTH);
 
-        txtServers.setEditable(false);
-        txtServers.setColumns(20);
-        txtServers.setRows(5);
         spnServers.setViewportView(txtServers);
 
         pnlServers.add(spnServers, BorderLayout.CENTER);
@@ -545,16 +563,31 @@ public final class Editor extends BaseTaskPane {
         }
     }//GEN-LAST:event_tbpOutputMouseClicked
 
+    private void btnStopActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnStopActionPerformed
+        btnStart.setSelected(false);
+        StyledDocument doc = txtServers.getStyledDocument();
+        try {
+            doc.insertString(doc.getLength(), "Ternimated\n", null);
+        } catch (BadLocationException ex) {
+            logger.log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_btnStopActionPerformed
+
+    private void btnStartActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnStartActionPerformed
+        txtServers.setText("Started...\n");
+    }//GEN-LAST:event_btnStartActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    JButton btnStart;
+    JToggleButton btnStart;
     JButton btnStop;
+    JComboBox<String> cmbServers;
     JLabel lblClear;
-    JLabel lblServerName;
     JPanel pnlEditor;
     JPanel pnlInfo;
     JPanel pnlOutput;
     JPanel pnlServers;
+    JPanel pnlServersTop;
     JPanel pnlTabRightButtons;
     JPanel pnlTop;
     JScrollPane splHistory;
@@ -564,12 +597,11 @@ public final class Editor extends BaseTaskPane {
     JScrollPane srlProblems;
     JTable tblHistory;
     JTabbedPane tbpOutput;
-    JToolBar tbrServers;
     JTree treeProblems;
     JTextPane txtConsole;
     JTextField txtInfo;
     JEditorPane txtRaw;
-    JTextArea txtServers;
+    JTextPane txtServers;
     // End of variables declaration//GEN-END:variables
 
     static public class Entry implements TreeNode {

@@ -7,6 +7,7 @@ package com.equinix.amphibia.components;
 
 import com.equinix.amphibia.Amphibia;
 import static com.equinix.amphibia.Amphibia.TYPE;
+import static com.equinix.amphibia.Amphibia.NAME;
 import static com.equinix.amphibia.Amphibia.VALUE;
 
 import java.awt.BorderLayout;
@@ -57,7 +58,7 @@ public class Wizard extends javax.swing.JPanel {
     private WizardTab wizardTab;
     private int headerSaveIndex;
     private TreeCollection selectedCollection;
-    private String[] endpoints;
+    private Map<Object, Object> endpoints;
     
     MainPanel mainPanel;
    
@@ -157,19 +158,17 @@ public class Wizard extends javax.swing.JPanel {
     public void updateEndPoints() {
         Amphibia.SelectedEnvironment env = Amphibia.instance.getSelectedEnvironment();
         if (env != null) {
-            Map<Object, Boolean> items = new HashMap<>();
+            endpoints = new HashMap<>();
             for (Object[] item : env.data) {
-                if (GlobalVariableDialog.ENDPOINT.equals(item[TYPE]) && !items.containsKey(item[VALUE]) && 
+                if (GlobalVariableDialog.ENDPOINT.equals(item[TYPE]) &&
                         item[VALUE] != null && !item[VALUE].toString().isEmpty()) {
-                    items.put(item[VALUE], true);
-
+                    endpoints.put(item[NAME], item[VALUE]);
                 }
             }
-            this.endpoints = items.keySet().toArray(new String[items.size()]);
             for (int i = 0; i < tabNav.getTabCount(); i++) {
                 WizardTab tab = (WizardTab)tabNav.getComponent(i);
                 if (tab != null) {
-                    tab.updateEndPoints(this.endpoints);
+                    tab.updateEndPoints(endpoints);
                 }
             }
         }
