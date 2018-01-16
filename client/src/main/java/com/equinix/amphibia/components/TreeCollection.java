@@ -143,6 +143,7 @@ public final class TreeCollection {
         {"path", REFERENCE},
         {"method", VIEW},
         {"url", VIEW},
+        {"interface", VIEW},
         {"transfer", TRANSFER, EDIT},
         {"headers", ADD},
         {"properties", ADD},

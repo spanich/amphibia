@@ -332,7 +332,7 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
         pnlTop.add(lblGlobalVars, BorderLayout.WEST);
 
         jLabel1.setForeground(new Color(51, 51, 255));
-        jLabel1.setText(bundle.getString("tip_edit_global")); // NOI18N
+        jLabel1.setText(bundle.getString("tip_edit_column")); // NOI18N
         pnlTop.add(jLabel1, BorderLayout.EAST);
 
         add(pnlTop, BorderLayout.NORTH);

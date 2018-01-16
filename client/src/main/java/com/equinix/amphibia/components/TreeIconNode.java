@@ -217,6 +217,7 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
     static public class ResourceInfo {
 
         public File file;
+        public JSONObject resource; //resource item in projectResources array
         public JSONObject testSuite; //(runner.json) get and change testcases order
         public JSONObject testCase; //(runner.json) get and set testcase name and disabled status
         public JSONObject testStep; //(runner.json) get diff of parent test file
@@ -236,8 +237,9 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
             this.states = states;
         }
 
-        public ResourceInfo(File file, JSONObject testSuite, JSONObject testSuiteInfo, JSONObject testCaseInfo, JSONObject testCaseHeaders, JSONObject testStepInfo) {
+        public ResourceInfo(File file, JSONObject resource, JSONObject testSuite, JSONObject testSuiteInfo, JSONObject testCaseInfo, JSONObject testCaseHeaders, JSONObject testStepInfo) {
             this.file = file;
+            this.resource = resource;
             this.testSuite = testSuite;
             this.testSuiteInfo = testSuiteInfo;
             this.testCaseInfo = testCaseInfo;
@@ -247,7 +249,7 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
         }
 
         public ResourceInfo clone(JSONObject testCase) {
-            ResourceInfo clone = new ResourceInfo(file, testSuite, testSuiteInfo, testCaseInfo, testCaseHeaders, testStepInfo);
+            ResourceInfo clone = new ResourceInfo(file, resource, testSuite, testSuiteInfo, testCaseInfo, testCaseHeaders, testStepInfo);
             clone.testCase = testCase;
             clone.properties = properties;
             return clone;

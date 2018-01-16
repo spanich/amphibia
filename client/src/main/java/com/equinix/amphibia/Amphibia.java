@@ -40,7 +40,6 @@ import java.nio.IntBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -425,17 +424,7 @@ public class Amphibia extends JFrame {
         model[columnIndex++] = new SelectedEnvironment(bundle.getString("addEnvironment"), new Object[][]{}, -1);
         cmbEnvironment.setModel(new DefaultComboBoxModel(model));
         cmbEnvironment.setSelectedIndex(selectedIndex);
-        
-        SelectedEnvironment env = model[selectedIndex];
-        mainPanel.wizard.sharedEndPointModel.removeAllElements();
-        Map<Object, Boolean> endpoints = new HashMap<>();
-        for (Object[] item : env.data) {
-            if (GlobalVariableDialog.ENDPOINT.equals(item[TYPE]) && !endpoints.containsKey(item[VALUE]) && 
-                    item[VALUE] != null && !item[VALUE].toString().isEmpty()) {
-                mainPanel.wizard.sharedEndPointModel.addElement(item[VALUE]);
-                endpoints.put(item[VALUE], true);
-            }
-        }
+        mainPanel.wizard.updateEndPoints();
     }
 
     /**
@@ -1415,7 +1404,7 @@ public class Amphibia extends JFrame {
 
     private void mnuInterfacesActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuInterfacesActionPerformed
         if (MainPanel.selectedNode != null) {
-            mainPanel.wizard.openInterfacePanel();
+            mainPanel.wizard.openInterfacePanel(null);
         }
     }//GEN-LAST:event_mnuInterfacesActionPerformed
 
@@ -1540,7 +1529,12 @@ public class Amphibia extends JFrame {
         dialog.dispose();
         return !error.isVisible() && optionPane.getValue().equals(JOptionPane.OK_OPTION) ? optionPane.getInputValue().toString() : null;
     }
-
+    
+    public SelectedEnvironment getSelectedEnvironment() {
+        SelectedEnvironment env = (SelectedEnvironment) cmbEnvironment.getSelectedItem();
+        return env.columnIndex != -1 ? env : null;
+    }
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private JButton btnCreate;
     public JButton btnOpenTestCase;
@@ -1625,25 +1619,28 @@ public class Amphibia extends JFrame {
     private JToolBar tlbTop;
     private JButton tlbUndo;
     // End of variables declaration//GEN-END:variables
-}
 
-final class SelectedEnvironment {
 
-    public String column;
-    public Object[][] data;
-        
-    public SelectedEnvironment(String column, Object[][] data, int columnIndex) {
-        this.data = new Object[data.length][3];
-        this.column = column;
-        for (int r = 0; r < data.length; r++) {
-            this.data[r][Amphibia.TYPE] = data[r][0];
-            this.data[r][Amphibia.NAME] = data[r][1];
-            this.data[r][Amphibia.VALUE] = data[r][columnIndex];
+    public static class SelectedEnvironment {
+
+        public String column;
+        public Object[][] data;
+        public int columnIndex;
+
+        public SelectedEnvironment(String column, Object[][] data, int columnIndex) {
+            this.data = new Object[data.length][3];
+            this.column = column;
+            this.columnIndex = columnIndex;
+            for (int r = 0; r < data.length; r++) {
+                this.data[r][Amphibia.TYPE] = data[r][0];
+                this.data[r][Amphibia.NAME] = data[r][1];
+                this.data[r][Amphibia.VALUE] = data[r][columnIndex];
+            }
         }
-    }
 
-    @Override
-    public String toString() {
-        return column;
+        @Override
+        public String toString() {
+            return column;
+        }
     }
 }

@@ -6,10 +6,14 @@
 package com.equinix.amphibia.components;
 
 import com.equinix.amphibia.Amphibia;
+import com.equinix.amphibia.IO;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -17,41 +21,185 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.CellEditor;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.table.DefaultTableModel;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 
 /**
  *
  * @author dgofman
  */
-public class WizardTab extends javax.swing.JPanel {
+public final class WizardTab extends javax.swing.JPanel {
     
     private ResourceBundle bundle;
     private Wizard wizard;
-    private DefaultComboBoxModel interfacesModel;
+    private TreeIconNode testCaseNode;
+    private JDialog headersDialog;
+    private JButton applyHeadersButton;
+    private JButton cancelHeadersButton;
+    private DefaultTableModel testCaseHeaders;
+    private Object[][] lastSavedDataModel;
+
+    private static final Logger logger = Logger.getLogger(WizardTab.class.getName());
     
     /**
      * Creates new form WizardTab
      * @param wizard the value of wizard
      */
     public WizardTab(Wizard wizard) {
+        this(wizard, null);
+    }
+    
+    public WizardTab(Wizard wizard, TreeIconNode node) {
         this.wizard = wizard;
+        this.testCaseNode = node;
         
         bundle = Amphibia.getBundle();
         
-        interfacesModel = new DefaultComboBoxModel(new String[] {bundle.getString("none")});
+        lastSavedDataModel = new Object[][]{};
+        testCaseHeaders = new DefaultTableModel(lastSavedDataModel, wizard.headerColumns);
         
         initComponents();
+        
+        if (testCaseNode != null) {
+            cmdInterface.setEnabled(false);
+            cmdMethod.setEnabled(false);
+            String method = node.jsonObject().getString("method");
+            for (int i = 0; i < cmdMethod.getItemCount(); i++) {
+                if (cmdMethod.getItemAt(i).equals(method)) {
+                    cmdMethod.setSelectedIndex(i);
+                    break;
+                }
+            }
+            
+            txtPath.setText(node.jsonObject().getString("reqPath"));
+            
+            JSONObject request = node.info.testStepInfo.getJSONObject("request");
+            String json = null;
+            if (request.get("body") instanceof String) {
+                json = request.getString("body");
+                try {
+                    json = IO.readFile(node.getCollection(), json);
+                    json = IO.prettyJson(json);
+                    json = node.info.properties.cloneProperties().setTestStep(request.getJSONObject("properties")).replace(json);
+                } catch (Exception ex) {
+                    logger.log(Level.SEVERE, null, ex);
+                }
+            }
+            txtReqBody.setText(json);
+        } else {
+            btnClose.setVisible(false);
+        }
+        
+        updateInterfaces();
+        
+        applyHeadersButton = new JButton(bundle.getString("apply"));
+        applyHeadersButton.addActionListener((ActionEvent evt) -> {
+            CellEditor cellEditor = tblHeadersBottom.getCellEditor();
+            if (cellEditor != null) {
+                cellEditor.stopCellEditing();
+            }
+            Map<Object, Object[]> map = new HashMap<>();
+            for (int r = 0; r < tblHeadersBottom.getRowCount(); r++) {
+                Object key = tblHeadersBottom.getValueAt(r, 0);
+                if (key != null && !key.toString().isEmpty()) {
+                    if (map.containsKey(key)) {
+                        lblHeadersBottomError.setVisible(true);
+                        return;
+                    }
+                    map.put(key, new Object[] {key, tblHeadersBottom.getValueAt(r, 1)});
+                }
+            }
+            lastSavedDataModel = map.values().toArray(new Object[map.size()][2]);
+            headersDialog.setVisible(false);
+        });
+        cancelHeadersButton = new JButton(bundle.getString("cancel"));
+        cancelHeadersButton.addActionListener((ActionEvent evt) -> {
+            headersDialog.setVisible(false);
+        });
+        
+        headersDialog = Amphibia.createDialog(pnlHeaders, new Object[]{applyHeadersButton, cancelHeadersButton}, true);
+        headersDialog.setSize(new Dimension(500, 500));
+        
+        EventQueue.invokeLater(() -> {
+            headersDialog.setLocationRelativeTo(this);
+        });
+    }
+    
+    public void refresh() {
+        btnSend.setEnabled(cmdEndpoint.getSelectedItem() != null);
+        if (btnSend.isEnabled()) {
+            String basePath = "/";
+            if (cmdInterface.getSelectedItem() != null) {
+                basePath = ((Wizard.ComboItem)cmdInterface.getSelectedItem()).json.getString("basePath");
+            }
+            lblURI.setText(cmdEndpoint.getSelectedItem().toString() + basePath + 
+                    (txtPath.getText().startsWith("/")  ? "" : "/") + txtPath.getText());
+        } else {
+            lblURI.setText("http://");
+        }
+    }
+    
+    public void updateInterfaces() {
+        String selected = String.valueOf(cmdInterface.getSelectedItem());
+        DefaultComboBoxModel model = new DefaultComboBoxModel();
+        cmdInterface.setModel(model);
+        model.addElement(wizard.createDefaultItem());
+        if (testCaseNode != null) {
+            String interfaceName = testCaseNode.info.resource.getString("interface");
+            if (!interfaceName.isEmpty()) {
+                JSONArray interfaces = testCaseNode.getCollection().interfaces.jsonArray();
+                for (int i = 0; i < interfaces.size(); i++) {
+                    JSONObject interf = interfaces.getJSONObject(i);
+                    if (interf.getString("name").equals(interfaceName)) {
+                        model.removeAllElements();
+                        model.addElement(new Wizard.ComboItem(interf, false));
+                        break;
+                    }
+                }
+            }
+        } else {
+            DefaultComboBoxModel interfaceModel = wizard.getInterfaceNameModel();
+            for (int i = 0; i < interfaceModel.getSize(); i++) {
+                Wizard.ComboItem item = (Wizard.ComboItem)interfaceModel.getElementAt(i);
+                model.addElement(item);
+                if (item.toString().equals(selected)) {
+                    cmdInterface.setSelectedItem(item);
+                }
+            }
+        }
+    }
+    
+    public void updateEndPoints(String[] endpoints) {
+        Object selected = cmdEndpoint.getSelectedItem();
+        cmdEndpoint.setModel(new DefaultComboBoxModel<>(endpoints));
+        cmdEndpoint.setSelectedItem(selected);
+        if (cmdEndpoint.getSelectedIndex() == -1) {
+            cmdEndpoint.setSelectedIndex(0);
+        }
     }
 
     /**
@@ -64,6 +212,22 @@ public class WizardTab extends javax.swing.JPanel {
     private void initComponents() {
         GridBagConstraints gridBagConstraints;
 
+        pnlHeaders = new JPanel();
+        sptHeaders = new JSplitPane();
+        pnlHeadersTop = new JPanel();
+        lblHeadersTop = new JLabel();
+        spnHeadersTop = new JScrollPane();
+        tblHeadersTop = new JTable();
+        pnlHeadersBottom = new JPanel();
+        pnlHeaderBottomHeader = new JPanel();
+        lblHeadersBottom = new JLabel();
+        lblHeaderBottomHint = new JLabel();
+        spnHeadersBottom = new JScrollPane();
+        tblHeadersBottom = new JTable();
+        pnlHeadersBottomFooter = new JPanel();
+        btnHeadersBottomAdd = new JButton();
+        btnHeadersBottomDelete = new JButton();
+        lblHeadersBottomError = new JLabel();
         pnlTop = new JPanel();
         lblEndpoint = new JLabel();
         pnlEndpoint = new JPanel();
@@ -80,6 +244,7 @@ public class WizardTab extends javax.swing.JPanel {
         lblPath = new JLabel();
         txtPath = new JTextField();
         btnHeaders = new JButton();
+        btnClose = new JButton();
         tabBody = new JTabbedPane();
         spnReqBody = new JScrollPane();
         txtReqBody = new JTextArea();
@@ -93,12 +258,92 @@ public class WizardTab extends javax.swing.JPanel {
         btnSend = new JButton();
         btnSave = new JButton();
 
+        pnlHeaders.setLayout(new BorderLayout());
+
+        sptHeaders.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
+        sptHeaders.setDividerLocation(150);
+        sptHeaders.setDividerSize(3);
+        sptHeaders.setOrientation(JSplitPane.VERTICAL_SPLIT);
+
+        pnlHeadersTop.setLayout(new BorderLayout());
+
+        lblHeadersTop.setFont(new Font("Tahoma", 1, 11)); // NOI18N
+        ResourceBundle bundle = ResourceBundle.getBundle("com/equinix/amphibia/messages"); // NOI18N
+        lblHeadersTop.setText(bundle.getString("sharedHeaders")); // NOI18N
+        lblHeadersTop.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        pnlHeadersTop.add(lblHeadersTop, BorderLayout.PAGE_START);
+
+        tblHeadersTop.setModel(new DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+
+            }
+        ));
+        tblHeadersTop.setEnabled(false);
+        spnHeadersTop.setViewportView(tblHeadersTop);
+
+        pnlHeadersTop.add(spnHeadersTop, BorderLayout.CENTER);
+
+        sptHeaders.setLeftComponent(pnlHeadersTop);
+
+        pnlHeadersBottom.setLayout(new BorderLayout());
+
+        pnlHeaderBottomHeader.setLayout(new BorderLayout());
+
+        lblHeadersBottom.setFont(new Font("Tahoma", 1, 11)); // NOI18N
+        lblHeadersBottom.setText(bundle.getString("headers")); // NOI18N
+        lblHeadersBottom.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        pnlHeaderBottomHeader.add(lblHeadersBottom, BorderLayout.WEST);
+
+        lblHeaderBottomHint.setForeground(Color.blue);
+        lblHeaderBottomHint.setText(bundle.getString("tip_edit_column")); // NOI18N
+        pnlHeaderBottomHeader.add(lblHeaderBottomHint, BorderLayout.EAST);
+
+        pnlHeadersBottom.add(pnlHeaderBottomHeader, BorderLayout.NORTH);
+
+        tblHeadersBottom.setModel(testCaseHeaders);
+        spnHeadersBottom.setViewportView(tblHeadersBottom);
+
+        pnlHeadersBottom.add(spnHeadersBottom, BorderLayout.CENTER);
+
+        pnlHeadersBottomFooter.setLayout(new BoxLayout(pnlHeadersBottomFooter, BoxLayout.LINE_AXIS));
+
+        btnHeadersBottomAdd.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/plus-icon.png"))); // NOI18N
+        btnHeadersBottomAdd.setToolTipText(bundle.getString("addRow")); // NOI18N
+        btnHeadersBottomAdd.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                btnHeadersBottomAddActionPerformed(evt);
+            }
+        });
+        pnlHeadersBottomFooter.add(btnHeadersBottomAdd);
+
+        btnHeadersBottomDelete.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/remove_16.png"))); // NOI18N
+        btnHeadersBottomDelete.setToolTipText(bundle.getString("deleteRow")); // NOI18N
+        btnHeadersBottomDelete.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                btnHeadersBottomDeleteActionPerformed(evt);
+            }
+        });
+        pnlHeadersBottomFooter.add(btnHeadersBottomDelete);
+
+        lblHeadersBottomError.setForeground(Color.red);
+        lblHeadersBottomError.setText(bundle.getString("tip_key_exists")); // NOI18N
+        lblHeadersBottomError.setBorder(BorderFactory.createEmptyBorder(1, 10, 1, 10));
+        pnlHeadersBottomFooter.add(lblHeadersBottomError);
+
+        pnlHeadersBottom.add(pnlHeadersBottomFooter, BorderLayout.PAGE_END);
+
+        sptHeaders.setRightComponent(pnlHeadersBottom);
+
+        pnlHeaders.add(sptHeaders, BorderLayout.CENTER);
+
         setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         setLayout(new BorderLayout());
 
         pnlTop.setLayout(new GridBagLayout());
 
-        ResourceBundle bundle = ResourceBundle.getBundle("com/equinix/amphibia/messages"); // NOI18N
         lblEndpoint.setText(bundle.getString("endpoint")); // NOI18N
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.anchor = GridBagConstraints.WEST;
@@ -106,7 +351,6 @@ public class WizardTab extends javax.swing.JPanel {
 
         pnlEndpoint.setLayout(new FlowLayout(FlowLayout.LEFT));
 
-        cmdEndpoint.setModel(wizard.sharedEndPointModel);
         cmdEndpoint.setPreferredSize(new Dimension(250, 20));
         cmdEndpoint.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent evt) {
@@ -138,7 +382,6 @@ public class WizardTab extends javax.swing.JPanel {
 
         pnlInterface.setLayout(new FlowLayout(FlowLayout.LEFT));
 
-        cmdInterface.setModel(wizard.interfaceBasePathModel);
         cmdInterface.setPreferredSize(new Dimension(250, 20));
         cmdInterface.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent evt) {
@@ -188,6 +431,12 @@ public class WizardTab extends javax.swing.JPanel {
         gridBagConstraints.gridy = 4;
         gridBagConstraints.anchor = GridBagConstraints.WEST;
         pnlTop.add(lblPath, gridBagConstraints);
+
+        txtPath.addKeyListener(new KeyAdapter() {
+            public void keyReleased(KeyEvent evt) {
+                txtPathKeyReleased(evt);
+            }
+        });
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridy = 4;
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
@@ -205,6 +454,18 @@ public class WizardTab extends javax.swing.JPanel {
         gridBagConstraints.gridy = 4;
         pnlTop.add(btnHeaders, gridBagConstraints);
 
+        btnClose.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/close_16.png"))); // NOI18N
+        btnClose.setToolTipText(bundle.getString("close")); // NOI18N
+        btnClose.setMargin(new Insets(2, 2, 2, 2));
+        btnClose.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                btnCloseActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.anchor = GridBagConstraints.EAST;
+        pnlTop.add(btnClose, gridBagConstraints);
+
         add(pnlTop, BorderLayout.NORTH);
 
         txtReqBody.setColumns(20);
@@ -213,7 +474,6 @@ public class WizardTab extends javax.swing.JPanel {
 
         tabBody.addTab(bundle.getString("requestBody"), spnReqBody); // NOI18N
 
-        txtResBody.setEditable(false);
         txtResBody.setColumns(20);
         txtResBody.setRows(5);
         spnResBody.setViewportView(txtResBody);
@@ -247,9 +507,7 @@ public class WizardTab extends javax.swing.JPanel {
                 btnSendActionPerformed(evt);
             }
         });
-        gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.insets = new Insets(5, 5, 5, 5);
-        pnlFooter.add(btnSend, gridBagConstraints);
+        pnlFooter.add(btnSend, new GridBagConstraints());
 
         btnSave.setText(bundle.getString("save")); // NOI18N
         btnSave.addActionListener(new ActionListener() {
@@ -257,7 +515,9 @@ public class WizardTab extends javax.swing.JPanel {
                 btnSaveActionPerformed(evt);
             }
         });
-        pnlFooter.add(btnSave, new GridBagConstraints());
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.insets = new Insets(5, 5, 5, 5);
+        pnlFooter.add(btnSave, gridBagConstraints);
 
         add(pnlFooter, BorderLayout.SOUTH);
     }// </editor-fold>//GEN-END:initComponents
@@ -268,7 +528,19 @@ public class WizardTab extends javax.swing.JPanel {
     }//GEN-LAST:event_btnEndpointInfoActionPerformed
 
     private void btnHeadersActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnHeadersActionPerformed
-        wizard.openHeadersPanel();
+        lblHeadersBottomError.setVisible(false);
+        Wizard.ComboItem item = (Wizard.ComboItem) cmdInterface.getSelectedItem();
+        JSONObject headers = (JSONObject) item.json.getOrDefault("headers", new JSONObject());
+        Object[][] sharedHeaders = new Object[headers.size()][2];
+        int row = 0;
+        for (Object key : headers.keySet()) {
+            sharedHeaders[row][0] = key;
+            sharedHeaders[row][1] = headers.get(key);
+            row++;
+        }
+        tblHeadersTop.setModel(new DefaultTableModel(sharedHeaders, wizard.headerColumns));
+        testCaseHeaders.setDataVector(lastSavedDataModel, wizard.headerColumns);
+        headersDialog.setVisible(true);
     }//GEN-LAST:event_btnHeadersActionPerformed
 
     private void btnSendActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnSendActionPerformed
@@ -280,30 +552,48 @@ public class WizardTab extends javax.swing.JPanel {
     }//GEN-LAST:event_btnSaveActionPerformed
 
     private void btnInterfaceInfoActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnInterfaceInfoActionPerformed
-        wizard.openInterfacePanel();
+        wizard.openInterfacePanel((Wizard.ComboItem)cmdInterface.getSelectedItem());
     }//GEN-LAST:event_btnInterfaceInfoActionPerformed
 
     private void cmdEndpointItemStateChanged(ItemEvent evt) {//GEN-FIRST:event_cmdEndpointItemStateChanged
-        btnSend.setEnabled(cmdEndpoint.getSelectedItem() != null);
-        if (btnSend.isEnabled()) {
-            String basePath = "/";
-            if (cmdInterface.getSelectedItem() != null) {
-                basePath = ((Wizard.ComboItem)cmdInterface.getSelectedItem()).json.getString("basePath");
-            }
-            lblURI.setText(cmdEndpoint.getSelectedItem().toString() + basePath);
-        } else {
-            lblURI.setText("http://");
-        }
+        refresh();
     }//GEN-LAST:event_cmdEndpointItemStateChanged
 
     private void cmdInterfaceItemStateChanged(ItemEvent evt) {//GEN-FIRST:event_cmdInterfaceItemStateChanged
-        cmdEndpointItemStateChanged(evt);
+        refresh();
     }//GEN-LAST:event_cmdInterfaceItemStateChanged
+
+    private void btnHeadersBottomAddActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnHeadersBottomAddActionPerformed
+        testCaseHeaders.addRow(new Object[][]{null, null});
+    }//GEN-LAST:event_btnHeadersBottomAddActionPerformed
+
+    private void btnHeadersBottomDeleteActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnHeadersBottomDeleteActionPerformed
+        if (testCaseHeaders.getRowCount() > 0) {
+            int index = tblHeadersBottom.getSelectedRow();
+            testCaseHeaders.removeRow(index == -1 ? testCaseHeaders.getRowCount() - 1 : index);
+        }
+    }//GEN-LAST:event_btnHeadersBottomDeleteActionPerformed
+
+    private void txtPathKeyReleased(KeyEvent evt) {//GEN-FIRST:event_txtPathKeyReleased
+        refresh();
+    }//GEN-LAST:event_txtPathKeyReleased
+
+    private void btnCloseActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnCloseActionPerformed
+        for (int i = 0; i < wizard.tabNav.getTabCount(); i++) {
+            if (wizard.tabNav.getComponent(i) == this) {
+                wizard.tabNav.remove(i);
+                break;
+            }
+        }
+    }//GEN-LAST:event_btnCloseActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    JButton btnClose;
     JButton btnEndpointInfo;
     JButton btnHeaders;
+    JButton btnHeadersBottomAdd;
+    JButton btnHeadersBottomDelete;
     JButton btnInterfaceInfo;
     JButton btnSave;
     JButton btnSend;
@@ -312,6 +602,10 @@ public class WizardTab extends javax.swing.JPanel {
     JComboBox<String> cmdMethod;
     JLabel lblCode;
     JLabel lblEndpoint;
+    JLabel lblHeaderBottomHint;
+    JLabel lblHeadersBottom;
+    JLabel lblHeadersBottomError;
+    JLabel lblHeadersTop;
     JLabel lblInterface;
     JLabel lblMethod;
     JLabel lblPath;
@@ -319,13 +613,23 @@ public class WizardTab extends javax.swing.JPanel {
     JLabel lblURI;
     JPanel pnlEndpoint;
     JPanel pnlFooter;
+    JPanel pnlHeaderBottomHeader;
+    JPanel pnlHeaders;
+    JPanel pnlHeadersBottom;
+    JPanel pnlHeadersBottomFooter;
+    JPanel pnlHeadersTop;
     JPanel pnlInterface;
     JPanel pnlMethodURI;
     JPanel pnlTop;
     JScrollPane spnConsole;
+    JScrollPane spnHeadersBottom;
+    JScrollPane spnHeadersTop;
     JScrollPane spnReqBody;
     JScrollPane spnResBody;
+    JSplitPane sptHeaders;
     JTabbedPane tabBody;
+    JTable tblHeadersBottom;
+    JTable tblHeadersTop;
     JTextArea txtConsole;
     JTextField txtPath;
     JTextArea txtReqBody;

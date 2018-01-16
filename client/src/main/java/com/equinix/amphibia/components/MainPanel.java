@@ -547,6 +547,7 @@ public final class MainPanel extends javax.swing.JPanel {
 
             JSONObject projectJson = (JSONObject) IO.getJSON(collection.getProjectFile(), editor);
             globalVarsDialog.mergeVariables(projectJson.getJSONArray("globals"));
+            wizard.updateEndPoints();
             
             success = reloadProject(collection);
             if (success && MainPanel.selectedNode == null && collection.project.info != null) {
@@ -637,7 +638,7 @@ public final class MainPanel extends javax.swing.JPanel {
                             });
                         }
                         if (!testcasesMap.containsKey(path) && path.equals(String.format(pathFormat, testsuite.getString("name"), testCaseInfo.getString("name")))) {
-                            TreeIconNode.ResourceInfo info = new TreeIconNode.ResourceInfo(file, testsuite, testSuiteInfo, testCaseInfo, testCaseHeaders, (JSONObject) IO.getJSON(file, editor));
+                            TreeIconNode.ResourceInfo info = new TreeIconNode.ResourceInfo(file, resource, testsuite, testSuiteInfo, testCaseInfo, testCaseHeaders, (JSONObject) IO.getJSON(file, editor));
                             Properties properties = projectProperties.cloneProperties();
                             properties.setTestSuite(testSuiteInfo.getJSONObject("properties"));
                             properties.setTestCase(JSONObject.fromObject(testCaseInfo.getJSONObject("properties")));
@@ -701,7 +702,7 @@ public final class MainPanel extends javax.swing.JPanel {
                 TreeIconNode testsuiteNode = collection.addTreeNode(collection.testsuites, name, TESTSUITE, false)
                         .addProperties(TESTSUITE_PROPERTIES);
                 testsuiteNode.getTreeIconUserObject().setEnabled(testsuite.get("disabled") != Boolean.TRUE);
-                testsuiteNode.info = new TreeIconNode.ResourceInfo(dir, testsuite, projectTestSuite, null, null, null);
+                testsuiteNode.info = new TreeIconNode.ResourceInfo(dir, resource, testsuite, projectTestSuite, null, null, null);
                 testsuiteNode.info.properties = projectProperties;
                 if (!testsuite.containsKey("states")) {
                     testsuite.element("states", new int[]{0, 0, 0});
@@ -791,6 +792,8 @@ public final class MainPanel extends javax.swing.JPanel {
                         testcaseJSON.element("properties", testCaseProperties);
                         testcaseJSON.element("method", replace.getString("method"));
                         testcaseJSON.element("url", url);
+                        testcaseJSON.element("interface", resource.getString("interface"));
+                        testcaseJSON.element("reqPath", properties.replace(replace.getString("path")).replaceAll("&amp;", "&"));
                         String tooltipURL = properties.replace(url).replaceAll("&amp;", "&");
                         TreeIconNode testcaseNode = collection.addTreeNode(testsuiteNode, testcase.getString("name"), TESTCASE, false)
                                 .addProperties(TESTCASE_PROPERTIES)

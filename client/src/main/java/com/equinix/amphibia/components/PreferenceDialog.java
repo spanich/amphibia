@@ -85,6 +85,9 @@ public class PreferenceDialog extends javax.swing.JPanel {
 
         String userLF = userPreferences.get(Amphibia.P_LOOKANDFEEL, UIManager.getSystemLookAndFeelClassName());
         for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+            if ("Nimbus".equals(info.getName())) {
+                continue;
+            }
             themeModel.addElement(new ComboItem(info.getName(), info.getClassName()));
             if (info.getClassName().equals(userLF)) {
                 cmbThemes.setSelectedIndex(themeModel.getSize() - 1);
