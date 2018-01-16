@@ -37,6 +37,7 @@ import javax.swing.CellEditor;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -67,8 +68,10 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     private Wizard wizard;
     private TreeIconNode testCaseNode;
     private JDialog headersDialog;
+    private JDialog saveTestCase;
     private JButton applyHeadersButton;
-    private JButton cancelHeadersButton;
+    private JButton applyTestCaseButton;
+    private JButton cancelButton;
     private DefaultTableModel testCaseHeaders;
     private Object[][] lastSavedDataModel;
 
@@ -145,17 +148,28 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
             lastSavedDataModel = map.values().toArray(new Object[map.size()][2]);
             headersDialog.setVisible(false);
         });
-        cancelHeadersButton = new JButton(bundle.getString("cancel"));
-        cancelHeadersButton.addActionListener((ActionEvent evt) -> {
-            headersDialog.setVisible(false);
+        
+        applyTestCaseButton = new JButton(bundle.getString("apply"));
+        applyHeadersButton.addActionListener((ActionEvent evt) -> {
+            saveTestCase.setVisible(false);
         });
         
-        headersDialog = Amphibia.createDialog(pnlHeaders, new Object[]{applyHeadersButton, cancelHeadersButton}, true);
+        cancelButton = new JButton(bundle.getString("cancel"));
+        cancelButton.addActionListener((ActionEvent evt) -> {
+            headersDialog.setVisible(false);
+            saveTestCase.setVisible(false);
+        });
+        
+        headersDialog = Amphibia.createDialog(pnlHeaders, new Object[]{applyHeadersButton, cancelButton}, true);
         headersDialog.setSize(new Dimension(500, 500));
+        
+        saveTestCase = Amphibia.createDialog(pnlSaveTestCase, new Object[]{applyHeadersButton, cancelButton}, true);
+        saveTestCase.setSize(new Dimension(500, 400));
         
         EventQueue.invokeLater(() -> {
             headersDialog.setLocationRelativeTo(this);
-        });
+            saveTestCase.setLocationRelativeTo(this);
+        });        
     }
     
     public void refresh() {
@@ -237,6 +251,24 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         btnHeadersBottomAdd = new JButton();
         btnHeadersBottomDelete = new JButton();
         lblHeadersBottomError = new JLabel();
+        pnlSaveTestCase = new JPanel();
+        pnlTestsuite = new JPanel();
+        lblTestSuite = new JLabel();
+        cmbTestSuite = new JComboBox<>();
+        btnAddTestSuite = new JButton();
+        pnlTestCase = new JPanel();
+        lblTestCase = new JLabel();
+        txtTestCase = new JTextField();
+        pnlOptions = new JPanel();
+        ckbReqSchema = new JCheckBox();
+        ckbResSchema = new JCheckBox();
+        ckbStatusAssert = new JCheckBox();
+        ckbSaveExample = new JCheckBox();
+        pnlTestCaseFooter = new JPanel();
+        lblTestCaseFuncName = new JLabel();
+        txtTestCaseFuncName = new JTextField();
+        lblSummary = new JLabel();
+        txtSummary = new JTextField();
         pnlTop = new JPanel();
         lblEndpoint = new JLabel();
         pnlEndpoint = new JPanel();
@@ -349,6 +381,85 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         sptHeaders.setRightComponent(pnlHeadersBottom);
 
         pnlHeaders.add(sptHeaders, BorderLayout.CENTER);
+
+        pnlSaveTestCase.setLayout(new BorderLayout());
+
+        pnlTestsuite.setLayout(new BorderLayout(5, 15));
+
+        lblTestSuite.setFont(new Font("Tahoma", 1, 11)); // NOI18N
+        lblTestSuite.setText(bundle.getString("testsuite")); // NOI18N
+        pnlTestsuite.add(lblTestSuite, BorderLayout.WEST);
+
+        cmbTestSuite.setModel(new DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        pnlTestsuite.add(cmbTestSuite, BorderLayout.CENTER);
+
+        btnAddTestSuite.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/plus-icon.png"))); // NOI18N
+        pnlTestsuite.add(btnAddTestSuite, BorderLayout.EAST);
+
+        pnlTestCase.setLayout(new BorderLayout(0, 5));
+
+        lblTestCase.setFont(new Font("Tahoma", 1, 11)); // NOI18N
+        lblTestCase.setText(bundle.getString("testcaseName")); // NOI18N
+        pnlTestCase.add(lblTestCase, BorderLayout.NORTH);
+        pnlTestCase.add(txtTestCase, BorderLayout.CENTER);
+
+        pnlTestsuite.add(pnlTestCase, BorderLayout.SOUTH);
+
+        pnlSaveTestCase.add(pnlTestsuite, BorderLayout.NORTH);
+
+        pnlOptions.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        pnlOptions.setLayout(new BoxLayout(pnlOptions, BoxLayout.Y_AXIS));
+
+        ckbReqSchema.setSelected(true);
+        ckbReqSchema.setText(bundle.getString("requestBodySchema")); // NOI18N
+        pnlOptions.add(ckbReqSchema);
+
+        ckbResSchema.setSelected(true);
+        ckbResSchema.setText(bundle.getString("resultBodySchema")); // NOI18N
+        pnlOptions.add(ckbResSchema);
+
+        ckbStatusAssert.setSelected(true);
+        ckbStatusAssert.setText(bundle.getString("assertionStatus")); // NOI18N
+        pnlOptions.add(ckbStatusAssert);
+
+        ckbSaveExample.setSelected(true);
+        ckbSaveExample.setText(bundle.getString("saveResultExample")); // NOI18N
+        pnlOptions.add(ckbSaveExample);
+
+        pnlSaveTestCase.add(pnlOptions, BorderLayout.CENTER);
+
+        GridBagLayout jPanel2Layout = new GridBagLayout();
+        jPanel2Layout.columnWidths = new int[] {0, 5, 0};
+        jPanel2Layout.rowHeights = new int[] {0, 2, 0, 2, 0};
+        pnlTestCaseFooter.setLayout(jPanel2Layout);
+
+        lblTestCaseFuncName.setText(bundle.getString("functionName")); // NOI18N
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.anchor = GridBagConstraints.WEST;
+        pnlTestCaseFooter.add(lblTestCaseFuncName, gridBagConstraints);
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 1.0;
+        pnlTestCaseFooter.add(txtTestCaseFuncName, gridBagConstraints);
+
+        lblSummary.setText(bundle.getString("summary")); // NOI18N
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.anchor = GridBagConstraints.WEST;
+        pnlTestCaseFooter.add(lblSummary, gridBagConstraints);
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 1.0;
+        pnlTestCaseFooter.add(txtSummary, gridBagConstraints);
+
+        pnlSaveTestCase.add(pnlTestCaseFooter, BorderLayout.PAGE_END);
 
         setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         setLayout(new BorderLayout());
@@ -588,7 +699,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     }//GEN-LAST:event_btnSendActionPerformed
 
     private void btnSaveActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnSaveActionPerformed
-        // TODO add your handling code here:
+        saveTestCase.setVisible(true);
     }//GEN-LAST:event_btnSaveActionPerformed
 
     private void btnInterfaceInfoActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnInterfaceInfoActionPerformed
@@ -629,6 +740,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    JButton btnAddTestSuite;
     JButton btnClose;
     JButton btnEndpointInfo;
     JButton btnHeaders;
@@ -637,6 +749,11 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     JButton btnInterfaceInfo;
     JButton btnSave;
     JButton btnSend;
+    JCheckBox ckbReqSchema;
+    JCheckBox ckbResSchema;
+    JCheckBox ckbSaveExample;
+    JCheckBox ckbStatusAssert;
+    JComboBox<String> cmbTestSuite;
     JComboBox<String> cmdEndpoint;
     JComboBox<String> cmdInterface;
     JComboBox<String> cmdMethod;
@@ -650,6 +767,10 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     JLabel lblMethod;
     JLabel lblPath;
     JLabel lblStatusCode;
+    JLabel lblSummary;
+    JLabel lblTestCase;
+    JLabel lblTestCaseFuncName;
+    JLabel lblTestSuite;
     JLabel lblTime;
     JLabel lblTimeValue;
     JLabel lblURI;
@@ -662,6 +783,11 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     JPanel pnlHeadersTop;
     JPanel pnlInterface;
     JPanel pnlMethodURI;
+    JPanel pnlOptions;
+    JPanel pnlSaveTestCase;
+    JPanel pnlTestCase;
+    JPanel pnlTestCaseFooter;
+    JPanel pnlTestsuite;
     JPanel pnlTop;
     JScrollPane spnConsole;
     JScrollPane spnHeadersBottom;
@@ -676,6 +802,9 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     JTextField txtPath;
     JTextArea txtReqBody;
     JTextArea txtResBody;
+    JTextField txtSummary;
+    JTextField txtTestCase;
+    JTextField txtTestCaseFuncName;
     // End of variables declaration//GEN-END:variables
 
     @Override
