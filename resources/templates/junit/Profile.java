@@ -7,7 +7,7 @@ import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
 import org.junit.runners.model.InitializationError;
 
-public class Runner {
+public class Profile {
 
 	public static void main(String[] args) throws InitializationError {
 		AmphibiaBaseTest.loggerLevel = Level.OFF;

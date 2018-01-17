@@ -124,6 +124,7 @@ public class JUnit extends ProjectAbstract {
         List<String> resourceList = new ArrayList<>();
         interfaces.forEach((item) -> {
             JSONObject interfaceItem = (JSONObject) item;
+            interfacesJson.element(interfaceItem.getString("id"), interfaceItem);
             String header = "\t\tput(\"" + interfaceItem.getString("name") + "\", new String[][] {\n"
                     + "\t\t\t<% PARAMETERS %>\n"
                     + "\t\t});";
@@ -149,6 +150,7 @@ public class JUnit extends ProjectAbstract {
         for (Object item : resources) {
             JSONObject resource = (JSONObject) item;
             JSONObject testsuites = resource.getJSONObject("testsuites");
+            JSONObject interfaceItem = (JSONObject) interfacesJson.getOrDefault(resource.getString("interfaceId"), null);
             for (Object name : testsuites.keySet()) {
                 JSONObject testSuiteItem = testsuites.getJSONObject(name.toString());
                 properties.setTestSuite(testSuiteItem.getJSONObject("properties"));
@@ -158,7 +160,7 @@ public class JUnit extends ProjectAbstract {
                 testCaseOrder.add(testSuiteName + ".class");
                 test = replace(test, "<% TESTSUITE_CLASS_NAME %>", testSuiteName);
                 test = replace(test, "<% ENDPOINT %>", resource.getString("endpoint"));
-                test = replace(test, "<% INTERFACE %>", resource.getString("interface"));
+                test = replace(test, "<% INTERFACE %>", interfaceItem != null ? interfaceItem.getString("name") : "");
 
                 List<String> testCaseList = new ArrayList<>();
                 buildTestCases(testCaseList, testSuiteItem.getJSONArray("testcases"), properties);

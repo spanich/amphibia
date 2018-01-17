@@ -119,6 +119,7 @@ public class Mocha extends ProjectAbstract {
         List<String> resourceList = new ArrayList<>();
         interfaces.forEach((item) -> {
             JSONObject interfaceItem = (JSONObject) item;
+            interfacesJson.element(interfaceItem.getString("id"), interfaceItem);
             String headerJSON = "\t'" + interfaceItem.getString("name") + "': {\n<% PARAMETERS %>\n\t}";
 
             if (interfaceItem.containsKey("headers")) {
@@ -147,6 +148,7 @@ public class Mocha extends ProjectAbstract {
         for (Object item : resources) {
             JSONObject resource = (JSONObject) item;
             JSONObject testsuites = resource.getJSONObject("testsuites");
+            JSONObject interfaceItem = (JSONObject) interfacesJson.getOrDefault(resource.getString("interfaceId"), null);
             for (Object name : testsuites.keySet()) {
                 JSONObject testSuiteItem = testsuites.getJSONObject(name.toString());
                 properties.setTestSuite(testSuiteItem.getJSONObject("properties"));
@@ -155,7 +157,7 @@ public class Mocha extends ProjectAbstract {
 
                 test = replace(test, "<% TESTSUITE_NAME %>", name);
                 test = replace(test, "<% ENDPOINT %>", resource.getString("endpoint"));
-                test = replace(test, "<% INTERFACE %>", resource.getString("interface"));
+                test = replace(test, "<% INTERFACE %>", interfaceItem != null ? interfaceItem.getString("name") : "");
 
                 List<String> testCaseList = new ArrayList<>();
                 buildTestCases(testCaseList, testSuiteItem.getJSONArray("testcases"), properties);
