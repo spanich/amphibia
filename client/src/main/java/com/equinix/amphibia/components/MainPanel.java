@@ -308,6 +308,10 @@ public final class MainPanel extends javax.swing.JPanel {
                     if (selectedNode.info != null) {
                         editor.spnConsole.getVerticalScrollBar().setValue(selectedNode.info.consoleLine);
                     } 
+                    
+                    if(e.getClickCount() == 2 && selectedNode.getTreeIconUserObject().getType() == TESTCASE) {
+                        wizard.openTestCase();
+                    }
                 }
             }
         });

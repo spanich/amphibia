@@ -127,13 +127,14 @@ public class Amphibia extends JFrame {
     public static final int TAB_RAW = 1;
     public static final int TAB_CONSOLE = 2;
     public static final int TAB_SERVERS = 3;
-    public static final int TAB_HISTORY = 4;
+    public static final int TAB_PROFILE = 4;
+    public static final int TAB_HISTORY = 5;
     
     public static int TYPE = 0;
     public static int NAME = 1;
     public static int VALUE = 2;
     
-    public static final String OPEN_TABS = "11111";
+    public static final String OPEN_TABS = "111111";
 
     public static final String VERSION = "1.0";
 
@@ -270,6 +271,9 @@ public class Amphibia extends JFrame {
                 break;
             case TAB_SERVERS:
                 mnuServers.setSelected(b);
+                break;
+            case TAB_PROFILE:
+                mnuProfile.setSelected(b);
                 break;
             case TAB_HISTORY:
                 mnuHistory.setSelected(b);
@@ -514,6 +518,7 @@ public class Amphibia extends JFrame {
         mnuRaw = new JCheckBoxMenuItem();
         mnuConsole = new JCheckBoxMenuItem();
         mnuServers = new JCheckBoxMenuItem();
+        mnuProfile = new JCheckBoxMenuItem();
         mnuHistory = new JCheckBoxMenuItem();
         mnuHelp = new JMenu();
         mnuHelpContent = new JMenuItem();
@@ -1042,6 +1047,7 @@ public class Amphibia extends JFrame {
 
         mnuProblems.setSelected(true);
         mnuProblems.setText(bundle.getString("problems")); // NOI18N
+        mnuProblems.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/error_16.png"))); // NOI18N
         mnuProblems.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 mnuProblemsActionPerformed(evt);
@@ -1051,6 +1057,7 @@ public class Amphibia extends JFrame {
 
         mnuRaw.setSelected(true);
         mnuRaw.setText(bundle.getString("raw")); // NOI18N
+        mnuRaw.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/raw_16.png"))); // NOI18N
         mnuRaw.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 mnuRawActionPerformed(evt);
@@ -1060,6 +1067,7 @@ public class Amphibia extends JFrame {
 
         mnuConsole.setSelected(true);
         mnuConsole.setText(bundle.getString("console")); // NOI18N
+        mnuConsole.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/console_16.png"))); // NOI18N
         mnuConsole.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 mnuConsoleActionPerformed(evt);
@@ -1069,6 +1077,7 @@ public class Amphibia extends JFrame {
 
         mnuServers.setSelected(true);
         mnuServers.setText(bundle.getString("servers")); // NOI18N
+        mnuServers.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/servers_16.png"))); // NOI18N
         mnuServers.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 mnuServersActionPerformed(evt);
@@ -1076,8 +1085,19 @@ public class Amphibia extends JFrame {
         });
         mnuView.add(mnuServers);
 
+        mnuProfile.setSelected(true);
+        mnuProfile.setText(bundle.getString("profile")); // NOI18N
+        mnuProfile.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/stopwatch_16.png"))); // NOI18N
+        mnuProfile.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                mnuProfileActionPerformed(evt);
+            }
+        });
+        mnuView.add(mnuProfile);
+
         mnuHistory.setSelected(true);
         mnuHistory.setText(bundle.getString("history")); // NOI18N
+        mnuHistory.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/history_16.png"))); // NOI18N
         mnuHistory.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 mnuHistoryActionPerformed(evt);
@@ -1411,6 +1431,10 @@ public class Amphibia extends JFrame {
         showHideTab(TAB_SERVERS, mnuServers.isSelected());
     }//GEN-LAST:event_mnuServersActionPerformed
 
+    private void mnuProfileActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuProfileActionPerformed
+        showHideTab(TAB_PROFILE, mnuProfile.isSelected());
+    }//GEN-LAST:event_mnuProfileActionPerformed
+
     public void export(String type) {
         Amphibia.setWaitOverlay(true);
         new Thread() {
@@ -1575,6 +1599,7 @@ public class Amphibia extends JFrame {
     private JMenuItem mnuPostman;
     private JMenuItem mnuPreferences;
     public JCheckBoxMenuItem mnuProblems;
+    private JCheckBoxMenuItem mnuProfile;
     public JMenu mnuProject;
     private JCheckBoxMenuItem mnuRaw;
     private JMenuItem mnuReady;

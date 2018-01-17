@@ -146,6 +146,8 @@ public class Converter {
             IOUtils.closeQuietly(is);
         }
 
+        profile.finalize(name);
+
         if (projectFile == null) {
             projectFile = new File(Profile.PROJECT_DIR, name + ".json");
         }

@@ -390,7 +390,7 @@ public final class Swagger {
             config.accumulate("definition", definition.ref.split("#/definitions/")[1]);
         }
 
-        final String replacePath = info.interfaceBasePath.substring(1) + path + definition.getQueries();
+        final String replacePath = path + definition.getQueries();
         final Object replaceBody = body == null ? NULL : body;
         config.accumulate("replace",
                 new LinkedHashMap<String, Object>() {

@@ -49,6 +49,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.JToggleButton;
@@ -428,6 +429,9 @@ public final class Editor extends BaseTaskPane {
         btnStop = new JButton();
         spnServers = new JScrollPane();
         txtServers = new JTextPane();
+        pnlProfile = new JPanel();
+        jScrollPane1 = new JScrollPane();
+        jTextArea1 = new JTextArea();
         splHistory = new JScrollPane();
         tblHistory = new JTable();
         pnlTabRightButtons = new JPanel();
@@ -469,17 +473,17 @@ public final class Editor extends BaseTaskPane {
         srlProblems.setViewportView(treeProblems);
 
         ResourceBundle bundle = ResourceBundle.getBundle("com/equinix/amphibia/messages"); // NOI18N
-        tbpOutput.addTab(bundle.getString("problems"), srlProblems); // NOI18N
+        tbpOutput.addTab(bundle.getString("problems"), new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/error_16.png")), srlProblems); // NOI18N
 
         txtRaw.setEditable(false);
         txtRaw.setContentType("text/html"); // NOI18N
         spnRaw.setViewportView(txtRaw);
 
-        tbpOutput.addTab(bundle.getString("raw"), spnRaw); // NOI18N
+        tbpOutput.addTab(bundle.getString("raw"), new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/raw_16.png")), spnRaw); // NOI18N
 
         spnConsole.setViewportView(txtConsole);
 
-        tbpOutput.addTab(bundle.getString("console"), spnConsole); // NOI18N
+        tbpOutput.addTab(bundle.getString("console"), new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/console_16.png")), spnConsole); // NOI18N
 
         pnlServers.setLayout(new BorderLayout());
 
@@ -518,12 +522,22 @@ public final class Editor extends BaseTaskPane {
 
         pnlServers.add(spnServers, BorderLayout.CENTER);
 
-        tbpOutput.addTab(bundle.getString("servers"), pnlServers); // NOI18N
+        tbpOutput.addTab(bundle.getString("servers"), new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/servers_16.png")), pnlServers); // NOI18N
+
+        pnlProfile.setLayout(new BorderLayout());
+
+        jTextArea1.setColumns(20);
+        jTextArea1.setRows(5);
+        jScrollPane1.setViewportView(jTextArea1);
+
+        pnlProfile.add(jScrollPane1, BorderLayout.CENTER);
+
+        tbpOutput.addTab(bundle.getString("profile"), new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/stopwatch_16.png")), pnlProfile); // NOI18N
 
         tblHistory.setModel(historyModel        );
         splHistory.setViewportView(tblHistory);
 
-        tbpOutput.addTab(bundle.getString("history"), splHistory); // NOI18N
+        tbpOutput.addTab(bundle.getString("history"), new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/history_16.png")), splHistory); // NOI18N
 
         pnlOutput.add(tbpOutput);
 
@@ -579,10 +593,13 @@ public final class Editor extends BaseTaskPane {
     JToggleButton btnStart;
     JButton btnStop;
     JComboBox<String> cmbServers;
+    JScrollPane jScrollPane1;
+    JTextArea jTextArea1;
     JLabel lblClear;
     JPanel pnlEditor;
     JPanel pnlInfo;
     JPanel pnlOutput;
+    JPanel pnlProfile;
     JPanel pnlServers;
     JPanel pnlServersTop;
     JPanel pnlTabRightButtons;

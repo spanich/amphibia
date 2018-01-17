@@ -126,7 +126,13 @@ public final class TreeCollection {
     };
 
     public static final Object[][] PROFILE_PROPERTIES = new Object[][]{
-        {"options", null, EDIT},
+        {"project", new Object[][] {
+            {"id", VIEW},
+            {"name", EDIT_LIMIT},
+            {"appendLogs", EDIT_LIMIT},
+            {"continueOnError", EDIT_LIMIT},
+            {"testCaseTimeout", EDIT_LIMIT}
+        }},
         {"resources", null, VIEW},
         {"testsuites", null, VIEW}
     };

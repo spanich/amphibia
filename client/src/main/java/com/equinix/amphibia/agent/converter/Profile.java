@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,7 +43,9 @@ public class Profile {
         isJSON = "true".equals(Converter.cmd.getOptionValue(Converter.JSON));
 
         profile = new LinkedHashMap<Object, Object>() {{
-                put("options", new LinkedHashMap<Object, Object>() {{
+                put("project", new LinkedHashMap<Object, Object>() {{
+                        put("id", UUID.randomUUID().toString());
+                        put("name", null);
                         put("appendLogs", false);
                         put("continueOnError", true);
                         put("testCaseTimeout", 15000);
@@ -51,6 +53,10 @@ public class Profile {
                 put("resources", resources);
                 put("testsuites", testsuites);
         }};
+    }
+
+    public void finalize(String projectName) {
+        ((LinkedHashMap<Object, Object>)profile.get("project")).put("name", projectName);
     }
 
     public void setSwagger(Swagger swagger) {

@@ -61,10 +61,10 @@ public class Runner extends AbstractScript {
 
 		jUnitReports = new JUnitReports();
 
-		JSON runnerJson = getJsonObject(DATA_DIR + "/runner.json");
-		JSONObject projectProperties = getProperties(runnerJson);
-		JSONArray testsuitesJson = (JSONArray) runnerJson.getAt("testsuites");
-		optionsJson = (JSON) runnerJson.getAt("options");
+		JSON profileJson = getJsonObject(DATA_DIR + "/profile.json");
+		JSONObject projectProperties = getProperties(profileJson);
+		JSONArray testsuitesJson = (JSONArray) profileJson.getAt("testsuites");
+		optionsJson = (JSON) profileJson.getAt("project");
 
 		if (SoapUI.getCmdLineRunner() != null) {
 			outputFolder = SoapUI.getCmdLineRunner().getOutputFolder();
