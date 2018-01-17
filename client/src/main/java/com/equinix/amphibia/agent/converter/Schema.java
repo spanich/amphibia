@@ -24,7 +24,6 @@ public final class Schema {
     private Map<Object, Object> definitions;
     private Map<Object, Object> schema;
 
-    public static final String OUTPUT_DIR = Runner.DATA_DIR + "/schemas";
     public static final Map<String, String> schemas = new LinkedHashMap<String, String>();
 
     private static final Logger LOGGER = Logger.getLogger(Schema.class.getName());
@@ -50,7 +49,7 @@ public final class Schema {
             definitions = (Map<Object, Object>) this.schema.get("definitions");
             String definitionName = this.parse(fields, ref, null);
             if (!schemas.containsKey(ref)) {
-                String path = save(JSONObject.fromObject(schema).toString(), definitionName, childDir);
+                String path = save(swagger.getDataDir(), JSONObject.fromObject(schema).toString(), definitionName, childDir);
                 schemas.put(ref, path);
             }
         }
@@ -120,11 +119,15 @@ public final class Schema {
         parse(definition, ref, paths);
     }
 
-    public static String save(String json, String fileName, String childDir) throws Exception {
+    public static File getSchemasDir(File dataDir) {
+        return new File(dataDir, "schemas");
+    }
+
+    public static String save(File dataDir, String json, String fileName, String childDir) throws Exception {
         if ("false".equals(Converter.cmd.getOptionValue(Converter.SCHEMA))) {
             return null;
         }
-        File path = new File(OUTPUT_DIR);
+        File path = getSchemasDir(dataDir);
         if (childDir != null) {
             path = new File(path, childDir);
         }

@@ -34,12 +34,14 @@ public final class Swagger {
     private final JSONObject output;
     private final JSONObject swaggerProperties;
     private final Runner runner;
+    private final String resourceId;
 
     public static final JSONObject asserts = new JSONObject();
     public static final JSONNull NULL = JSONNull.getInstance();
 
     public Swagger(CommandLine cmd, String resourceId, InputStream input, InputStream properties, JSONObject output, Runner runner)
             throws Exception {
+        this.resourceId = resourceId;
         this.cmd = cmd;
         this.doc = getContent(input);
         this.swaggerProperties = getContent(properties);
@@ -47,7 +49,7 @@ public final class Swagger {
         this.runner = runner;
     }
 
-    public String init(String name, int index, String resourceId) throws Exception {
+    public String init(String name, int index) throws Exception {
         if (name == null) {
             JSONObject info = doc.getJSONObject("info");
             if (!info.isNullObject()) {
@@ -63,6 +65,18 @@ public final class Swagger {
         runner.setDefinition(doc);
         parse(index, resourceId);
         return name;
+    }
+
+    public String getResourceId() {
+        return resourceId;
+    }
+
+    public String getDataDirPath() {
+        return Runner.DATA_DIR + "/" + resourceId;
+    }
+
+    public File getDataDir() {
+        return new File(Runner.DATA_DIR, resourceId);
     }
 
     public static String getJson(List<?> value) throws Exception {
@@ -297,26 +311,6 @@ public final class Swagger {
     protected JSONObject getConfig(int index, Map<String, Object> properties, ApiInfo info) throws Exception {
         JSONObject api = info.api;
         JSONObject config = new JSONObject();
-        String path = info.path;
-        
-        Definition definition = new Definition(doc, this);
-        parseDefinition(info, definition, info.apis, properties);
-        parseDefinition(info, definition, api, properties);
-        JSONObject body = api.getJSONObject("example");
-        if (body.isNullObject()) {
-            body = definition.getExample();
-        }
-        
-        final String replacePath = info.interfaceBasePath.substring(1) + path + definition.getQueries();
-        final Object replaceBody = body == null ? NULL : body;
-        config.accumulate("replace",
-                new HashMap<String, Object>() {
-            {
-                put("method", info.methodName);
-                put("path", replacePath);
-                put("body", replaceBody);
-            }
-        });
 
         JSONArray assertions = new JSONArray();
         JSONObject responses = api.getJSONObject("responses");
@@ -373,6 +367,15 @@ public final class Swagger {
             }
         }
 
+        Definition definition = new Definition(doc, this);
+        parseDefinition(info, definition, info.apis, properties);
+        parseDefinition(info, definition, api, properties);
+        JSONObject body = api.getJSONObject("example");
+        if (body.isNullObject()) {
+            body = definition.getExample();
+        }
+
+        String path = info.path;
         for (String name : definition.getParameters().keySet()) {
             String paramValue = definition.getParameters().get(name);
             if (paramValue != null) {
@@ -385,6 +388,16 @@ public final class Swagger {
             config.accumulate("definition", definition.ref.split("#/definitions/")[1]);
         }
 
+        final String replacePath = info.interfaceBasePath.substring(1) + path + definition.getQueries();
+        final Object replaceBody = body == null ? NULL : body;
+        config.accumulate("replace",
+                new HashMap<String, Object>() {
+            {
+                put("method", info.methodName);
+                put("path", replacePath);
+                put("body", replaceBody);
+            }
+        });
         return config;
     }
 

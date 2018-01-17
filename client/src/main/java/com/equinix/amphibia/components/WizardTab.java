@@ -74,7 +74,8 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     private JDialog saveTestCase;
     private JButton applyHeadersButton;
     private JButton applyTestCaseButton;
-    private JButton cancelButton;
+    private JButton headersCancelButton;
+    private JButton testcaseCancelButton;
     private DefaultTableModel testCaseHeaders;
     private DefaultComboBoxModel testSuitesModel;
     private Object[][] lastSavedDataModel;
@@ -183,6 +184,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
             JSONArray projectResources = project.jsonObject().getJSONArray("projectResources");
             String interfaceName = "";
             JSONObject resource = null;
+            boolean addResource = false;
             if (testCaseNode != null) {
                 for (int i = 0; i < projectResources.size(); i++) {
                     JSONObject item = projectResources.getJSONObject(i);
@@ -207,21 +209,23 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
                 resource.element("endpoint", ((EndPoint)cmdEndpoint.getSelectedItem()).endPointName);
                 resource.element("interface", interfaceName);
                 resource.element("testsuites", new JSONObject());
-                projectResources.add(resource);
+                addResource = true;
             }
             
             String testSuiteName = cmbTestSuite.getSelectedItem().toString();
+            JSONObject testsuites = resource.getJSONObject("testsuites");
             JSONObject testsuite;
-            if (resource.containsKey(testSuiteName)) {
-                testsuite = resource.getJSONObject(testSuiteName);
+            if (testsuites.containsKey(testSuiteName)) {
+                testsuite = testsuites.getJSONObject(testSuiteName);
             } else {
                 testsuite = new JSONObject();
                 testsuite.element("testcases", new JSONArray());
                 testsuite.element("properties", new JSONObject());
-                resource.element(testSuiteName, testsuite);
+                testsuites.element(testSuiteName, testsuite);
             }
 
             JSONArray testcases = testsuite.getJSONArray("testcases");
+            boolean addTestCase = false;
             JSONObject testcase = null;
             for (Object item : testcases) {
                 if (((JSONObject) item).getString("name").equals(testCaseName)) {
@@ -236,39 +240,59 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
                 testcase.element("type", "restrequest");
                 testcase.element("config", JSONObject.fromObject("{\"replace\": {}}"));
                 testcase.element("properties", new JSONObject());
-                testcases.add(testcase);
+                addTestCase = true;
             }
             testcase.element("summary", txtSummary.getText());
-            /*
-                JCheckBox ckbReqSchema;
-    JCheckBox ckbResSchema;
-    JCheckBox ckbSaveExample;
-    JCheckBox ckbStatusAssert;
-            */
+
             JSONObject config = testcase.getJSONObject("config");
-            if (ckbStatusAssert.isSelected()) {
-                testcase.getJSONObject("properties").element("HTTPStatusCode", Integer.valueOf(lblCode.getText()));
-                config.element("assertions", JSONObject.fromObject("[{\"replace\": {\"value\": \"${#HTTPStatusCode}\"},\"type\": \"ValidHTTPStatusCodes\"}]"));
+            if (ckbStatusAssert.isEnabled() && ckbStatusAssert.isSelected()) {
+                int code;
+                try {
+                    code = Integer.valueOf(lblCode.getText());
+                } catch (NumberFormatException e) {
+                    code = 0;
+                }
+                testcase.getJSONObject("properties").element("HTTPStatusCode", code);
+                config.element("assertions", JSONArray.fromObject("[{\"replace\": {\"value\": \"${#HTTPStatusCode}\"},\"type\": \"ValidHTTPStatusCodes\"}]"));
             }
             config.element("operationId", txtTestCaseFuncName.getText());
             
-            JSONObject replace = testcase.getJSONObject("replace");
+            JSONObject replace = config.getJSONObject("replace");
+            replace.element("path", txtPath.getText());
+            replace.element("method", cmdMethod.getSelectedItem().toString());
+            if (ckbSaveExample.isEnabled() && ckbSaveExample.isSelected()) {
+                try {
+                    replace.element("body", IO.prettyJson(txtResBody.getText()));
+                } catch (Exception ex) {
+                }
+            }
             
+            if (addTestCase) {
+                testcases.add(testcase);
+            }
+            testsuites.element(testSuiteName, testsuite);
+            if (addResource) {
+                projectResources.add(resource);
+            }
             
             wizard.mainPanel.saveNodeValue(project);
             saveTestCase.setVisible(false);
         });
         
-        cancelButton = new JButton(bundle.getString("cancel"));
-        cancelButton.addActionListener((ActionEvent evt) -> {
+        headersCancelButton = new JButton(bundle.getString("cancel"));
+        headersCancelButton.addActionListener((ActionEvent evt) -> {
             headersDialog.setVisible(false);
+        });
+        
+        testcaseCancelButton = new JButton(bundle.getString("cancel"));
+        testcaseCancelButton.addActionListener((ActionEvent evt) -> {
             saveTestCase.setVisible(false);
         });
         
-        headersDialog = Amphibia.createDialog(pnlHeaders, new Object[]{applyHeadersButton, cancelButton}, true);
+        headersDialog = Amphibia.createDialog(pnlHeaders, new Object[]{applyHeadersButton, headersCancelButton}, true);
         headersDialog.setSize(new Dimension(500, 500));
         
-        saveTestCase = Amphibia.createDialog(pnlSaveTestCase, new Object[]{applyTestCaseButton, cancelButton}, true);
+        saveTestCase = Amphibia.createDialog(pnlSaveTestCase, new Object[]{applyTestCaseButton, testcaseCancelButton}, true);
         saveTestCase.setSize(new Dimension(500, 400));
         
         EventQueue.invokeLater(() -> {
@@ -329,12 +353,16 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         });
         cmdEndpoint.setModel(model);
         cmdEndpoint.setSelectedItem(selected);
-        if (cmdEndpoint.getSelectedIndex() == -1) {
+        if (model.getSize() > 0 && cmdEndpoint.getSelectedIndex() == -1) {
             cmdEndpoint.setSelectedIndex(0);
         }
+        refresh();
     }
     
     public void openTestCaseDialog() {
+        if (MainPanel.selectedNode == null) {
+            return;
+        }
         txtTestCase.setBorder(DEFAULT_BORDER);
         if (testCaseNode == null) {
             TreeIconNode testsuites = MainPanel.selectedNode.getCollection().testsuites;
@@ -348,15 +376,13 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
             txtTestCaseFuncName.setText("");
             txtSummary.setText("");
         }
-        String reqBodyJson;
-        String resBodyJson;
         try {
-            reqBodyJson = IO.prettyJson(txtReqBody.getText());
+            IO.prettyJson(txtReqBody.getText());
         } catch (Exception ex) {
             ckbReqSchema.setEnabled(false);
         }
         try {
-            resBodyJson = IO.prettyJson(txtResBody.getText());
+            IO.prettyJson(txtResBody.getText());
         } catch (Exception ex) {
             ckbResSchema.setEnabled(false);
             ckbSaveExample.setEnabled(false);

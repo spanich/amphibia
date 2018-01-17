@@ -119,8 +119,8 @@ public final class ResourceAddDialog extends javax.swing.JPanel {
                         return;
                     }
                 }
-                String relPath = "data/tests/%s/%s.json";
-                String path = String.format(relPath, selectedNode.getParent().toString(), selectedNode.toString());
+                String fileFormat = "data/%s/tests/%s/%s.json";
+                String path = String.format(fileFormat, selectedNode.info.resource.getString("resourceId"), selectedNode.getParent().toString(), selectedNode.toString());
                 if (IO.getFile(collection, path).exists()) { 
                     JSONObject testcase = new JSONObject();
                     testcase.put("name", txtName.getText());

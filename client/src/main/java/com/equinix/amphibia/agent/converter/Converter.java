@@ -20,6 +20,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
 import net.sf.json.JSONObject;
@@ -39,6 +40,8 @@ public class Converter {
     public static CommandLine cmd;
 
     private static Map<RESOURCE_TYPE, Object> results;
+
+    private static final Logger LOGGER = Logger.getLogger(Converter.class.getName());
 
     public static enum RESOURCE_TYPE {
         project,
@@ -109,6 +112,11 @@ public class Converter {
             projectFile = new File(projectPath);
             Runner.PROJECT_DIR = projectFile.getParentFile().getAbsolutePath();
         }
+        try {
+            FileUtils.deleteDirectory(new File(Runner.PROJECT_DIR, Runner.DATA_DIR));
+        } catch (Exception ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
+        }
         Runner runner = new Runner();
         JSONObject output = new JSONObject();
         for (int i = 0; i < inputParams.length; i++) {
@@ -136,7 +144,7 @@ public class Converter {
 
             Swagger swagger = new Swagger(cmd, resourceId, is, pis, output, runner);
             runner.setSwagger(swagger);
-            name = swagger.init(name, i, resourceId);
+            name = swagger.init(name, i);
             IOUtils.closeQuietly(is);
         }
 

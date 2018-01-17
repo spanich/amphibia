@@ -590,7 +590,8 @@ public final class MainPanel extends javax.swing.JPanel {
         collection.project.add(collection.testsuites);
 
         String value;
-        String pathFormat = "data/tests/%s/%s.json";
+        String dirFormat = "data/%s/tests/%s";
+        String pathFormat = dirFormat + "/%s.json";
         TreeIconNode.TreeIconUserObject userObject = collection.project.getTreeIconUserObject();
         if (!(value = projectJson.getString("name")).equals(userObject.label)) {
             history.renameProject(userObject.label, value, collection);
@@ -627,7 +628,7 @@ public final class MainPanel extends javax.swing.JPanel {
             String resourceId = testsuite.getString("resource");
             JSONObject resource = resourceMap.getJSONObject(resourceId);
             JSONObject testSuiteInfo = resource.getJSONObject("testsuites").getJSONObject(testsuite.getString("name"));
-            String dirPath = "data/tests/" + testsuite.getString("name");
+            String dirPath = String.format(dirFormat, resourceId, testsuite.getString("name"));
             File dir = IO.getFile(collection, dirPath);
             for (String name : dir.list()) {
                 String path = dirPath + "/" + name;
@@ -647,7 +648,7 @@ public final class MainPanel extends javax.swing.JPanel {
                                 testCaseHeaders.put(key, headers.get(key));
                             });
                         }
-                        if (!testcasesMap.containsKey(path) && path.equals(String.format(pathFormat, testsuite.getString("name"), testCaseInfo.getString("name")))) {
+                        if (!testcasesMap.containsKey(path) && path.equals(String.format(pathFormat, resourceId, testsuite.getString("name"), testCaseInfo.getString("name")))) {
                             TreeIconNode.ResourceInfo info = new TreeIconNode.ResourceInfo(file, resource, testsuite, testSuiteInfo, testCaseInfo, testCaseHeaders, (JSONObject) IO.getJSON(file, editor));
                             Properties properties = projectProperties.cloneProperties();
                             properties.setTestSuite(testSuiteInfo.getJSONObject("properties"));
@@ -695,7 +696,8 @@ public final class MainPanel extends javax.swing.JPanel {
             String resourceId = testsuite.getString("resource");
             JSONObject resource = resourceMap.getJSONObject(resourceId);
 
-            File dir = IO.getFile(collection, "data/tests/" + Swagger.stripName(name));
+            String relPath = String.format(dirFormat, resourceId, Swagger.stripName(name));
+            File dir = IO.getFile(collection, relPath);
             JSONObject testsuiteJSON = new JSONObject();
             testsuiteJSON.put("disabled", testsuite.get("disabled") == Boolean.TRUE);
             testsuiteJSON.put("name", name);
@@ -907,7 +909,7 @@ public final class MainPanel extends javax.swing.JPanel {
                 testsuiteNode.addJSON(testsuiteJSON);
             }
 
-            testsuitesJson.element(name, dir.getAbsolutePath());
+            testsuitesJson.element(name, relPath);
         }
 
         collection.testsuites
@@ -918,12 +920,14 @@ public final class MainPanel extends javax.swing.JPanel {
         projectResources.forEach((resource) -> {
             JSONObject resourseJSON = (JSONObject) resource;
             JSONObject testsuiteList = resourseJSON.getJSONObject("testsuites");
+            String resourceId = resourseJSON.getString("resourceId");
             testsuiteList.keySet().forEach((name) -> {
                 JSONObject testSuiteItem = testsuiteList.getJSONObject(name.toString());
                 JSONObject testSuiteJSON = new JSONObject();
-                File file = IO.getFile(collection, "data/tests/" + name);
+                File file = IO.getFile(collection, String.format(dirFormat, resourceId, name));
                 testSuites.put(name, file.getAbsolutePath());
                 testSuiteJSON.element("name", name);
+                testSuiteJSON.element("path", file.getAbsolutePath());
                 testSuiteJSON.element("endpoint", resourseJSON.getString("endpoint"));
                 testSuiteJSON.element("interface", resourseJSON.getString("interface"));
 
@@ -956,7 +960,7 @@ public final class MainPanel extends javax.swing.JPanel {
                     IO.replaceValue(testcaseJSON, "properties", testCase.getJSONObject("properties"));
                     IO.replaceValue(testcaseJSON, "headers", testCase.getJSONObject("headers"));
 
-                    String path = String.format(pathFormat, name, testCase.getString("name"));
+                    String path = String.format(pathFormat, resourceId, name, testCase.getString("name"));
                     TreeIconNode.ResourceInfo info = testcasesMap.get(path);
 
                     TreeIconNode testcaseNode = collection.addTreeNode(node, testCase.getString("name"), TESTCASE, false)
@@ -994,41 +998,48 @@ public final class MainPanel extends javax.swing.JPanel {
             {"schemas", collection.schemas, SCHEMA_ITEM, VIEW_ITEM_PROPERTIES, EDIT_ITEM_PROPERTIES}
         };
 
-        for (Object[] item : loadNodes) {
-            File suiteDir = IO.getFile(collection, "data/" + item[0].toString());
-            TreeIconNode parentNode = (TreeIconNode) item[1];
-            TreeCollection.TYPE type = (TreeCollection.TYPE) item[2];
-            if (Amphibia.isExpertView()) {
-                collection.project.add(parentNode);
+        File dataDir = IO.getFile(collection, "data");
+        for (String resourceId : dataDir.list()) {
+            File resourceDir = new File(dataDir, resourceId);
+            if (resourceDir.isFile()) { //runner.json
+                continue;
             }
-            if (suiteDir.exists()) {
-                JSONObject itemJSON = new JSONObject();
-                for (String dir : suiteDir.list()) {
-                    File subdir = new File(suiteDir, dir);
-                    TreeIconNode node;
-                    if (parentNode != collection.schemas) {
-                        node = collection.addTreeNode(parentNode, dir, TESTSUITE, false);
-                    } else {
-                        node = collection.addTreeNode(parentNode, dir, null, false).addType(type);
-                    }
-                    node.info = new TreeIconNode.ResourceInfo(subdir);
-                    node.addProperties(RESOURCES_PROPERTIES)
-                            .addTooltip(subdir.getAbsolutePath())
-                            .addJSON(new JSONObject().element("path", subdir.getAbsolutePath()).element("files", subdir.list()));
-                    itemJSON.element(dir, subdir.getAbsolutePath());
-                    for (String name : subdir.list()) {
-                        File file = new File(suiteDir, dir + "/" + name);
-                        if (file.isFile()) {
-                            TreeIconNode childNode = collection.addTreeNode(node, name, null, false)
-                                    .addTooltip(file.getAbsolutePath())
-                                    .addProperties((Object[][]) item[4])
-                                    .addJSON(IO.getJSON(file, editor))
-                                    .addType(type);
-                            childNode.info = new TreeIconNode.ResourceInfo(file);
+            for (Object[] item : loadNodes) {
+                File suiteDir = new File(resourceDir, item[0].toString());
+                TreeIconNode parentNode = (TreeIconNode) item[1];
+                TreeCollection.TYPE type = (TreeCollection.TYPE) item[2];
+                if (Amphibia.isExpertView()) {
+                    collection.project.add(parentNode);
+                }
+                if (suiteDir.exists()) {
+                    JSONObject itemJSON = new JSONObject();
+                    for (String dir : suiteDir.list()) {
+                        File subdir = new File(suiteDir, dir);
+                        TreeIconNode node;
+                        if (parentNode != collection.schemas) {
+                            node = collection.addTreeNode(parentNode, dir, TESTSUITE, false);
+                        } else {
+                            node = collection.addTreeNode(parentNode, dir, null, false).addType(type);
+                        }
+                        node.info = new TreeIconNode.ResourceInfo(subdir);
+                        node.addProperties(RESOURCES_PROPERTIES)
+                                .addTooltip(subdir.getAbsolutePath())
+                                .addJSON(new JSONObject().element("path", subdir.getAbsolutePath()).element("files", subdir.list()));
+                        itemJSON.element(dir, subdir.getAbsolutePath());
+                        for (String name : subdir.list()) {
+                            File file = new File(suiteDir, dir + "/" + name);
+                            if (file.isFile()) {
+                                TreeIconNode childNode = collection.addTreeNode(node, name, null, false)
+                                        .addTooltip(file.getAbsolutePath())
+                                        .addProperties((Object[][]) item[4])
+                                        .addJSON(IO.getJSON(file, editor))
+                                        .addType(type);
+                                childNode.info = new TreeIconNode.ResourceInfo(file);
+                            }
                         }
                     }
+                    parentNode.addProperties((Object[][]) item[3]).addJSON(itemJSON);
                 }
-                parentNode.addProperties((Object[][]) item[3]).addJSON(itemJSON);
             }
         }
 

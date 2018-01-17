@@ -161,7 +161,8 @@ public class Wizard extends javax.swing.JPanel {
             endpoints = new HashMap<>();
             for (Object[] item : env.data) {
                 if (GlobalVariableDialog.ENDPOINT.equals(item[TYPE]) &&
-                        item[VALUE] != null && !item[VALUE].toString().isEmpty()) {
+                        item[NAME] != null && item[VALUE] != null &&
+                        !item[NAME].toString().trim().isEmpty() && !item[VALUE].toString().trim().isEmpty()) {
                     endpoints.put(item[NAME], item[VALUE]);
                 }
             }
@@ -240,11 +241,13 @@ public class Wizard extends javax.swing.JPanel {
     }
     
     public void openInterfacePanel(ComboItem item) {
-        reset();
-        cmdNameItemStateChanged(null);
-        cmdName.setSelectedItem(item);
-        interfaceDialog.setVisible(true);
-        updateInterfaces();
+        if (MainPanel.selectedNode != null) {
+            reset();
+            cmdNameItemStateChanged(null);
+            cmdName.setSelectedItem(item);
+            interfaceDialog.setVisible(true);
+            updateInterfaces();
+        }
     }
 
     public void openTestCase() {

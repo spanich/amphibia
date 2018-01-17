@@ -72,9 +72,9 @@ public class Runner {
     public void saveFile(JSONObject output, File outputFile) throws Exception {
         for (Object httpCode : Swagger.asserts.keySet()) {
             JSONObject item = Swagger.asserts.getJSONObject(httpCode.toString());
-            Schema.save(item.toString(), item.getString("status"), ASSERTS_DIR);
+            Schema.save(swagger.getDataDir(), item.toString(), item.getString("status"), ASSERTS_DIR);
         }
-        save(Swagger.getJson(runner), "runner.json", null, RESOURCE_TYPE.runner);
+        save(new File(DATA_DIR), Swagger.getJson(runner), "runner.json", null, RESOURCE_TYPE.runner);
 
         PrintWriter writer = new PrintWriter(new FileOutputStream(outputFile, false));
         writer.println(Swagger.getJson(output.toString()));
@@ -83,15 +83,14 @@ public class Runner {
         Converter.addResult(RESOURCE_TYPE.project, outputFile.getCanonicalPath());
     }
 
-    protected static String save(String json, String fileName, String childDir, RESOURCE_TYPE type) throws Exception {
+    protected static String save(File dataDir, String json, String fileName, String childDir, RESOURCE_TYPE type) throws Exception {
         if ("false".equals(Converter.cmd.getOptionValue(Converter.TESTS))) {
             return null;
         }
-        File path = new File(DATA_DIR);
         if (childDir != null) {
-            path = new File(path, childDir);
+        	dataDir = new File(dataDir, childDir);
         }
-        File outputDir = new File(PROJECT_DIR, path.getPath());
+        File outputDir = new File(PROJECT_DIR, dataDir.getPath());
         File outputFile = new File(outputDir, fileName);
         if (!outputFile.getParentFile().exists()) {
             outputFile.getParentFile().mkdirs();
@@ -121,7 +120,7 @@ public class Runner {
                 String testFile = Swagger.stripName(testSuiteName) + "/" + info.methodName + "_" + fileName + ".json";
                 tests.add(new HashMap<Object, Object>() {{
                         put("name", info.methodName + "_" + fileName);
-                        put("path", DATA_DIR + "/tests/" + testFile);
+                        put("path", swagger.getDataDirPath() + "/tests/" + testFile);
                         put("steps", new ArrayList<>());
                 }});
                 addTestSteps(info, testFile, "tests", fileName);
@@ -141,7 +140,7 @@ public class Runner {
         Map<String, Object> step = addStep(info, testFile, api, body);
         teststep.put("request", step.get("request"));
         teststep.put("response", step.get("response"));
-        String testStepFile = save(Swagger.getJson(teststep), testFile, childDir, null);
+        String testStepFile = save(swagger.getDataDir(), Swagger.getJson(teststep), testFile, childDir, null);
         Converter.addResult(RESOURCE_TYPE.tests, testStepFile);
     }
 
@@ -296,7 +295,7 @@ public class Runner {
         addTestStepProperties(info, api, requestProperties, body);
 
         if (!body.isEmpty()) {
-            requestBody = save(Swagger.escapeJson(body), fileName, "requests", RESOURCE_TYPE.requests);
+            requestBody = save(swagger.getDataDir(), Swagger.escapeJson(body), fileName, "requests", RESOURCE_TYPE.requests);
         }
 
         Map<Object, Object> responseProperties = new LinkedHashMap<>();
@@ -317,13 +316,13 @@ public class Runner {
                         Map<Object, Object> resBody = new LinkedHashMap<>();
                         addBodyAndProperties(info, schema.getString("$ref"), responseProperties, resBody, "");
                         if (!resBody.isEmpty()) {
-                            responseBody = save(Swagger.escapeJson(resBody), fileName, "responses", RESOURCE_TYPE.responses);
+                            responseBody = save(swagger.getDataDir(), Swagger.escapeJson(resBody), fileName, "responses", RESOURCE_TYPE.responses);
                         }
                     }
                 }
 
                 if (Swagger.asserts.containsKey(httpCode)) {
-                    responseAsserts = Swagger.getPath(new File(Schema.OUTPUT_DIR, ASSERTS_DIR)) + "/" + Swagger.asserts.getJSONObject(httpCode.toString()).getString("status") + ".json";
+                    responseAsserts = Swagger.getPath(new File(Schema.getSchemasDir(swagger.getDataDir()), ASSERTS_DIR)) + "/" + Swagger.asserts.getJSONObject(httpCode.toString()).getString("status") + ".json";
                     break;
                 }
             }

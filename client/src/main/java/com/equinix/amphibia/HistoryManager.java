@@ -49,6 +49,7 @@ public class HistoryManager {
                     break;
                 }
             }
+            mainPanel.selectNode(collection.project);
         } catch (Exception ex) {
             logger.log(Level.SEVERE, null, ex);
         }

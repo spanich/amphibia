@@ -190,6 +190,7 @@ public final class TreeCollection {
     
     public static final Object[][] TEST_TESTSUITE_PROPERTIES = new Object[][]{
         {"name", VIEW},
+        {"path", VIEW},
         {"endpoint", VIEW},
         {"interface", VIEW},
         {"properties", ADD},

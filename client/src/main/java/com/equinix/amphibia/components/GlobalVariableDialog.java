@@ -33,6 +33,7 @@ import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import javax.swing.border.Border;
 import javax.swing.BorderFactory;
+import javax.swing.CellEditor;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -109,7 +110,7 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
         globalVarsModel = new TableModel(globalVarsSource.data, globalVarsSource.columns) {
             @Override
             public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return columnIndex > 1;
+                return columnIndex > 0;
             }
         };
 
@@ -438,6 +439,10 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
     @SuppressWarnings("UseOfObsoleteCollectionType")
     private void btnApplyActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnApplyActionPerformed
         try {
+            CellEditor cellEditor = tblVars.getCellEditor();
+            if (cellEditor != null) {
+                cellEditor.stopCellEditing();
+            }
             java.util.Vector<java.util.Vector> rows = globalVarsModel.getDataVector();
             Object[][] data = new Object[rows.size()][];
             for (int r = 0; r < rows.size(); r++) {
@@ -524,7 +529,7 @@ final class GlobalVarSource implements Serializable {
     public GlobalVarSource() {
         columns = new String[]{"", "", ""};
         data = new Object[][]{
-            new Object[]{0, "EndPoint", "http://"}
+            new Object[]{0, "", "http://"}
         };
     }
 }

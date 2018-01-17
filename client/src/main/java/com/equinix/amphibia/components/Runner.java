@@ -351,7 +351,7 @@ public final class Runner extends BaseTaskPane implements IHttpConnection {
 
         AggregateTransformer transformer = aggregator.createReport();
         transformer.setFormat(format);
-        transformer.setStyledir(new File("resources"));
+        transformer.setStyledir(new File("../resources"));
         transformer.setTodir(dir);
         
         target.addTask(aggregator);
