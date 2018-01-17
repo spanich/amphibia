@@ -321,12 +321,12 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         cmdInterface.setModel(model);
         model.addElement(wizard.createDefaultItem());
         if (testCaseNode != null) {
-            String interfaceName = testCaseNode.info.resource.getString("interface");
-            if (!interfaceName.isEmpty()) {
+            Object interfaceId = testCaseNode.info.resource.getOrDefault("interfaceId", null);
+            if (interfaceId != null && !interfaceId.toString().isEmpty()) {
                 JSONArray interfaces = testCaseNode.getCollection().interfaces.jsonArray();
                 for (int i = 0; i < interfaces.size(); i++) {
                     JSONObject interf = interfaces.getJSONObject(i);
-                    if (interf.getString("name").equals(interfaceName)) {
+                    if (interf.getString("id").equals(interfaceId)) {
                         model.removeAllElements();
                         model.addElement(new Wizard.ComboItem(interf, false));
                         break;

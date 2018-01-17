@@ -65,10 +65,10 @@ public class Profile {
         resources.add(
                 new LinkedHashMap<Object, Object>() {{
                         put("id", resourceId);
+                        put("interface", intf);
                         put("type", isURL ? RESOURCE_TYPE_URL : RESOURCE_TYPE_FILE);
                         put("source", inputParam);
                         put("properties", propertiesFile);
-                        put("interface", intf);
                 }}
         );
     }

@@ -136,13 +136,13 @@ public class Wizard extends javax.swing.JPanel {
         interfaceNameModel.removeAllElements();
         JSONObject json = selectedCollection.project.jsonObject();
         JSONArray projectResources = selectedCollection.project.jsonObject().getJSONArray("projectResources");
-        Map<String,Boolean> usedNames = new HashMap<>();
+        Map<String,Boolean> interfaceIds = new HashMap<>();
         projectResources.forEach((item) -> {
-            usedNames.put(((JSONObject) item).getString("interface"), true);
+            interfaceIds.put(((JSONObject) item).getString("interfaceId"), true);
         });
         json.getJSONArray("interfaces").forEach((item) -> {
             JSONObject iJson = JSONObject.fromObject(item.toString());
-            ComboItem comboItem = new ComboItem(iJson, !usedNames.containsKey(iJson.getString("name")));
+            ComboItem comboItem = new ComboItem(iJson, !interfaceIds.containsKey(iJson.getString("id")));
             interfaceNameModel.addElement(comboItem);
         }); 
 

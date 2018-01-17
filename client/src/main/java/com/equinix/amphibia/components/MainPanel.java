@@ -618,10 +618,10 @@ public final class MainPanel extends javax.swing.JPanel {
             resourceMap.element(resource.getString("resourceId"), resource);
         });
         
-        JSONObject interfacesMap = new JSONObject();
+        Map<Object, JSONObject> interfacesMap = new HashMap<>();
         interfacesJSON.forEach((item) -> {
             JSONObject interfaceJSON = (JSONObject) item;
-            interfacesMap.element(interfaceJSON.getString("name"), interfaceJSON);
+            interfacesMap.put(interfaceJSON.getString("id"), interfaceJSON);
             collection.addTreeNode(collection.interfaces, interfaceJSON.getString("name"), INTERFACE, false)
                     .addProperties(INTERFACE_PROPERTIES)
                     .addTooltip(interfaceJSON.getString("basePath"))
@@ -643,11 +643,11 @@ public final class MainPanel extends javax.swing.JPanel {
                     JSONArray testcases = testSuiteInfo.getJSONArray("testcases");
                     for (int i = 0; i < testcases.size(); i++) {
                         JSONObject testCaseInfo = testcases.getJSONObject(i);
-                        JSONObject interfaceJSON = new JSONObject();
+                        JSONObject interfaceJSON = null;
                         if (resource.containsKey("interface") && !resource.getString("interface").isEmpty()) {
-                            interfaceJSON = interfacesMap.getJSONObject(resource.getString("interface"));
+                            interfaceJSON = interfacesMap.get(resource.getString("interface"));
                         }
-                        JSONObject testCaseHeaders = JSONObject.fromObject(interfaceJSON.getJSONObject("headers").toString());
+                        JSONObject testCaseHeaders = interfaceJSON == null ? new JSONObject() : JSONObject.fromObject(interfaceJSON.getJSONObject("headers").toString());
                         if (testCaseInfo.containsKey("headers")) {
                             JSONObject headers = testCaseInfo.getJSONObject("headers");
                             headers.keySet().forEach((key) -> {
@@ -689,8 +689,8 @@ public final class MainPanel extends javax.swing.JPanel {
             resourceNode.info = new TreeIconNode.ResourceInfo(resource.getJSONArray("states"));
             
             if (resource.containsKey("interface")) {
-                JSONObject interfaceJSON = interfacesMap.getJSONObject(resource.getString("interface"));
-                if (interfaceJSON != null && !interfaceJSON.isNullObject()) {
+                JSONObject interfaceJSON = interfacesMap.get(resource.getString("interface"));
+                if (interfaceJSON != null) {
                     collection.addTreeNode(resourceNode, interfaceJSON.getString("name"), INTERFACE, false)
                             .addProperties(INTERFACE_PROPERTIES)
                             .addTooltip(interfaceJSON.getString("basePath"))
@@ -713,6 +713,10 @@ public final class MainPanel extends javax.swing.JPanel {
             String name = testsuite.getString("name");
             String resourceId = testsuite.getString("resource");
             JSONObject resource = resourceMap.getJSONObject(resourceId);
+            JSONObject interfaceJSON = null;
+            if (resource.containsKey("interface")) {
+                interfaceJSON = interfacesMap.get(resource.getString("interface"));
+            }
 
             String relPath = String.format(dirFormat, resourceId, Swagger.stripName(name));
             File dir = IO.getFile(collection, relPath);
@@ -720,10 +724,10 @@ public final class MainPanel extends javax.swing.JPanel {
             testsuiteJSON.put("disabled", testsuite.get("disabled") == Boolean.TRUE);
             testsuiteJSON.put("name", name);
             testsuiteJSON.put("endpoint", "${#Global#" + resource.getString("endpoint") + "}");
-            testsuiteJSON.put("interface", resource.getString("interface"));
             testsuiteJSON.put("properties", JSONNull.getInstance());
             testsuiteJSON.put("testcases", JSONNull.getInstance());
             testsuiteJSON.put("index", i);
+            testsuiteJSON.put("interface", interfaceJSON == null ? "" : interfaceJSON.getString("name"));
 
             JSONObject projectTestSuite = resource.getJSONObject("testsuites").getJSONObject(name);
             IO.replaceValue(testsuiteJSON, "properties", projectTestSuite.get("properties"));
@@ -822,7 +826,7 @@ public final class MainPanel extends javax.swing.JPanel {
                         testcaseJSON.element("properties", testCaseProperties);
                         testcaseJSON.element("method", replace.getString("method"));
                         testcaseJSON.element("url", url);
-                        testcaseJSON.element("interface", resource.getString("interface"));
+                        testcaseJSON.element("interface", interfaceJSON == null ? "" : interfaceJSON.getString("name"));
                         testcaseJSON.element("reqPath", properties.replace(replace.getString("path")).replaceAll("&amp;", "&"));
                         String tooltipURL = properties.replace(url).replaceAll("&amp;", "&");
                         TreeIconNode testcaseNode = collection.addTreeNode(testsuiteNode, testcase.getString("name"), TESTCASE, false)
@@ -939,6 +943,7 @@ public final class MainPanel extends javax.swing.JPanel {
             JSONObject resourseJSON = (JSONObject) resource;
             JSONObject testsuiteList = resourseJSON.getJSONObject("testsuites");
             String resourceId = resourseJSON.getString("resourceId");
+            JSONObject interfaceJSON = interfacesMap.get(resourseJSON.getOrDefault("interface", ""));
             testsuiteList.keySet().forEach((name) -> {
                 JSONObject testSuiteItem = testsuiteList.getJSONObject(name.toString());
                 JSONObject testSuiteJSON = new JSONObject();
@@ -947,7 +952,7 @@ public final class MainPanel extends javax.swing.JPanel {
                 testSuiteJSON.element("name", name);
                 testSuiteJSON.element("path", file.getAbsolutePath());
                 testSuiteJSON.element("endpoint", resourseJSON.getString("endpoint"));
-                testSuiteJSON.element("interface", resourseJSON.getString("interface"));
+                testSuiteJSON.element("interface", interfaceJSON == null ? "" : interfaceJSON.getString("name"));
 
                 testSuiteJSON.element("properties", JSONNull.getInstance());
                 IO.replaceValue(testSuiteJSON, "properties", testSuiteItem.getJSONObject("properties"));

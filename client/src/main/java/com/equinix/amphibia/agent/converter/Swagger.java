@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -166,11 +167,12 @@ public final class Swagger {
         JSONArray interfaces = output.containsKey("interfaces") ? output.getJSONArray("interfaces") : new JSONArray();
         String interfaceBasePath = doc.getString("basePath");
         String interfaceName = interfaceBasePath;
+        String interfaceId = UUID.randomUUID().toString();
         String param = cmd.getOptionValue(Converter.INTERFACES);
         if (param != null) {
             String[] params = param.split(",");
             if (params.length > index && !params[index].isEmpty()) {
-                interfaceName = params[index];
+            	interfaceName = params[index];
             }
         }
 
@@ -185,20 +187,21 @@ public final class Swagger {
         final JSONObject hs = headers;
         interfaces.add(new LinkedHashMap<String, Object>() {
             {
-                put("type", "rest");
+                put("id", interfaceId);
                 put("name", name);
                 put("basePath", interfaceBasePath);
+                put("type", "rest");
                 put("headers", hs);
             }
         });
         output.element("interfaces", interfaces);
 
-        profile.addResource(resourceId, interfaceName, inputParam, isURL, propertiesFile);
+        profile.addResource(resourceId, interfaceId, inputParam, isURL, propertiesFile);
 
         JSONArray projectResources = output.containsKey("projectResources") ? output.getJSONArray("projectResources") : new JSONArray();
         JSONObject testsuites = output.containsKey("testsuites") ? output.getJSONObject("testsuites") : new JSONObject();
         
-        addTestSuite(index, resourceId, interfaceName, interfaceBasePath, testsuites);
+        addTestSuite(index, resourceId, interfaceId, interfaceBasePath, testsuites);
 
         JSONObject properties = output.containsKey("properties") ? output.getJSONObject("properties") : new JSONObject();
         if (swaggerProperties != null) {
@@ -221,12 +224,11 @@ public final class Swagger {
         }
         output.put("properties", properties);
 
-        final String iName = interfaceName;
         projectResources.add(new LinkedHashMap<String, Object>() {
             {
                 put("resourceId", resourceId);
+                put("interfaceId", interfaceId);
                 put("endpoint", "RestEndPoint" + index);
-                put("interface", iName);
                 put("testsuites", testsuites);
             }
         });
