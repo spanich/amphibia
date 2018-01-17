@@ -229,7 +229,7 @@ public class Amphibia extends JFrame {
             }
         }
         mainPanel.reloadAll();
-        mainPanel.runner.openReport();
+        mainPanel.profile.openReport();
 
         this.addComponentListener(new ComponentAdapter() {
             Timer timer = new Timer();
@@ -960,7 +960,7 @@ public class Amphibia extends JFrame {
         });
         mnuExport.add(mnuJunit);
 
-        mnuSwagger.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/swaggers_16.png"))); // NOI18N
+        mnuSwagger.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/swagger_16.png"))); // NOI18N
         mnuSwagger.setText(bundle.getString("mnuSwagger")); // NOI18N
         mnuSwagger.setActionCommand("SWAGGER");
         mnuSwagger.addActionListener(new ActionListener() {
@@ -1210,7 +1210,7 @@ public class Amphibia extends JFrame {
         if (userPreferences.getBoolean(Amphibia.P_SHOW_DEBUGGER_TIP, true)) {
             openTipDialog("tip_degguger_mode", P_SHOW_DEBUGGER_TIP);
         }
-        mainPanel.runner.runTests();
+        mainPanel.profile.runTests();
     }//GEN-LAST:event_tlbRunActionPerformed
 
     private void mnuOpenProjectActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuOpenProjectActionPerformed
@@ -1265,8 +1265,8 @@ public class Amphibia extends JFrame {
         userPreferences.putBoolean(P_MENU_VIEW, false);
         isExpertView = false;
         if (MainPanel.selectedNode != null) {
-            MainPanel.selectedNode.getCollection().runner.jsonObject().element("expandResources", new JSONObject());
-            IO.write(MainPanel.selectedNode.getCollection().runner, mainPanel.editor);
+            MainPanel.selectedNode.getCollection().profile.jsonObject().element("expandResources", new JSONObject());
+            IO.write(MainPanel.selectedNode.getCollection().profile, mainPanel.editor);
         }
         mainPanel.reloadAll();
     }//GEN-LAST:event_mnuUserActionPerformed
@@ -1323,11 +1323,11 @@ public class Amphibia extends JFrame {
     }//GEN-LAST:event_mnuOpenActionPerformed
 
     private void btnStopActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnStopActionPerformed
-        mainPanel.runner.stopTests();
+        mainPanel.profile.stopTests();
     }//GEN-LAST:event_btnStopActionPerformed
 
     private void btnPauseActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnPauseActionPerformed
-        mainPanel.runner.pauseResumeTests(btnPause.isSelected());
+        mainPanel.profile.pauseResumeTests(btnPause.isSelected());
     }//GEN-LAST:event_btnPauseActionPerformed
 
     private void mnuReportActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuReportActionPerformed
@@ -1336,7 +1336,7 @@ public class Amphibia extends JFrame {
 
     private void btnReportActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnReportActionPerformed
         try {
-            mainPanel.runner.generateJUnitReport();
+            mainPanel.profile.generateJUnitReport();
         } catch (IOException e) {
             mainPanel.addError(e);
         }
@@ -1365,7 +1365,7 @@ public class Amphibia extends JFrame {
                     IO.write(content.replace("<% PROJECT_NAME %>", name), jc.getSelectedFile());
                     File dataDir = new File(jc.getSelectedFile().getParentFile(), "data");
                     if (dataDir.mkdirs()) {
-                        IO.copy(new File("../resources", "runner_template.json"), new File(dataDir, "runner.json"));
+                        IO.copy(new File("../resources", "profile_template.json"), new File(dataDir, "profile.json"));
                     }
                     TreeCollection selectedProject = new TreeCollection();
                     selectedProject.setProjectFile(jc.getSelectedFile());

@@ -9,7 +9,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.cli.CommandLine;
 
-import com.equinix.amphibia.agent.converter.Runner;
+import com.equinix.amphibia.agent.converter.Profile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -75,7 +75,7 @@ public class JUnit extends ProjectAbstract {
 
         IOUtils.copy(getTemplateFile("junit/classpath").toURL().openStream(), new FileOutputStream(new File(outputDirPath, ".classpath")));
         IOUtils.copy(getTemplateFile("junit/AmphibiaBaseTest.java").toURL().openStream(), new FileOutputStream(new File(outputDirPath, "AmphibiaBaseTest.java")));
-        IOUtils.copy(getTemplateFile("junit/Runner.java").toURL().openStream(), new FileOutputStream(new File(outputDirPath, "Runner.java")));
+        IOUtils.copy(getTemplateFile("junit/Profile.java").toURL().openStream(), new FileOutputStream(new File(outputDirPath, "Profile.java")));
         Builder.addResult(Builder.ADD_PROJECT, outputFile);
 
         writer = new PrintWriter(new FileOutputStream(outputFile, false));
@@ -87,11 +87,11 @@ public class JUnit extends ProjectAbstract {
     protected void saveResources() throws Exception {
         ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(zipFile));
         addToZip(new File(outputDirPath, "AmphibiaBaseTest.java"), zout, outputDirPath);
-        addToZip(new File(outputDirPath, "Runner.java"), zout, outputDirPath);
+        addToZip(new File(outputDirPath, "Profile.java"), zout, outputDirPath);
         addToZip(outputFile, zout, outputDirPath);
         addToZip(pomFile, zout, outputDirPath);
         if (!"false".equals(cmd.getOptionValue(Builder.RESOURCE))) {
-            addToZip(new File(projectDirPath, Runner.DATA_DIR), zout, outputDirPath);
+            addToZip(new File(projectDirPath, Profile.DATA_DIR), zout, outputDirPath);
         }
         zout.close();
         Builder.addResult(Builder.ADD_RESOURCE, zipFile);

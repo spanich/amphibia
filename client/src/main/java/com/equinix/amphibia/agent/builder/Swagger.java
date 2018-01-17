@@ -164,6 +164,9 @@ public class Swagger extends ProjectAbstract {
                             Matcher m = Pattern.compile("\\$\\{#(.*?)#(.*?)\\}", Pattern.DOTALL | Pattern.MULTILINE).matcher(values[i]);
                             while (m.find()) {
                                 JSONObject source = properties.getProperty(m.group(1));
+                                if (source == null) {
+                                    continue;
+                                }
                                 String key = m.group(2);
                                 Matcher m2 = Pattern.compile("_[A-Z][A-Z0-9_]+", Pattern.DOTALL).matcher(key);
                                 if (m2.find()) {

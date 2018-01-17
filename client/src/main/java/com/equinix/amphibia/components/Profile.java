@@ -47,7 +47,7 @@ import org.apache.tools.ant.types.FileSet;
  *
  * @author dgofman
  */
-public final class Runner extends BaseTaskPane implements IHttpConnection {
+public final class Profile extends BaseTaskPane implements IHttpConnection {
 
     private boolean isRunning;
     private boolean includeSkippedTests;
@@ -64,7 +64,7 @@ public final class Runner extends BaseTaskPane implements IHttpConnection {
     private final SimpleDateFormat reportDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
     public static Color GREEN = new Color(40, 130, 10);
 
-    public Runner(MainPanel mainPanel, Editor editor) {
+    public Profile(MainPanel mainPanel, Editor editor) {
         super();
         this.editor = editor;
         this.mainPanel = mainPanel;
@@ -85,7 +85,7 @@ public final class Runner extends BaseTaskPane implements IHttpConnection {
     }
 
     @SuppressWarnings("SleepWhileInLoop")
-    public Runner addToConsole(String text, Color color, boolean isBold) {
+    public Profile addToConsole(String text, Color color, boolean isBold) {
         if (text != null && !text.isEmpty()) {
             StyledDocument doc = editor.txtConsole.getStyledDocument();
             SimpleAttributeSet attr = new SimpleAttributeSet();
@@ -125,33 +125,33 @@ public final class Runner extends BaseTaskPane implements IHttpConnection {
         }
     }
 
-    public Runner date() {
+    public Profile date() {
         return addToConsole("\n" + dateMediumFormat.print(new Date().getTime()) + "\n\n", Color.black, true);
     }
 
     @Override
-    public Runner info(String text) {
+    public Profile info(String text) {
         return info(text, false);
     }
 
     @Override
-    public Runner info(String text, boolean isBool) {
+    public Profile info(String text, boolean isBool) {
         return addToConsole(text, Color.BLUE, isBool);
     }
 
-    public Runner fine(String text) {
+    public Profile fine(String text) {
         return fine(text, false);
     }
 
-    public Runner fine(String text, boolean isBool) {
+    public Profile fine(String text, boolean isBool) {
         return addToConsole(text, GREEN, isBool);
     }
 
-    public Runner error(String text) {
+    public Profile error(String text) {
         return error(text, false);
     }
 
-    public Runner error(String text, boolean isBool) {
+    public Profile error(String text, boolean isBool) {
         return addToConsole(text, Color.RED, isBool);
     }
 
@@ -216,7 +216,7 @@ public final class Runner extends BaseTaskPane implements IHttpConnection {
                 child.setReportState(TreeIconNode.REPORT_SKIPPED_STATE);
             }
         }
-        IO.write(MainPanel.selectedNode.getCollection().runner, Runner.this);
+        IO.write(MainPanel.selectedNode.getCollection().profile, Profile.this);
 
         selectedNode = null;
         isRunning = false;
@@ -227,8 +227,8 @@ public final class Runner extends BaseTaskPane implements IHttpConnection {
         lineIndex = 0;
         editor.txtConsole.setText("");
         if (MainPanel.selectedNode != null) {
-            TreeIconNode runner = MainPanel.selectedNode.getCollection().runner;
-            JSONArray testsuites = runner.jsonObject().getJSONArray("testsuites");
+            TreeIconNode profile = MainPanel.selectedNode.getCollection().profile;
+            JSONArray testsuites = profile.jsonObject().getJSONArray("testsuites");
             testsuites.forEach((testsuite) -> {
                 JSONArray testcases = ((JSONObject) testsuite).getJSONArray("testcases");
                 testcases.forEach((item) -> {
@@ -239,7 +239,7 @@ public final class Runner extends BaseTaskPane implements IHttpConnection {
                     });
                 });
             });
-            mainPanel.saveNodeValue(runner);
+            mainPanel.saveNodeValue(profile);
         }
     }
 
@@ -260,8 +260,8 @@ public final class Runner extends BaseTaskPane implements IHttpConnection {
             return;
         }
         TreeCollection collection = MainPanel.selectedNode.getCollection();
-        TreeIconNode runner = collection.runner;
-        JSONArray testsuites = runner.jsonObject().getJSONArray("testsuites");
+        TreeIconNode profile = collection.profile;
+        JSONArray testsuites = profile.jsonObject().getJSONArray("testsuites");
         File dir = IO.getFile(collection, "reports");
         if (!dir.exists()) {
             dir.mkdirs();
@@ -403,8 +403,8 @@ public final class Runner extends BaseTaskPane implements IHttpConnection {
         }
         mainPanel.reportTreeNode.removeAllChildren();
         TreeCollection collection = MainPanel.selectedNode.getCollection();
-        TreeIconNode runner = collection.runner;
-        JSONArray testsuites = runner.jsonObject().getJSONArray("testsuites");
+        TreeIconNode profile = collection.profile;
+        JSONArray testsuites = profile.jsonObject().getJSONArray("testsuites");
         testsuites.forEach((ts) -> {
             JSONArray testcases = ((JSONObject)ts).getJSONArray("testcases");
             testcases.forEach((tc) -> {

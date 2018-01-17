@@ -17,7 +17,7 @@ import javax.script.ScriptEngineManager;
 
 import org.apache.commons.cli.CommandLine;
 
-import com.equinix.amphibia.agent.converter.Runner;
+import com.equinix.amphibia.agent.converter.Profile;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -55,7 +55,7 @@ public abstract class ProjectAbstract {
     }
 
     public static String getRelativePath(URI file) {
-        return getRelativePath(new File(Runner.PROJECT_DIR).toURI(), file);
+        return getRelativePath(new File(Profile.PROJECT_DIR).toURI(), file);
     }
 
     public static String getRelativePath(URI base, URI file) {

@@ -361,7 +361,7 @@ public final class Editor extends BaseTaskPane {
     @Override
     public void clear() {
         if (tabs.getSelectedIndex() == Amphibia.TAB_CONSOLE) {
-            mainPanel.runner.resetConsole();
+            mainPanel.profile.resetConsole();
         } else {
             super.clear();
         }

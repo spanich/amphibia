@@ -1,4 +1,4 @@
-package com.equinix.amphibia.agent.runner;
+package com.equinix.amphibia.agent.groovy;
 
 import com.eviware.soapui.impl.wsdl.WsdlTestSuite;
 import com.eviware.soapui.impl.wsdl.submit.transports.http.HttpResponse;

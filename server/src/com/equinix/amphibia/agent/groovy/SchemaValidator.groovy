@@ -1,4 +1,4 @@
-package com.equinix.amphibia.agent.runner;
+package com.equinix.amphibia.agent.groovy;
 
 import groovy.json.JsonOutput;
 import java.util.Map;

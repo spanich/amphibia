@@ -2,7 +2,7 @@ import org.apache.log4j.Logger;
 
 import groovy.lang.Script;
 
-import com.equinix.amphibia.agent.runner.Main;
+import com.equinix.amphibia.agent.groovy.Main
 import com.eviware.soapui.impl.wsdl.WsdlProject;
 import com.eviware.soapui.model.testsuite.TestRunner;
 

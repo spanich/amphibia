@@ -45,7 +45,7 @@ public class Converter {
 
     public static enum RESOURCE_TYPE {
         project,
-        runner,
+        profile,
         schemas,
         tests,
         requests,
@@ -85,7 +85,7 @@ public class Converter {
             throw e;
         }
 
-        File outputDir = new File(new File(Runner.PROJECT_DIR).getAbsolutePath());
+        File outputDir = new File(new File(Profile.PROJECT_DIR).getAbsolutePath());
         if (!outputDir.exists()) {
             outputDir.mkdirs();
         }
@@ -94,7 +94,7 @@ public class Converter {
         if ("true".equals(json)) {
             results = new LinkedHashMap<>();
             results.put(RESOURCE_TYPE.project, null);
-            results.put(RESOURCE_TYPE.runner, null);
+            results.put(RESOURCE_TYPE.profile, null);
             results.put(RESOURCE_TYPE.tests, new ArrayList<>());
             results.put(RESOURCE_TYPE.requests, new ArrayList<>());
             results.put(RESOURCE_TYPE.responses, new ArrayList<>());
@@ -110,14 +110,14 @@ public class Converter {
         String projectPath = cmd.getOptionValue(Converter.PATH);
         if (projectPath != null) {
             projectFile = new File(projectPath);
-            Runner.PROJECT_DIR = projectFile.getParentFile().getAbsolutePath();
+            Profile.PROJECT_DIR = projectFile.getParentFile().getAbsolutePath();
         }
         try {
-            FileUtils.deleteDirectory(new File(Runner.PROJECT_DIR, Runner.DATA_DIR));
+            FileUtils.deleteDirectory(new File(Profile.PROJECT_DIR, Profile.DATA_DIR));
         } catch (Exception ex) {
             LOGGER.log(Level.SEVERE, null, ex);
         }
-        Runner runner = new Runner();
+        Profile profile = new Profile();
         JSONObject output = new JSONObject();
         for (int i = 0; i < inputParams.length; i++) {
             InputStream is;
@@ -140,18 +140,16 @@ public class Converter {
                 }
             }
             String resourceId = UUID.randomUUID().toString();
-            runner.addResource(resourceId, inputParam, isURL, propertiesFile);
-
-            Swagger swagger = new Swagger(cmd, resourceId, is, pis, output, runner);
-            runner.setSwagger(swagger);
-            name = swagger.init(name, i);
+            Swagger swagger = new Swagger(cmd, resourceId, is, pis, output, profile);
+            profile.setSwagger(swagger);
+            name = swagger.init(name, i, inputParam, isURL, propertiesFile);
             IOUtils.closeQuietly(is);
         }
 
         if (projectFile == null) {
-            projectFile = new File(Runner.PROJECT_DIR, name + ".json");
+            projectFile = new File(Profile.PROJECT_DIR, name + ".json");
         }
-        runner.saveFile(output, projectFile);
+        profile.saveFile(output, projectFile);
         return results;
     }
 

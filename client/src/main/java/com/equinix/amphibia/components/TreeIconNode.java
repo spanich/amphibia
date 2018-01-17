@@ -218,9 +218,9 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
 
         public File file;
         public JSONObject resource; //resource item in projectResources array
-        public JSONObject testSuite; //(runner.json) get and change testcases order
-        public JSONObject testCase; //(runner.json) get and set testcase name and disabled status
-        public JSONObject testStep; //(runner.json) get diff of parent test file
+        public JSONObject testSuite; //(profile.json) get and change testcases order
+        public JSONObject testCase; //(profile.json) get and set testcase name and disabled status
+        public JSONObject testStep; //(profile.json) get diff of parent test file
         public JSONObject testSuiteInfo; //get testsuite properties
         public JSONObject testCaseInfo; //get testcase properties and configiration
         public JSONObject testCaseHeaders; //combination interface and testcase headers
@@ -269,7 +269,6 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
         protected String fullPath;
         protected TreeCollection.TYPE type;
         protected Icon icon;
-        protected boolean isURL;
         protected boolean enabled;
         protected Object[][] properties;
 
@@ -279,20 +278,11 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
         public TreeIconUserObject(TreeCollection collection, String label, TreeCollection.TYPE type, boolean truncate, Object[][] properties) {
             this.collection = collection;
             this.type = type;
-            this.isURL = false;
             this.enabled = true;
             this.type = type;
             this.properties = properties;
             this.setIcon(type);
             update(label, null, truncate);
-        }
-
-        public void setIsURL(boolean value) {
-            isURL = value;
-        }
-
-        public boolean isURL() {
-            return isURL;
         }
 
         public void setLabel(String value) {

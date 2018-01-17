@@ -67,18 +67,18 @@ public class HistoryManager {
             JSONObject json;
             switch (type) {
                 case TESTSUITE:
-                    node = collection.runner;
+                    node = collection.profile;
                     JSONArray testsuites = node.jsonObject().getJSONArray("testsuites");
                     int index = MainPanel.selectedNode.jsonObject().getInt("index");
                     json = testsuites.getJSONObject(index);
                     break;
                 case TESTCASE:
                     json = info.testCase;
-                    node = collection.runner;
+                    node = collection.profile;
                     break;
                 case TEST_STEP_ITEM:
                     json = info.testStep;
-                    node = collection.runner;
+                    node = collection.profile;
                     break;
                 default:
                     return;
@@ -91,7 +91,7 @@ public class HistoryManager {
         } else if (type == TESTCASE) {
             if ("name".equals(entry.name)) {
                 info.testCase.element(entry.name, entry.value);
-                node = collection.runner;
+                node = collection.profile;
             } else if ("summary".equals(entry.name)) {
                 info.testCaseInfo.element(entry.name, entry.value);
             } else if ("operationId".equals(entry.name)) {
@@ -99,20 +99,20 @@ public class HistoryManager {
             } else if ("method".equals(entry.name) || "path".equals(entry.name) || "example".equals(entry.name)) {
                 info.testCaseInfo.getJSONObject("config").getJSONObject("replace").element("example".equals(entry.name) ? "body" : entry.name, entry.value);
             } else if ("properties".equals(entry.getParent().toString())) {
-                if (info.testCase != null) { //update runner.json
-                    node = collection.runner;
+                if (info.testCase != null) { //update profile.json
+                    node = collection.profile;
                     updateValues(entry, info.testCaseInfo.getJSONObject("properties"), info.testCase, "properties");
                 }
             } else if ("headers".equals(entry.getParent().toString())) {
-                if (info.testCase != null) { //update runner.json
+                if (info.testCase != null) { //update profile.json
                     updateValues(entry, info.testCaseHeaders, info.testCase, "headers");
-                    node = collection.runner;
+                    node = collection.profile;
                 }
             } else {
                 return;
             }
-        } else if (type == RUNNERS) {
-            node = collection.runner;
+        } else if (type == PROFILE) {
+            node = collection.profile;
         } else if (type == RULES || type == TEST_ITEM || type == SCHEMA_ITEM) {
             node = MainPanel.selectedNode;
         } else if (type == TEST_STEP_ITEM) {
@@ -129,7 +129,7 @@ public class HistoryManager {
             if (!response.isEmpty()) {
                 info.testStep.element("response", response);
             }
-            node = collection.runner;
+            node = collection.profile;
         }
         saveNodeValue(node);
     }
@@ -223,7 +223,7 @@ public class HistoryManager {
         return editor.addHistory(null, filePath, oldContent, newContent);
     }
 
-    private void saveAndAddHistory(TreeIconNode node) {
+    public void saveAndAddHistory(TreeIconNode node) {
         String[] contents = IO.write(node, editor);
         addHistory(contents[0], contents[1], node);
     }

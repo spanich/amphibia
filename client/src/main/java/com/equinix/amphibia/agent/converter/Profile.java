@@ -12,35 +12,38 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-public class Runner {
+public class Profile {
 
     protected JSONObject definitions;
     protected Swagger swagger;
     protected final boolean isJSON;
     protected final ArrayList<Object> resources;
     protected final ArrayList<Object> testsuites;
-    protected final Map<Object, Object> runner;
+    protected final Map<Object, Object> profile;
 
     public static String PROJECT_DIR = "projects";
     public static final String DATA_DIR = "data";
     public static final String ASSERTS_DIR = "asserts";
+    
+    public static final String RESOURCE_TYPE_FILE = "file";
+    public static final String RESOURCE_TYPE_URL = "url";
+    public static final String RESOURCE_TYPE_WIZARD = "wizard";
 
-    private static final Logger LOGGER = Logger.getLogger(Runner.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(Profile.class.getName());
 
-    public Runner() throws Exception {
+    public Profile() throws Exception {
         resources = new ArrayList<>();
         testsuites = new ArrayList<>();
         isJSON = "true".equals(Converter.cmd.getOptionValue(Converter.JSON));
-        
-        runner = new HashMap<Object, Object>() {{
-                put("options", new HashMap<Object, Object>() {{
+
+        profile = new LinkedHashMap<Object, Object>() {{
+                put("options", new LinkedHashMap<Object, Object>() {{
                         put("appendLogs", false);
                         put("continueOnError", true);
                         put("testCaseTimeout", 15000);
@@ -58,13 +61,14 @@ public class Runner {
         this.definitions = doc.getJSONObject("definitions");
     }
 
-    public void addResource(String resourceId, String swagger, boolean isURL, String propertiesFile) {
+    public void addResource(String resourceId, String intf, String inputParam, boolean isURL, String propertiesFile) {
         resources.add(
-                new HashMap<Object, Object>() {{
+                new LinkedHashMap<Object, Object>() {{
                         put("id", resourceId);
-                        put("swagger", swagger);
-                        put("isURL", isURL);
+                        put("type", isURL ? RESOURCE_TYPE_URL : RESOURCE_TYPE_FILE);
+                        put("source", inputParam);
                         put("properties", propertiesFile);
+                        put("interface", intf);
                 }}
         );
     }
@@ -74,7 +78,7 @@ public class Runner {
             JSONObject item = Swagger.asserts.getJSONObject(httpCode.toString());
             Schema.save(swagger.getDataDir(), item.toString(), item.getString("status"), ASSERTS_DIR);
         }
-        save(new File(DATA_DIR), Swagger.getJson(runner), "runner.json", null, RESOURCE_TYPE.runner);
+        save(new File(DATA_DIR), Swagger.getJson(profile), "profile.json", null, RESOURCE_TYPE.profile);
 
         PrintWriter writer = new PrintWriter(new FileOutputStream(outputFile, false));
         writer.println(Swagger.getJson(output.toString()));
@@ -118,7 +122,7 @@ public class Runner {
             for (ApiInfo info : testcases) {
                 String fileName = info.apiName;
                 String testFile = Swagger.stripName(testSuiteName) + "/" + info.methodName + "_" + fileName + ".json";
-                tests.add(new HashMap<Object, Object>() {{
+                tests.add(new LinkedHashMap<Object, Object>() {{
                         put("name", info.methodName + "_" + fileName);
                         put("path", swagger.getDataDirPath() + "/tests/" + testFile);
                         put("steps", new ArrayList<>());
@@ -333,12 +337,12 @@ public class Runner {
         final Object resBody = responseBody == null ? Swagger.NULL : responseBody;
         final Object resSchema = responseSchema == null ? Swagger.NULL : responseSchema;
         final Object resAsserts = responseAsserts;
-        step.put("request", new HashMap<Object, Object>() {{
+        step.put("request", new LinkedHashMap<Object, Object>() {{
                 put("properties", requestProperties);
                 put("body", reqBody);
                 put("schema", reqSchema);
         }});
-        step.put("response", new HashMap<Object, Object>() {{
+        step.put("response", new LinkedHashMap<Object, Object>() {{
                 put("properties", responseProperties);
                 put("body", resBody);
                 put("schema", resSchema);

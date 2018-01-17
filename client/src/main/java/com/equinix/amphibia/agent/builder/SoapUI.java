@@ -10,7 +10,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.cli.CommandLine;
 
-import com.equinix.amphibia.agent.converter.Runner;
+import com.equinix.amphibia.agent.converter.Profile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -106,7 +106,7 @@ public class SoapUI extends ProjectAbstract {
     protected void saveResources() throws Exception {
         ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(zipFile));
         if (!"false".equals(cmd.getOptionValue(Builder.RESOURCE))) {
-            addToZip(new File(projectDirPath, Runner.DATA_DIR), zout, outputDirPath);
+            addToZip(new File(projectDirPath, Profile.DATA_DIR), zout, outputDirPath);
         }
         addToZip(outputFile, zout, outputDirPath);
         addToZip(pomFile, zout, outputDirPath);

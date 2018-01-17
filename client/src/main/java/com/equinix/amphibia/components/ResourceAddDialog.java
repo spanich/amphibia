@@ -134,7 +134,7 @@ public final class ResourceAddDialog extends javax.swing.JPanel {
                     return;
                 }
             }
-            mainPanel.saveNodeValue(collection.runner);
+            mainPanel.saveNodeValue(collection.profile);
             dialog.setVisible(false);
         });
         cancelButton = new JButton(UIManager.getString("OptionPane.cancelButtonText"));
@@ -184,7 +184,7 @@ public final class ResourceAddDialog extends javax.swing.JPanel {
             JSONObject json = new JSONObject();
             json.element("name", name);
             steps.add(json);
-            mainPanel.saveNodeValue(selectedNode.getCollection().runner);
+            mainPanel.saveNodeValue(selectedNode.getCollection().profile);
         }
     }
     

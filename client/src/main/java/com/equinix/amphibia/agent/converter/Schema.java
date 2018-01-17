@@ -131,7 +131,7 @@ public final class Schema {
         if (childDir != null) {
             path = new File(path, childDir);
         }
-        File outputDir = new File(Runner.PROJECT_DIR, path.getPath());
+        File outputDir = new File(Profile.PROJECT_DIR, path.getPath());
         if (!outputDir.exists()) {
             outputDir.mkdirs();
         }

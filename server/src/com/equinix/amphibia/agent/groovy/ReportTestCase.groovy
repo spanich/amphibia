@@ -1,4 +1,4 @@
-package com.equinix.amphibia.agent.runner;
+package com.equinix.amphibia.agent.groovy;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;

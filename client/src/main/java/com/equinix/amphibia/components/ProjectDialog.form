@@ -93,7 +93,7 @@
                   <ResourceString bundle="com/equinix/amphibia/messages.properties" key="url" replaceFormat="java.util.ResourceBundle.getBundle(&quot;{bundleNameSlashes}&quot;).getString(&quot;{key}&quot;)"/>
                 </Property>
                 <Property name="actionCommand" type="java.lang.String" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
-                  <Connection code="SET_URL" type="code"/>
+                  <Connection code="RESOURCE_TYPE_URL" type="code"/>
                 </Property>
               </Properties>
               <Events>
@@ -151,7 +151,7 @@
                   <ResourceString bundle="com/equinix/amphibia/messages.properties" key="file" replaceFormat="java.util.ResourceBundle.getBundle(&quot;{bundleNameSlashes}&quot;).getString(&quot;{key}&quot;)"/>
                 </Property>
                 <Property name="actionCommand" type="java.lang.String" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
-                  <Connection code="SET_FILE" type="code"/>
+                  <Connection code="RESOURCE_TYPE_FILE" type="code"/>
                 </Property>
               </Properties>
               <Events>
@@ -469,8 +469,11 @@
                 <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                   <Font name="Tahoma" size="11" style="1"/>
                 </Property>
+                <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
+                  <Image iconType="3" name="/com/equinix/amphibia/icons/resources_16.png"/>
+                </Property>
                 <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                  <ResourceString bundle="com/equinix/amphibia/messages.properties" key="swaggers" replaceFormat="java.util.ResourceBundle.getBundle(&quot;{bundleNameSlashes}&quot;).getString(&quot;{key}&quot;)"/>
+                  <ResourceString bundle="com/equinix/amphibia/messages.properties" key="resources" replaceFormat="java.util.ResourceBundle.getBundle(&quot;{bundleNameSlashes}&quot;).getString(&quot;{key}&quot;)"/>
                 </Property>
               </Properties>
               <Constraints>

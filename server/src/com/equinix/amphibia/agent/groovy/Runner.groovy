@@ -1,4 +1,4 @@
-package com.equinix.amphibia.agent.runner;
+package com.equinix.amphibia.agent.groovy;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

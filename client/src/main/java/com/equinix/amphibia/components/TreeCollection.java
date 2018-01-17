@@ -52,9 +52,9 @@ public final class TreeCollection {
     private SerializeProject serialize;
 
     public final TreeIconNode project;
-    public final TreeIconNode swaggers;
+    public final TreeIconNode resources;
     public final TreeIconNode interfaces;
-    public final TreeIconNode runner;
+    public final TreeIconNode profile;
     public final TreeIconNode testsuites;
     public final TreeIconNode tests;
     public final TreeIconNode schemas;
@@ -64,7 +64,7 @@ public final class TreeCollection {
     public static enum TYPE {
         ROOT,
         PROJECT,
-        SWAGGERS,
+        RESOURCES,
         TESTCASES,
         TESTSUITE,
         TESTS,
@@ -76,10 +76,11 @@ public final class TreeCollection {
         REQUEST_ITEM,
         RESPONSES,
         RESPONSE_ITEM,
-        RUNNERS,
+        PROFILE,
         INTERFACES,
         INTERFACE,
         SWAGGER,
+        WIZARD,
         RULES,
         TESTCASE,
         ERRORS
@@ -102,9 +103,11 @@ public final class TreeCollection {
         }}
     };
 
-    public static final Object[][] DOCUMENT_PROPERTIES = new Object[][]{
-        {"swagger", VIEW},
-        {"properties", VIEW}
+    public static final Object[][] RESOURCE_PROPERTIES = new Object[][]{
+        {"id", VIEW},
+        {"source", VIEW},
+        {"properties", VIEW},
+        {"interface", VIEW}
     };
 
     public static final Object[][] INTERFACE_PROPERTIES = new Object[][]{
@@ -122,7 +125,7 @@ public final class TreeCollection {
         {"asserts", null, VIEW}
     };
 
-    public static final Object[][] RUNNERS_PROPERTIES = new Object[][]{
+    public static final Object[][] PROFILE_PROPERTIES = new Object[][]{
         {"options", null, EDIT},
         {"resources", null, VIEW},
         {"testsuites", null, VIEW}
@@ -230,9 +233,9 @@ public final class TreeCollection {
         serialize = new SerializeProject();
         ResourceBundle bundle = Amphibia.getBundle();
         project = new TreeIconNode(this, bundle.getString("project"), PROJECT, false, PROJECT_PROPERTIES);
-        swaggers = new TreeIconNode(this, bundle.getString("swaggers"), SWAGGERS, false, DOCUMENT_PROPERTIES);
+        resources = new TreeIconNode(this, bundle.getString("resources"), RESOURCES, false, RESOURCE_PROPERTIES);
         interfaces = new TreeIconNode(this, bundle.getString("interfaces"), INTERFACES, false, INTERFACES_PROPERTIES);
-        runner = new TreeIconNode(this, "", RUNNERS, false, RUNNERS_PROPERTIES);
+        profile = new TreeIconNode(this, "", PROFILE, false, PROFILE_PROPERTIES);
         testsuites = new TreeIconNode(this, bundle.getString("testcases"), TESTCASES, false);
         tests = new TreeIconNode(this, bundle.getString("tests"), TESTS, false);
         schemas = new TreeIconNode(this, bundle.getString("schemas"), SCHEMAS, false);
@@ -272,8 +275,8 @@ public final class TreeCollection {
     }
 
     public void reset(DefaultTreeModel treeModel) {
-        removeAllChildren(treeModel, swaggers);
-        removeAllChildren(treeModel, runner);
+        removeAllChildren(treeModel, resources);
+        removeAllChildren(treeModel, profile);
         removeAllChildren(treeModel, interfaces);
         removeAllChildren(treeModel, testsuites);
         removeAllChildren(treeModel, tests);

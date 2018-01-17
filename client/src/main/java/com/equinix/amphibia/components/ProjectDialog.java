@@ -6,6 +6,8 @@
 package com.equinix.amphibia.components;
 
 import static com.equinix.amphibia.agent.converter.Converter.RESOURCE_TYPE;
+import static com.equinix.amphibia.agent.converter.Profile.RESOURCE_TYPE_FILE;
+import static com.equinix.amphibia.agent.converter.Profile.RESOURCE_TYPE_URL;
 
 import com.equinix.amphibia.Amphibia;
 import com.equinix.amphibia.IO;
@@ -70,17 +72,15 @@ public final class ProjectDialog extends javax.swing.JPanel {
     private final ResourceBundle bundle;
     private TreeCollection selectedProject;
     private DefaultTableModel resourceModel;
-    private Map<Integer, Boolean> swaggerDocType;
+    private Map<Integer, String> resourceDocType;
     private int dataModelIndex;
     private boolean isAddResource;
 
-    private final String SET_URL = "SET_URL";
-    private final String SET_FILE = "SET_FILE";
     private final Border DEFAULT_BORDER;
     private final Border ERROR_BORDER = BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(Color.RED),
             BorderFactory.createEmptyBorder(2, 2, 2, 2));
-
+    
     /**
      * Creates new form ProjectDialog
      *
@@ -161,20 +161,20 @@ public final class ProjectDialog extends javax.swing.JPanel {
         pnlSetup.setVisible(true);
         pnlNext.setVisible(false);
         dataModelIndex = 0;
-        swaggerDocType = new HashMap<>();
+        resourceDocType = new HashMap<>();
         resourceModel.setRowCount(0);
-        for (int i = 0; i < selectedProject.swaggers.getChildCount(); i++) {
-            TreeIconNode swagger = (TreeIconNode) selectedProject.swaggers.getChildAt(i);
-            TreeIconNode intrf = (TreeIconNode) swagger.getFirstChild();
+        for (int i = 0; i < selectedProject.resources.getChildCount(); i++) {
+            TreeIconNode resource = (TreeIconNode) selectedProject.resources.getChildAt(i);
+            TreeIconNode intrf = (TreeIconNode) resource.getFirstChild();
             String rules = "";
-            if (swagger.getChildCount() > 1) {
-                rules = ((TreeIconNode) swagger.getChildAt(1)).getTreeIconUserObject().getFullPath();
+            if (resource.getChildCount() > 1) {
+                rules = ((TreeIconNode) resource.getChildAt(1)).getTreeIconUserObject().getFullPath();
             }
             resourceModel.addRow(new String[]{
-                swagger.getTreeIconUserObject().getFullPath(),
+                resource.getTreeIconUserObject().getFullPath(),
                 intrf.getTreeIconUserObject().getLabel(),
                 rules});
-            swaggerDocType.put(i, swagger.getTreeIconUserObject().isURL());
+            resourceDocType.put(i, resource.jsonObject().getString("type"));
         }
         txtProjectName.setText(selectedProject.getProjectName());
         if (selectedProject.getProjectFile() != null) {
@@ -275,7 +275,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
         rbgSwagger.add(rbnSwaggerUrl);
         rbnSwaggerUrl.setSelected(true);
         rbnSwaggerUrl.setText(bundle.getString("url")); // NOI18N
-        rbnSwaggerUrl.setActionCommand(SET_URL);
+        rbnSwaggerUrl.setActionCommand(RESOURCE_TYPE_URL);
         rbnSwaggerUrl.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 rbnSwaggerUrlActionPerformed(evt);
@@ -302,7 +302,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
 
         rbgSwagger.add(rbnSwaggerFile);
         rbnSwaggerFile.setText(bundle.getString("file")); // NOI18N
-        rbnSwaggerFile.setActionCommand(SET_FILE);
+        rbnSwaggerFile.setActionCommand(RESOURCE_TYPE_FILE);
         rbnSwaggerFile.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 rbnSwaggerFileActionPerformed(evt);
@@ -439,9 +439,10 @@ public final class ProjectDialog extends javax.swing.JPanel {
         lblLocationError.setBounds(90, 90, 670, 14);
 
         lblResources.setFont(new Font("Tahoma", 1, 11)); // NOI18N
-        lblResources.setText(bundle.getString("swaggers")); // NOI18N
+        lblResources.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/resources_16.png"))); // NOI18N
+        lblResources.setText(bundle.getString("resources")); // NOI18N
         pnlNext.add(lblResources);
-        lblResources.setBounds(10, 110, 650, 14);
+        lblResources.setBounds(10, 110, 650, 16);
 
         btnAddResources.setText(bundle.getString("addResources")); // NOI18N
         btnAddResources.addActionListener(new ActionListener() {
@@ -609,7 +610,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
     }//GEN-LAST:event_btnRulesFileActionPerformed
 
     private void btnNextActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnNextActionPerformed
-        boolean isURL = SET_URL.equals(rbgSwagger.getSelection().getActionCommand());
+        boolean isURL = RESOURCE_TYPE_URL.equals(rbgSwagger.getSelection().getActionCommand());
         if (isURL) {
             String fileOrUrl = null;
             if (resourceModel.getRowCount() > dataModelIndex) {
@@ -805,7 +806,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
                 txtSwaggerUrl.setText("");
                 txtSwaggerFile.setText("");
                 String value = resourceModel.getValueAt(dataModelIndex, 0).toString();
-                if (swaggerDocType.containsKey(dataModelIndex) && swaggerDocType.get(dataModelIndex)) {
+                if (resourceDocType.containsKey(dataModelIndex) && RESOURCE_TYPE_URL.equals(resourceDocType.get(dataModelIndex))) {
                     txtSwaggerUrl.setText(value);
                     rbnSwaggerUrl.setSelected(true);
                 } else {
@@ -861,7 +862,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
             }
             resourceModel.setValueAt(fileOrUrl, dataModelIndex, 0);
             resourceModel.setValueAt(json.getString("basePath"), dataModelIndex, 1);
-            swaggerDocType.put(dataModelIndex, isURL);
+            resourceDocType.put(dataModelIndex, RESOURCE_TYPE_URL);
             tblResources.setRowSelectionInterval(0, dataModelIndex);
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Parse: " + fileOrUrl, e);
@@ -882,7 +883,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
     
     public void invalidateAll() {
         reset();
-        boolean isURL = SET_URL.equals(rbgSwagger.getSelection().getActionCommand());
+        boolean isURL = RESOURCE_TYPE_URL.equals(rbgSwagger.getSelection().getActionCommand());
         txtSwaggerUrl.setEnabled(isURL);
         btnSwaggerUrl.setEnabled(isURL);
         txtSwaggerFile.setEnabled(!isURL);

@@ -95,11 +95,12 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
                     value = JSONNull.getInstance();
                 }
                 TreeIconNode node = MainPanel.selectedNode;
+                TreeCollection collection = node.getCollection();
                 TreeCollection.TYPE type = node.getType();
                 if ("name".equals(entry.name)) {
                     value = value.toString().trim();
                     if (type == TreeCollection.TYPE.INTERFACE) {
-                        JSONObject json = node.getCollection().project.jsonObject();
+                        JSONObject json = collection.project.jsonObject();
                         JSONArray interfaces = json.getJSONArray("interfaces");
                         JSONArray projectResources = json.getJSONArray("projectResources");
                         String currentName = ((JSONObject)entry.json).getString("name");
@@ -110,11 +111,24 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
                                 lblError.setVisible(true);
                                 return;
                             }
+                            if (currentName.equals(itf.getString("name"))) {
+                                itf.element("name", value);
+                            }
                         }
                         for (Object item : projectResources) {
                             JSONObject resource = (JSONObject) item;
                             if (currentName.equals(resource.getString("interface"))) {
                                 resource.element("interface", value);
+                                break;
+                            }
+                        }
+                        JSONArray resources = collection.profile.jsonObject().getJSONArray("resources");
+                        for (int i = 0; i < resources.size(); i++) {
+                            JSONObject resource = resources.getJSONObject(i);
+                            if (resource.containsKey("interface") && currentName.equals(resource.getString("interface"))) {
+                                resource.put("interface", value);
+                                mainPanel.history.saveAndAddHistory(collection.profile);
+                                break;
                             }
                         }
                     } else {
@@ -130,7 +144,7 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
                     }
                     if (type == TreeCollection.TYPE.PROJECT || type == TreeCollection.TYPE.INTERFACE) {
                         if (type == TreeCollection.TYPE.PROJECT) {
-                            mainPanel.history.renameProject(node.getLabel(), value.toString(), node.getCollection());
+                            mainPanel.history.renameProject(node.getLabel(), value.toString(), collection);
                         }
                     }
                 }

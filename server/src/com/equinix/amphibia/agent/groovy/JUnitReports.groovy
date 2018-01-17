@@ -1,6 +1,6 @@
-package com.equinix.amphibia.agent.runner;
+package com.equinix.amphibia.agent.groovy;
 
-import static com.equinix.amphibia.agent.runner.ReportTestCase.State;
+import static com.equinix.amphibia.agent.groovy.ReportTestCase.State
 
 import java.io.File;
 import java.io.FileOutputStream;

@@ -179,7 +179,7 @@ public class TransferDialog extends javax.swing.JPanel {
     }
     
     private void saveNodeValue(TreeIconNode node) {
-        mainPanel.saveNodeValue(node.getCollection().runner);
+        mainPanel.saveNodeValue(node.getCollection().profile);
     }
 
     public void openDialog(TreeIconNode node, Editor.Entry entry) {

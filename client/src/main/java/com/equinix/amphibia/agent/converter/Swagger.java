@@ -21,8 +21,6 @@ import javax.script.ScriptEngineManager;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.io.IOUtils;
 
-import java.util.HashMap;
-
 import net.sf.json.JSONArray;
 import net.sf.json.JSONNull;
 import net.sf.json.JSONObject;
@@ -33,23 +31,23 @@ public final class Swagger {
     private final JSONObject doc;
     private final JSONObject output;
     private final JSONObject swaggerProperties;
-    private final Runner runner;
+    private final Profile profile;
     private final String resourceId;
 
     public static final JSONObject asserts = new JSONObject();
     public static final JSONNull NULL = JSONNull.getInstance();
 
-    public Swagger(CommandLine cmd, String resourceId, InputStream input, InputStream properties, JSONObject output, Runner runner)
+    public Swagger(CommandLine cmd, String resourceId, InputStream input, InputStream properties, JSONObject output, Profile profile)
             throws Exception {
         this.resourceId = resourceId;
         this.cmd = cmd;
         this.doc = getContent(input);
         this.swaggerProperties = getContent(properties);
         this.output = output;
-        this.runner = runner;
+        this.profile = profile;
     }
 
-    public String init(String name, int index) throws Exception {
+    public String init(String name, int index, String inputParam, boolean isURL, String propertiesFile) throws Exception {
         if (name == null) {
             JSONObject info = doc.getJSONObject("info");
             if (!info.isNullObject()) {
@@ -62,8 +60,8 @@ public final class Swagger {
         if (!output.containsKey("name")) {
             output.accumulate("name", name);
         }
-        runner.setDefinition(doc);
-        parse(index, resourceId);
+        profile.setDefinition(doc);
+        parse(index, inputParam, isURL, propertiesFile);
         return name;
     }
 
@@ -72,11 +70,11 @@ public final class Swagger {
     }
 
     public String getDataDirPath() {
-        return Runner.DATA_DIR + "/" + resourceId;
+        return Profile.DATA_DIR + "/" + resourceId;
     }
 
     public File getDataDir() {
-        return new File(Runner.DATA_DIR, resourceId);
+        return new File(Profile.DATA_DIR, resourceId);
     }
 
     public static String getJson(List<?> value) throws Exception {
@@ -104,7 +102,7 @@ public final class Swagger {
         return output;
     }
 
-    protected void parse(int index, String resourceId) throws Exception {
+    protected void parse(int index, String inputParam, boolean isURL, String propertiesFile) throws Exception {
         JSONArray schemes = new JSONArray();
         if (doc.containsKey("schemes")) {
             schemes = doc.getJSONArray("schemes");
@@ -130,7 +128,7 @@ public final class Swagger {
                         }
                     }
                     if (newProp) {
-                        globals.add(new HashMap<String, Object>() {
+                        globals.add(new LinkedHashMap<String, Object>() {
                             {
                                 put("name", key);
                                 put("value", propertyGlobals.get(key));
@@ -139,7 +137,7 @@ public final class Swagger {
                     }
                 } else {
                     host = propertyGlobals.getString(key.toString());
-                    globals.add(new HashMap<String, Object>() {
+                    globals.add(new LinkedHashMap<String, Object>() {
                         {
                             put("name", "RestEndPoint" + index);
                             put("value", propertyGlobals.get(key));
@@ -150,7 +148,7 @@ public final class Swagger {
             }
         } else {
             final String hostVal = host;
-            globals.add(new HashMap<String, Object>() {
+            globals.add(new LinkedHashMap<String, Object>() {
                 {
                     put("name", "RestEndPoint" + index);
                     put("value", hostVal);
@@ -185,7 +183,7 @@ public final class Swagger {
 
         final String name = interfaceName;
         final JSONObject hs = headers;
-        interfaces.add(new HashMap<String, Object>() {
+        interfaces.add(new LinkedHashMap<String, Object>() {
             {
                 put("type", "rest");
                 put("name", name);
@@ -194,6 +192,8 @@ public final class Swagger {
             }
         });
         output.element("interfaces", interfaces);
+
+        profile.addResource(resourceId, interfaceName, inputParam, isURL, propertiesFile);
 
         JSONArray projectResources = output.containsKey("projectResources") ? output.getJSONArray("projectResources") : new JSONArray();
         JSONObject testsuites = output.containsKey("testsuites") ? output.getJSONObject("testsuites") : new JSONObject();
@@ -222,7 +222,7 @@ public final class Swagger {
         output.put("properties", properties);
 
         final String iName = interfaceName;
-        projectResources.add(new HashMap<String, Object>() {
+        projectResources.add(new LinkedHashMap<String, Object>() {
             {
                 put("resourceId", resourceId);
                 put("endpoint", "RestEndPoint" + index);
@@ -272,7 +272,7 @@ public final class Swagger {
             }
             addTestCases(index, testcases, testSuiteMap.get(testSuiteName));
             final JSONObject props = properties;
-            testsuites.put(testSuiteName, new HashMap<String, Object>() {
+            testsuites.put(testSuiteName, new LinkedHashMap<String, Object>() {
                 {
                     put("properties", props);
                     put("testcases", testcases);
@@ -280,7 +280,7 @@ public final class Swagger {
             });
         }
 
-        this.runner.addTestCases(index, resourceId, interfaceName, testSuiteMap);
+        this.profile.addTestCases(index, resourceId, interfaceName, testSuiteMap);
     }
 
     protected void addTestCases(int index, JSONArray testcases, List<ApiInfo> apiList) throws Exception {
@@ -295,7 +295,7 @@ public final class Swagger {
             Map<String, Object> properties = new LinkedHashMap<>();
             String summary = summaryInfo;
             testcases
-                    .add(new HashMap<String, Object>() {
+                    .add(new LinkedHashMap<String, Object>() {
                         {
                             put("type", "restrequest");
                             put("name", info.testCaseName);
@@ -316,10 +316,10 @@ public final class Swagger {
         JSONObject responses = api.getJSONObject("responses");
         for (Object httpCode : responses.keySet()) {
             properties.put("HTTPStatusCode", Integer.parseInt(httpCode.toString()));
-            assertions.add(new HashMap<String, Object>() {
+            assertions.add(new LinkedHashMap<String, Object>() {
                 {
                     put("type", "ValidHTTPStatusCodes");
-                    put("replace", new HashMap<String, String>() {
+                    put("replace", new LinkedHashMap<String, String>() {
                         {
                             put("value", "${#HTTPStatusCode}");
                         }
@@ -391,7 +391,7 @@ public final class Swagger {
         final String replacePath = info.interfaceBasePath.substring(1) + path + definition.getQueries();
         final Object replaceBody = body == null ? NULL : body;
         config.accumulate("replace",
-                new HashMap<String, Object>() {
+                new LinkedHashMap<String, Object>() {
             {
                 put("method", info.methodName);
                 put("path", replacePath);
