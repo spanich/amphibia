@@ -32,6 +32,8 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.IOException;
@@ -45,6 +47,7 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -88,14 +91,13 @@ import net.sf.json.JSONObject;
  *
  * @author dgofman
  */
-public class Amphibia extends JFrame {
+public final class Amphibia extends JFrame {
 
     public static final Amphibia instance = new Amphibia();
     public static final Color OVERLAY_BG_COLOR = new Color(246, 246, 246, 200);
 
     private static final Logger logger = Logger.getLogger(Amphibia.class.getName());
 
-    public static final String P_PROJECT = "project_";
     public static final String P_PROJECT_UUIDS = "projects";
     public static final String P_RECENT_PROJECTS = "recent";
     public static final String P_SELECTED_NODE = "selected";
@@ -167,6 +169,14 @@ public class Amphibia extends JFrame {
         super();
         icon = new ImageIcon(Amphibia.class.getResource("/com/equinix/amphibia/icons/logo_16.png"));
         waitIcon = new ImageIcon(Amphibia.class.getResource("/com/equinix/amphibia/icons/ajax-loader.gif"));
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (mainPanel.saveDialog.validateAndSave(bundle.getString("save"), false)) {
+                    System.exit(0);
+                }
+            }
+        });
     }
 
     /**
@@ -200,7 +210,7 @@ public class Amphibia extends JFrame {
         for (int i = 0; i < tabs.length; i++) {
             showHideTab(i, "1".equals(tabs[i]));
         }
-
+        
         isExpertView = userPreferences.getBoolean(P_MENU_VIEW, false);
         mnuExpert.setSelected(isExpertView);
 
@@ -219,17 +229,26 @@ public class Amphibia extends JFrame {
         preferenceDialog.txtGroupId.setText(userPreferences.get(P_GROUP_ID, "com.example"));
         inheritProp.setSelected(userPreferences.getBoolean(Amphibia.P_INHERIT_PROPERTIES, true));
 
-        TreeCollection.initializeCollections(mainPanel, userPreferences);
-        String projects = userPreferences.get(P_RECENT_PROJECTS, null);
-        if (projects != null) {
-            try {
-                JSONArray data = (JSONArray) IO.toJSON(projects);
-                createRecentProjectMenu(data);
-            } catch (Exception ex) {
-                mainPanel.addError(ex);
+        mainPanel.saveDialog.validateAndSave(bundle.getString("restore"), true);
+           
+        JSONArray recentProjects = JSONArray.fromObject(userPreferences.get(P_RECENT_PROJECTS, "[]"));
+        JSONArray list = JSONArray.fromObject(userPreferences.get(P_PROJECT_UUIDS, "[]"));
+        TreeCollection collection = null;
+        for (int i = list.size() - 1; i >= 0; i--) {
+            File file = new File(list.getString(i));
+            if (!file.exists()) {
+                list.remove(i);
+            } else {
+                updateRecentProjects(file, recentProjects);
+                collection = new TreeCollection();
+                collection.setProjectFile(file);
+                mainPanel.loadProject(collection);
             }
         }
+        userPreferences.put(Amphibia.P_PROJECT_UUIDS, list.toString());
+        createRecentProjectMenu(collection);
         mainPanel.reloadAll();
+
         mainPanel.profile.openReport();
 
         this.addComponentListener(new ComponentAdapter() {
@@ -305,27 +324,67 @@ public class Amphibia extends JFrame {
     public static boolean isExpertView() {
         return instance.isExpertView;
     }
+    
+    public TreeCollection registerProject(TreeCollection collection) {
+        updateRecentProjects(collection.getProjectFile(), null);
+        createRecentProjectMenu(collection);
+        mainPanel.loadProject(collection);
+        return collection;
+    }
+    
+    public TreeCollection registerProject(File projectFile) {
+        TreeCollection collection = new TreeCollection();
+        collection.setProjectFile(projectFile);
+        return registerProject(collection);
+    }
+    
+    public void updateRecentProjects(File file, JSONArray recentProjects) {
+        if (recentProjects == null) {
+            String projects = userPreferences.get(P_PROJECT_UUIDS, "[]");
+            JSONArray list = JSONArray.fromObject(projects);
+            list.remove(file.getAbsolutePath());
+            list.add(0, file.getAbsolutePath());
+            userPreferences.put(Amphibia.P_PROJECT_UUIDS, list.toString());
 
-    public void createRecentProjectMenu(JSONArray list) {
-        menuRecentProject.removeAll();
-        for (int i = 0; i < list.size(); i++) {
-            JSONObject project = list.getJSONObject(i);
-            JMenuItem menu = new JMenuItem(project.getString("name"));
-            menu.setToolTipText(project.getString("path"));
-            menu.addActionListener((ActionEvent evt) -> {
-                try {
-                    File file = new File(project.getString("path"));
-                    TreeCollection selectedProject = mainPanel.getSelectedProject(file);
-                    selectedProject.setUID(project.getString("uuid"));
-                    selectedProject.setProjectName(project.getString("name"));
-                    selectedProject.setProjectFile(file);
-                    mainPanel.loadProject(selectedProject);
-                } catch (Exception e) {
-                    mainPanel.addError(e);
-                }
-            });
-            menuRecentProject.add(menu);
+            projects = userPreferences.get(P_RECENT_PROJECTS, "[]");
+            recentProjects = JSONArray.fromObject(projects);
         }
+
+        recentProjects.remove(file.getAbsolutePath());
+        recentProjects.add(0, file.getAbsolutePath());
+        userPreferences.put(Amphibia.P_RECENT_PROJECTS, recentProjects.toString());
+    }
+
+    public void createRecentProjectMenu(TreeCollection collection) {
+        if (collection != null) {
+            mainPanel.selectNode(collection.project);
+        }
+        menuRecentProject.removeAll();
+        String projects = userPreferences.get(P_RECENT_PROJECTS, "[]");
+        JSONArray recentProjects = JSONArray.fromObject(projects);
+        for (int i = recentProjects.size() - 1; i >= 0; i--) {
+            File projectFile = new File(recentProjects.getString(i));
+            if (projectFile.exists()) {
+                File profileBakcupFile = new File(projectFile.getParentFile(), "data/profile.bak");
+                JSONObject profile = mainPanel.getProfileJSON(profileBakcupFile);
+                String projectName = profile.getJSONObject("project").getString("name");
+                JMenuItem menu = new JMenuItem(projectName);
+                menu.setToolTipText(projectFile.getAbsolutePath());
+                menu.addActionListener((ActionEvent evt) -> {
+                    try {
+                        TreeCollection selectedProject = mainPanel.getSelectedProject(projectFile);
+                        selectedProject.setProjectFile(projectFile);
+                        mainPanel.loadProject(selectedProject);
+                    } catch (Exception e) {
+                        mainPanel.addError(e);
+                    }
+                });
+                menuRecentProject.add(menu);
+            } else {
+                recentProjects.remove(i);
+            }
+        }
+        userPreferences.put(Amphibia.P_RECENT_PROJECTS, recentProjects.toString());
     }
 
     public static Preferences getUserPreferences() {
@@ -342,8 +401,8 @@ public class Amphibia extends JFrame {
         });
     }
 
-    public static JDialog createDialog(JOptionPane optionPane, boolean isResizable) {
-        JDialog dialog = optionPane.createDialog(null, UIManager.getString("OptionPane.title"));
+    public static JDialog createDialog(JOptionPane optionPane, String title, boolean isResizable) {
+        JDialog dialog = optionPane.createDialog(null, title);
         Frame frame;
         if (dialog.getParent() instanceof Frame) {
             frame = (Frame) dialog.getParent();
@@ -353,6 +412,10 @@ public class Amphibia extends JFrame {
         frame.setIconImage(Amphibia.instance.icon.getImage());
         dialog.setResizable(isResizable);
         return dialog;
+    }
+    
+    public static JDialog createDialog(JOptionPane optionPane, boolean isResizable) {
+        return createDialog(optionPane, UIManager.getString("OptionPane.title"), isResizable);
     }
 
     public static JDialog createDialog(Object form, Object[] options, boolean isResizable) {
@@ -385,10 +448,6 @@ public class Amphibia extends JFrame {
 
     public void hideWaitOverlay() {
         pnlWaitOverlay.setVisible(false);
-    }
-
-    public void openProjectDialog(TreeCollection selectedProject) {
-        projectDialog.openDialog(selectedProject);
     }
 
     public void enableSave(Boolean b) {
@@ -533,7 +592,7 @@ public class Amphibia extends JFrame {
         pnlWaitOverlay.add(lblAnimation);
         lblAnimation.setBounds(0, 0, 60, 0);
 
-        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         ResourceBundle bundle = ResourceBundle.getBundle("com/equinix/amphibia/messages"); // NOI18N
         setTitle(bundle.getString("title")); // NOI18N
         setMinimumSize(new Dimension(90, 140));
@@ -1147,27 +1206,13 @@ public class Amphibia extends JFrame {
     }//GEN-LAST:event_mnuHelpContentActionPerformed
 
     private void mnuExitActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuExitActionPerformed
-        Object[] options = {
-            bundle.getString("save"),
-            bundle.getString("dontSave"),
-            bundle.getString("cancel")
-        };
-        int option = JOptionPane.showOptionDialog(this,
-                bundle.getString("tip_save_changes"),
-                bundle.getString("title"),
-                JOptionPane.YES_NO_CANCEL_OPTION,
-                JOptionPane.QUESTION_MESSAGE,
-                null, options, options[2]);
-        if (option == JOptionPane.NO_OPTION) {
-            mainPanel.history.resetHistory(true);
+        if (mainPanel.saveDialog.validateAndSave(bundle.getString("save"), false)) {
+            System.exit(0);
         }
-        System.exit(0);
     }//GEN-LAST:event_mnuExitActionPerformed
 
     private void mnuNewProjectActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuNewProjectActionPerformed
-        TreeCollection selectedProject = new TreeCollection();
-        selectedProject.setProjectDir(new File("projects", generateTime()));
-        openProjectDialog(selectedProject);
+        projectDialog.openDialog(new TreeCollection());
     }//GEN-LAST:event_mnuNewProjectActionPerformed
 
     private void mnuPreferencesActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuPreferencesActionPerformed
@@ -1196,6 +1241,14 @@ public class Amphibia extends JFrame {
 
     private void mnuSaveActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuSaveActionPerformed
         mainPanel.history.resetHistory(false);
+        if (MainPanel.selectedNode != null) {
+            try {
+                File dir = MainPanel.selectedNode.getCollection().getProjectDir();
+                IO.copy(new File(dir, "data/profile.bak"), new File(dir, "data/profile.json"));
+            } catch (IOException ex) {
+                logger.log(Level.SEVERE, null, ex);
+            }
+        }
     }//GEN-LAST:event_mnuSaveActionPerformed
 
     private void mnuRulesFileActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuRulesFileActionPerformed
@@ -1260,10 +1313,7 @@ public class Amphibia extends JFrame {
                     return;
                 }
             }
-            TreeCollection selectedProject = new TreeCollection();
-            selectedProject.setProjectFile(jf.getSelectedFile());
-            mainPanel.reloadCollection(selectedProject);
-            selectedProject.save();
+            registerProject(jf.getSelectedFile());
         }
     }//GEN-LAST:event_mnuOpenProjectActionPerformed
 
@@ -1385,13 +1435,12 @@ public class Amphibia extends JFrame {
                     IO.write(content.replace("<% PROJECT_NAME %>", name), jc.getSelectedFile());
                     File dataDir = new File(jc.getSelectedFile().getParentFile(), "data");
                     if (dataDir.mkdirs()) {
-                        IO.copy(new File("../resources", "profile_template.json"), new File(dataDir, "profile.json"));
+                        content = IO.readFile(new File("../resources", "profile_template.json"));
+                        content = content.replace("<% PROJECT_ID %>", UUID.randomUUID().toString());
+                        IO.write(content.replace("<% PROJECT_NAME %>", name), new File(dataDir, "profile.json"));
                     }
-                    TreeCollection selectedProject = new TreeCollection();
-                    selectedProject.setProjectFile(jc.getSelectedFile());
-                    mainPanel.loadProject(selectedProject);
+                    TreeCollection selectedProject = registerProject(jc.getSelectedFile());
                     mainPanel.expandDefaultNodes(selectedProject);
-                    selectedProject.save();
                     if (mainPanel.tabRight.isEnabledAt(1)) {
                         mainPanel.tabRight.setSelectedIndex(1);
                     }

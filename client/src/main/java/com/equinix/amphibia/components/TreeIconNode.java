@@ -50,6 +50,7 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
     public static final int STATE_PROJECT_EXPAND = 0;
     public static final int STATE_DEBUG_EXPAND = 1;
     public static final int STATE_DEBUG_REPORT = 2;
+    public static final int STATE_IS_OPENED = 3;
 
     public static final int REPORT_INIT_STATE = 0;
     public static final int REPORT_RUN_STATE = 1;
@@ -188,8 +189,12 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
     }
     
     public void saveSelection() {
-        setSelectedUIDName(getUID(getNodePath()));
+        setSelectedUIDName(getUID());
         userPreferences.putByteArray(Amphibia.P_SELECTED_NODE, selectedUIDName.getBytes());
+    }
+    
+    public String getUID() {
+        return getUID(getNodePath());
     }
 
     public String getUID(String path) {

@@ -53,8 +53,6 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 import javax.swing.ListSelectionModel;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import net.sf.json.JSONObject;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -75,6 +73,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
     private Map<Integer, String> resourceDocType;
     private int dataModelIndex;
     private boolean isAddResource;
+    private String projectName;
 
     private final Border DEFAULT_BORDER;
     private final Border ERROR_BORDER = BorderFactory.createCompoundBorder(
@@ -106,20 +105,6 @@ public final class ProjectDialog extends javax.swing.JPanel {
         };
 
         initComponents();
-        txtProjectName.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                selectedProject.setProjectName(txtProjectName.getText());
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-            }
-        });
 
         DEFAULT_BORDER = txtSwaggerUrl.getBorder();
 
@@ -157,31 +142,13 @@ public final class ProjectDialog extends javax.swing.JPanel {
     }
 
     public void openDialog(TreeCollection selectedProject) {
+        this.projectName = "";
         this.selectedProject = selectedProject;
         pnlSetup.setVisible(true);
         pnlNext.setVisible(false);
         dataModelIndex = 0;
         resourceDocType = new HashMap<>();
         resourceModel.setRowCount(0);
-        for (int i = 0; i < selectedProject.resources.getChildCount(); i++) {
-            TreeIconNode resource = (TreeIconNode) selectedProject.resources.getChildAt(i);
-            TreeIconNode intrf = (TreeIconNode) resource.getFirstChild();
-            String rules = "";
-            if (resource.getChildCount() > 1) {
-                rules = ((TreeIconNode) resource.getChildAt(1)).getTreeIconUserObject().getFullPath();
-            }
-            resourceModel.addRow(new String[]{
-                resource.getTreeIconUserObject().getFullPath(),
-                intrf.getTreeIconUserObject().getLabel(),
-                rules});
-            resourceDocType.put(i, resource.jsonObject().getString("type"));
-        }
-        txtProjectName.setText(selectedProject.getProjectName());
-        if (selectedProject.getProjectFile() != null) {
-            txtLocation.setText(selectedProject.getProjectFile().getAbsolutePath());
-        } else {
-            txtLocation.setText("");
-        }
         resetSetup();
         dialog.setVisible(true);
     }
@@ -638,8 +605,9 @@ public final class ProjectDialog extends javax.swing.JPanel {
             properties[index] = rules != null ? rules.toString() : "";
         }
         try {
+            projectName = txtProjectName.getText();
             String[] args = new String[]{
-                "-n=" + selectedProject.getProjectName(),
+                "-n=" + projectName,
                 "-a=" + selectedProject.getProjectFile(),
                 "-i=" + String.join(",", inputs),
                 "-p=" + String.join(",", properties),
@@ -687,8 +655,6 @@ public final class ProjectDialog extends javax.swing.JPanel {
                     return;
                 }
             }
-
-            selectedProject.setProjectName(txtProjectName.getText().trim(), mainPanel.treeNav);
 
             Map<Object,Object> interfaces = new HashMap<>();
             for (int r = 0; r < resourceModel.getRowCount(); r++) {
@@ -744,9 +710,8 @@ public final class ProjectDialog extends javax.swing.JPanel {
                     }
                     pnlWaitOverlay.setVisible(false);
                     mainPanel.editor.getTabs().setSelectedIndex(0);
-                    mainPanel.loadProject(selectedProject);
+                    Amphibia.instance.registerProject(selectedProject);
                     mainPanel.expandDefaultNodes(selectedProject);
-                    selectedProject.save();
                     dialog.setVisible(false);
                 }
             }.start();
@@ -768,10 +733,10 @@ public final class ProjectDialog extends javax.swing.JPanel {
                 public void run() {
                     try {
                         if (jf.getSelectedFile().isDirectory()) {
-                            if (selectedProject.getProjectName().isEmpty()) {
+                            if (projectName.isEmpty()) {
                                 txtProjectName.setText("Project");
                             }
-                            selectedProject.setProjectFile(new File(jf.getSelectedFile(), selectedProject.getProjectName() + ".json"));
+                            selectedProject.setProjectFile(new File(jf.getSelectedFile(), projectName + ".json"));
                         } else {
                             if (selectedProject.getProjectFile() != null && selectedProject.getProjectFile().exists()) {
                                 selectedProject.getProjectFile().renameTo(jf.getSelectedFile());
@@ -831,7 +796,6 @@ public final class ProjectDialog extends javax.swing.JPanel {
                 throw new Exception(bundle.getString("error_swagger_format"));
             }
 
-            String projectName = selectedProject.getProjectName();
             if (projectName.isEmpty() || selectedProject.getProjectFile() == null) {
                 JSONObject info = json.getJSONObject("info");
                 if (info != null && info.containsKey("title")) {
@@ -850,12 +814,12 @@ public final class ProjectDialog extends javax.swing.JPanel {
                         }
                     }
                 }
-                selectedProject.setProjectName(projectName);
-                selectedProject.setProjectFile(IO.getFile(selectedProject, projectName + ".json"));
+                File projectFile = new File("projects", Amphibia.generateTime() + "/" + projectName + ".json");
+                selectedProject.setProjectFile(projectFile);
             }
 
             txtLocation.setText(selectedProject.getProjectFile().getCanonicalPath());
-            txtProjectName.setText(selectedProject.getProjectName());
+            txtProjectName.setText(projectName);
 
             if (resourceModel.getRowCount() <= dataModelIndex) {
                 resourceModel.addRow(new String[]{"", "", ""});

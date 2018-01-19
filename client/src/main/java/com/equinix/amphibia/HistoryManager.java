@@ -39,16 +39,7 @@ public class HistoryManager {
     }
 
     public void renameProject(String oldName, String newName, TreeCollection collection) {
-        String projects = userPreferences.get(Amphibia.P_RECENT_PROJECTS, "[]");
         try {
-            JSONArray list = (JSONArray) IO.toJSON(projects);
-            for (int i = 0; i < list.size(); i++) {
-                if (collection.getUUID().equals(list.getJSONObject(i).getString("uuid"))) {
-                    list.remove(i);
-                    userPreferences.put(Amphibia.P_RECENT_PROJECTS, list.toString());
-                    break;
-                }
-            }
             mainPanel.selectNode(collection.project);
         } catch (Exception ex) {
             logger.log(Level.SEVERE, null, ex);
@@ -56,29 +47,22 @@ public class HistoryManager {
     }
     
     public void saveEntry(Editor.Entry entry, TreeCollection collection) {
-        TreeIconNode node = collection.project;
+        TreeIconNode node = collection.profile;
         TreeIconNode.ResourceInfo info = MainPanel.selectedNode.info;
         TreeCollection.TYPE type = MainPanel.selectedNode.getType();
-        if ("name".equals(entry.name)) {
-            MainPanel.selectedNode.getTreeIconUserObject().setLabel((String)entry.value);
-            MainPanel.selectedNode.saveSelection();    
-        }
         if ("disabled".equals(entry.name)) {
             JSONObject json;
             switch (type) {
                 case TESTSUITE:
-                    node = collection.profile;
                     JSONArray testsuites = node.jsonObject().getJSONArray("testsuites");
                     int index = MainPanel.selectedNode.jsonObject().getInt("index");
                     json = testsuites.getJSONObject(index);
                     break;
                 case TESTCASE:
                     json = info.testCase;
-                    node = collection.profile;
                     break;
                 case TEST_STEP_ITEM:
                     json = info.testStep;
-                    node = collection.profile;
                     break;
                 default:
                     return;
@@ -91,7 +75,6 @@ public class HistoryManager {
         } else if (type == TESTCASE) {
             if ("name".equals(entry.name)) {
                 info.testCase.element(entry.name, entry.value);
-                node = collection.profile;
             } else if ("summary".equals(entry.name)) {
                 info.testCaseInfo.element(entry.name, entry.value);
             } else if ("operationId".equals(entry.name)) {
@@ -100,19 +83,15 @@ public class HistoryManager {
                 info.testCaseInfo.getJSONObject("config").getJSONObject("replace").element("example".equals(entry.name) ? "body" : entry.name, entry.value);
             } else if ("properties".equals(entry.getParent().toString())) {
                 if (info.testCase != null) { //update profile.json
-                    node = collection.profile;
                     updateValues(entry, info.testCaseInfo.getJSONObject("properties"), info.testCase, "properties");
                 }
             } else if ("headers".equals(entry.getParent().toString())) {
                 if (info.testCase != null) { //update profile.json
                     updateValues(entry, info.testCaseHeaders, info.testCase, "headers");
-                    node = collection.profile;
                 }
             } else {
                 return;
             }
-        } else if (type == PROFILE) {
-            node = collection.profile;
         } else if (type == RULES || type == TEST_ITEM || type == SCHEMA_ITEM) {
             node = MainPanel.selectedNode;
         } else if (type == TEST_STEP_ITEM) {
@@ -129,7 +108,6 @@ public class HistoryManager {
             if (!response.isEmpty()) {
                 info.testStep.element("response", response);
             }
-            node = collection.profile;
         }
         saveNodeValue(node);
     }

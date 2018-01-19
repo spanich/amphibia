@@ -139,7 +139,7 @@ public final class Schema {
         PrintWriter writer = new PrintWriter(new FileOutputStream(outputFile, false));
         writer.println(Swagger.getJson(json));
         writer.close();
-        LOGGER.log(Level.INFO, "The schena file saved successfully.\n{0}", outputFile);
+        LOGGER.log(Level.INFO, "The file saved successfully.\n{0}", outputFile);
         String filePath = ProjectAbstract.getRelativePath(outputFile.toURI());
         Converter.addResult(Converter.RESOURCE_TYPE.schemas, filePath);
         return filePath;

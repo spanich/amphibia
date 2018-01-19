@@ -5,37 +5,19 @@
  */
 package com.equinix.amphibia.components;
 
-import static com.equinix.amphibia.Amphibia.P_PROJECT;
-import static com.equinix.amphibia.Amphibia.P_PROJECT_UUIDS;
 import static com.equinix.amphibia.components.JTreeTable.EditValueRenderer.TYPE.*;
 import static com.equinix.amphibia.components.TreeCollection.TYPE.*;
-import static com.equinix.amphibia.Amphibia.getUserPreferences;
 
 import com.equinix.amphibia.Amphibia;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.prefs.BackingStoreException;
-import java.util.prefs.Preferences;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
-import net.sf.json.JSON;
-import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 /**
@@ -45,11 +27,8 @@ import net.sf.json.JSONObject;
 @SuppressWarnings("NonPublicExported")
 public final class TreeCollection {
 
-    private static final Logger logger = Logger.getLogger(TreeCollection.class.getName());
-    private static final Preferences userPreferences = getUserPreferences();
-    private static final JSONArray projectList = JSONArray.fromObject(userPreferences.get(P_PROJECT_UUIDS, "[]"));
-
-    private SerializeProject serialize;
+    private File projectFile;
+    private JSONObject projectProfile;
 
     public final TreeIconNode project;
     public final TreeIconNode resources;
@@ -87,7 +66,6 @@ public final class TreeCollection {
     };
 
     public static final Object[][] PROJECT_PROPERTIES = new Object[][]{
-        {"name", EDIT_LIMIT},
         {"hosts", null, VIEW},
         {"interfaces", null, VIEW},
         {"globals", null, VIEW},
@@ -236,12 +214,11 @@ public final class TreeCollection {
     }
 
     public TreeCollection() {
-        serialize = new SerializeProject();
         ResourceBundle bundle = Amphibia.getBundle();
         project = new TreeIconNode(this, bundle.getString("project"), PROJECT, false, PROJECT_PROPERTIES);
         resources = new TreeIconNode(this, bundle.getString("resources"), RESOURCES, false, RESOURCE_PROPERTIES);
         interfaces = new TreeIconNode(this, bundle.getString("interfaces"), INTERFACES, false, INTERFACES_PROPERTIES);
-        profile = new TreeIconNode(this, "", PROFILE, false, PROFILE_PROPERTIES);
+        profile = new TreeIconNode(this, bundle.getString("profile"), PROFILE, false, PROFILE_PROPERTIES);
         testsuites = new TreeIconNode(this, bundle.getString("testcases"), TESTCASES, false);
         tests = new TreeIconNode(this, bundle.getString("tests"), TESTS, false);
         schemas = new TreeIconNode(this, bundle.getString("schemas"), SCHEMAS, false);
@@ -313,124 +290,43 @@ public final class TreeCollection {
         return null;
     }
 
-    public void setProjectName(String name) {
-        serialize.projectName = name;
+    public File getProjectDir() {
+        return projectFile.getParentFile();
     }
-
-    public boolean setProjectName(String name, JTree tree) {
-        serialize.projectName = name;
-        project.getTreeIconUserObject().setLabel(serialize.projectName);
-        ((DefaultTreeModel) tree.getModel()).nodeChanged(project);
-        tree.repaint();
-        JSON json = project.getTreeIconUserObject().json;
-        if (json instanceof JSONObject) {
-            try {
-                ((JSONObject) json).element("name", name);
-                return true;
-            } catch (Exception ex) {
-                logger.log(Level.SEVERE, ex.toString(), ex);
-            }
-        }
-        return false;
+     
+    public JSONObject getProject() {
+        return projectProfile.getJSONObject("project");
+    }
+    
+    public String getProjectName() {
+        return getProject().getString("name");
     }
 
     public String getUUID() {
-        return serialize.uuid;
+        return getProject().getString("id");
+    }
+    
+    public JSONObject getProjectProfile() {
+        return projectProfile;
     }
 
-    public void setUID(String uid) {
-        serialize.uuid = uid;
+    public void setProjectProfile(JSONObject json) {
+        projectProfile = json;
     }
 
     public boolean isOpen() {
-        return serialize.isOpen;
+        return projectProfile.getJSONObject("states").getJSONArray("project").getInt(TreeIconNode.STATE_IS_OPENED) == 1;
     }
 
     public void setOpen(boolean isOpen) {
-        serialize.isOpen = isOpen;
-    }
-
-    public String getProjectName() {
-        return serialize.projectName;
-    }
-
-    public void setProjectDir(File dir) {
-        serialize.projectDir = dir;
-    }
-
-    public File getProjectDir() {
-        return serialize.projectDir;
-    }
-
-    public File getProjectFile() {
-        return serialize.projectFile;
+        projectProfile.getJSONObject("states").getJSONArray("project").set(TreeIconNode.STATE_IS_OPENED, isOpen ? 1 : 0);
     }
 
     public void setProjectFile(File file) {
-        serialize.projectFile = file;
-        serialize.projectDir = file.getParentFile();
+        projectFile = file;
     }
-
-    public void save() {
-        try {
-            Preferences pref = getUserPreferences();
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ObjectOutputStream os = new ObjectOutputStream(out);
-            os.writeObject(serialize);
-            pref.putByteArray(P_PROJECT + serialize.uuid, out.toByteArray());
-            if (!projectList.contains(serialize.uuid)) {
-                projectList.add(serialize.uuid);
-            }
-            pref.put(P_PROJECT_UUIDS, projectList.toString());
-        } catch (IOException ex) {
-            logger.log(Level.SEVERE, null, ex);
-        }
+    
+    public File getProjectFile() {
+        return projectFile;
     }
-
-    public static void initializeCollections(MainPanel mainPanel, Preferences pref) {
-        Map<String, Integer> createdProjects = new HashMap<>();
-        for (int i = projectList.size() - 1; i >= 0; i--) {
-            String uuid = projectList.getString(i);
-            byte[] data = pref.getByteArray(P_PROJECT + uuid, null);
-            if (data != null) {
-                try {
-                    TreeCollection collection = new TreeCollection();
-                    collection.serialize = (SerializeProject) new ObjectInputStream(new ByteArrayInputStream(data)).readObject();
-                    if (collection.getProjectFile() != null && collection.getProjectFile().exists()) {
-                        if (!collection.serialize.isOpen) {
-                            collection.project.getTreeIconUserObject().setEnabled(false);
-                        }
-                        if (mainPanel.loadProject(collection)) {
-                            createdProjects.put(P_PROJECT + uuid, i);
-                            continue;
-                        }
-                    }
-                } catch (IOException | ClassNotFoundException ex) {
-                    logger.log(Level.SEVERE, null, ex);
-                }
-            }
-            projectList.remove(i);
-            pref.put(P_PROJECT_UUIDS, projectList.toString());
-            pref.remove(P_PROJECT + uuid);
-        }
-        try {
-            //clean old keys
-            for (String key : pref.keys()) {
-                if (key.startsWith(P_PROJECT) && !createdProjects.containsKey(key)) {
-                    pref.remove(key);
-                }
-            }
-        } catch (BackingStoreException ex) {
-            logger.log(Level.SEVERE, null, ex);
-        }
-    }
-}
-
-final class SerializeProject implements Serializable {
-
-    public String uuid = UUID.randomUUID().toString();
-    public File projectFile;
-    public String projectName = "";
-    public File projectDir = new File(".");
-    public boolean isOpen = true;
 }

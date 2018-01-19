@@ -115,7 +115,6 @@ public final class TreePopupMenuBuilder implements ActionListener {
                         if (collection.getUUID().equals(list.getString(i))) {
                             list.remove(i);
                             userPreferences.put(Amphibia.P_PROJECT_UUIDS, list.toString());
-                            userPreferences.remove(Amphibia.P_PROJECT + collection.getUUID());
                             break;
                         }
                     }

@@ -29,10 +29,6 @@ import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -94,6 +90,7 @@ public final class MainPanel extends javax.swing.JPanel {
     public ResourceAddDialog resourceAddDialog;
     public TransferDialog transferDialog;
     public GlobalVariableDialog globalVarsDialog;
+    public SaveDialog saveDialog;
 
     private final Preferences userPreferences = getUserPreferences();
 
@@ -119,6 +116,7 @@ public final class MainPanel extends javax.swing.JPanel {
         resourceOrderDialog = new ResourceOrderDialog(this);
         transferDialog = new TransferDialog(this);
         globalVarsDialog = new GlobalVariableDialog(this);
+        saveDialog = new SaveDialog(this);
 
         spnMainPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, new PropertyChangeListener() {
             Timer timer = new Timer();
@@ -350,7 +348,6 @@ public final class MainPanel extends javax.swing.JPanel {
 
     public void reset(TreeCollection collection) {
         collection.reset(treeModel);
-        collection.project.removeFromParent();
         if (collection.project.debugNode != null) {
             collection.project.debugNode.removeAllChildren();
         }
@@ -365,7 +362,6 @@ public final class MainPanel extends javax.swing.JPanel {
     private void openCloseProject(TreeCollection collection, boolean isOpen) {
         collection.project.getTreeIconUserObject().setEnabled(isOpen);
         collection.project.debugNode.getTreeIconUserObject().setEnabled(isOpen);
-        collection.setOpen(isOpen);
         if (isOpen) {
             collection.expandNode(treeNav, collection.project);
             collection.expandNode(treeNav, collection.testsuites);
@@ -378,16 +374,10 @@ public final class MainPanel extends javax.swing.JPanel {
     public void openCloseProject(boolean isOpen) {
         if (selectedNode != null) {
             TreeCollection collection = selectedNode.getCollection();
+            collection.setOpen(isOpen);
             openCloseProject(collection, isOpen);
             reloadCollection(collection);
-            collection.save();
         }
-    }
-
-    public void reloadTree(TreeNode node) {
-        java.awt.EventQueue.invokeLater(() -> {
-            treeModel.reload(node);
-        });
     }
 
     public void expandDefaultNodes(TreeCollection collection) {
@@ -551,36 +541,37 @@ public final class MainPanel extends javax.swing.JPanel {
     }
 
     public boolean loadProject(TreeCollection collection) {
-        boolean success = false;
-        try {
-            File projectFile = collection.getProjectFile();
-            if (!projectFile.exists()) {
-                throw new FileNotFoundException(projectFile.getAbsolutePath());
-            }
-            collection.project.addTooltip(projectFile.getAbsolutePath());
+        boolean success;
+        File projectFile = collection.getProjectFile();
+        
+        JSONObject projectJson = (JSONObject) IO.getJSON(projectFile, editor);
+        collection.project.addJSON(projectJson);
+        collection.project.addTooltip(projectFile.getAbsolutePath());
+        
+        globalVarsDialog.mergeVariables(projectJson.getJSONArray("globals"));
+        wizard.updateEndPoints();
 
-            JSONObject projectJson = (JSONObject) IO.getJSON(collection.getProjectFile(), editor);
-            globalVarsDialog.mergeVariables(projectJson.getJSONArray("globals"));
-            wizard.updateEndPoints();
-            
-            success = reloadProject(collection);
-            if (success && MainPanel.selectedNode == null && collection.project.info != null) {
-                MainPanel.selectedNode = collection.project;
-            }
-        } catch (IOException e) {
-            addError(e);
+        success = reloadProject(collection);
+        if (success) {
+            treeNode.add(collection.project);
+            treeModel.reload(collection.project);
         }
         return success;
+    }
+    
+    public JSONObject getProfileJSON(File profileBakcupFile) {
+        if (profileBakcupFile.exists()) {
+            return (JSONObject) IO.getJSON(profileBakcupFile, editor);
+        } else {
+            return (JSONObject) IO.getJSON(new File(profileBakcupFile.getParentFile(), "profile.json"), editor);
+        }
     }
 
     public boolean reloadProject(TreeCollection collection) {
         reset(collection);
-
-        JSONObject projectJson = (JSONObject) IO.getJSON(collection.getProjectFile(), editor);
-        collection.project.addJSON(projectJson);
         
         TreeIconNode debugProjectNode = new TreeIconNode(collection.project);
-
+        JSONObject projectJson = collection.project.jsonObject();
         Properties projectProperties;
         try {
             projectProperties = new Properties(projectJson.getJSONArray("globals"), projectJson.getJSONObject("properties"));
@@ -589,26 +580,22 @@ public final class MainPanel extends javax.swing.JPanel {
             return false;
         }
 
-        File profileFile = IO.getFile(collection, "data/profile.json");
-        JSONObject json = (JSONObject) IO.getJSON(profileFile, editor);
-        collection.profile.getTreeIconUserObject().update(profileFile.getAbsolutePath(), json, true);
-
-        treeNode.add(collection.project);
+        File profileBakcupFile = IO.getFile(collection, "data/profile.bak");
+        JSONObject json = getProfileJSON(profileBakcupFile);
+        collection.profile.addJSON(json)
+                  .addTooltip(profileBakcupFile.getAbsolutePath());
+        
+        collection.setProjectProfile(json);
+        collection.project.getTreeIconUserObject().setLabel(collection.getProjectName());
+        
         collection.project.add(collection.resources);
         collection.project.add(collection.interfaces);
         collection.project.add(collection.profile);
         collection.project.add(collection.testsuites);
-
-        String value;
+  
         String dirFormat = "data/%s/tests/%s";
         String pathFormat = dirFormat + "/%s.json";
-        TreeIconNode.TreeIconUserObject userObject = collection.project.getTreeIconUserObject();
-        if (!(value = projectJson.getString("name")).equals(userObject.label)) {
-            history.renameProject(userObject.label, value, collection);
-        }
-        collection.setProjectName(value);
-        collection.project.getTreeIconUserObject().setLabel(value);
-
+        
         Map<String, TreeIconNode.ResourceInfo> testcasesMap = new HashMap<>();
 
         JSONArray projectResources = projectJson.getJSONArray("projectResources");
@@ -717,9 +704,11 @@ public final class MainPanel extends javax.swing.JPanel {
             String name = testsuite.getString("name");
             String resourceId = testsuite.getString("resource");
             JSONObject resource = resourceMap.getJSONObject(resourceId);
-            JSONObject interfaceJSON = null;
-            if (resource.containsKey("interface")) {
-                interfaceJSON = interfacesMap.get(resource.getString("interface"));
+            JSONObject interfaceJSON;
+            if (resource.containsKey("interfaceId")) {
+                interfaceJSON = interfacesMap.get(resource.getString("interfaceId"));
+            } else {
+                interfaceJSON = JSONObject.fromObject("{\"name\": \"\", \"basePath\": \"\"}");
             }
 
             String relPath = String.format(dirFormat, resourceId, Swagger.stripName(name));
@@ -731,7 +720,7 @@ public final class MainPanel extends javax.swing.JPanel {
             testsuiteJSON.put("properties", JSONNull.getInstance());
             testsuiteJSON.put("testcases", JSONNull.getInstance());
             testsuiteJSON.put("index", i);
-            testsuiteJSON.put("interface", interfaceJSON == null ? "" : interfaceJSON.getString("name"));
+            testsuiteJSON.put("interface", interfaceJSON.getString("name"));
 
             JSONObject projectTestSuite = resource.getJSONObject("testsuites").getJSONObject(name);
             IO.replaceValue(testsuiteJSON, "properties", projectTestSuite.get("properties"));
@@ -821,7 +810,7 @@ public final class MainPanel extends javax.swing.JPanel {
                         
                         JSONObject config = info.testCaseInfo.getJSONObject("config");
                         JSONObject replace = config.getJSONObject("replace");
-                        String url = "${#Global#" + resource.getString("endpoint") + "}" + "/" + replace.getString("path");
+                        String url = "${#Global#" + resource.getString("endpoint") + "}" + interfaceJSON.getString("basePath") + replace.getString("path");
                         
                         testcaseJSON.element("name", testcase.getString("name"));
                         testcaseJSON.element("disabled", testcase.get("disabled") == Boolean.TRUE);
@@ -830,7 +819,7 @@ public final class MainPanel extends javax.swing.JPanel {
                         testcaseJSON.element("properties", testCaseProperties);
                         testcaseJSON.element("method", replace.getString("method"));
                         testcaseJSON.element("url", url);
-                        testcaseJSON.element("interface", interfaceJSON == null ? "" : interfaceJSON.getString("name"));
+                        testcaseJSON.element("interface", interfaceJSON.getString("name"));
                         testcaseJSON.element("reqPath", properties.replace(replace.getString("path")).replaceAll("&amp;", "&"));
                         String tooltipURL = properties.replace(url).replaceAll("&amp;", "&");
                         TreeIconNode testcaseNode = collection.addTreeNode(testsuiteNode, testcase.getString("name"), TESTCASE, false)
@@ -1070,40 +1059,15 @@ public final class MainPanel extends javax.swing.JPanel {
             }
         }
 
-        amphibia.enableSave(true);
-        treeModel.reload();
-        debugTreeModel.reload();
-
-        amphibia.mnuOpen.setEnabled(!collection.isOpen());
-        amphibia.mnuClose.setEnabled(collection.isOpen());
-
-        //Update user preferences
-        String projects = userPreferences.get(Amphibia.P_RECENT_PROJECTS, "[]");
-        try {
-            JSONArray list = (JSONArray) IO.toJSON(projects);
-            JSONObject item = new JSONObject();
-            item.element("uuid", collection.getUUID());
-            item.element("name", collection.getProjectName());
-            item.element("path", collection.getProjectFile().getCanonicalPath());
-            for (int i = list.size() - 1; i >= 0; i--) {
-                JSONObject o = list.getJSONObject(i);
-                if (o.getString("name").equals(item.getString("name"))
-                        && o.getString("path").equals(item.getString("path"))) {
-                    list.remove(o);
-                    break;
-                }
-            }
-            list.add(0, item);
-            amphibia.createRecentProjectMenu(list);
-            userPreferences.put(Amphibia.P_RECENT_PROJECTS, list.toString());
-        } catch (Exception ex) {
-            addError(ex);
+        if (collection.project.getParent() != null) {
+            treeModel.reload(collection.project);
         }
-
+        debugTreeModel.reload();
+        
         JSONObject states;
         if (!json.containsKey("states")) {
             states = new JSONObject();
-            states.element("project", new int[]{1,1,0});
+            states.element("project", new int[]{1,1,0,1}); //STATE_PROJECT_EXPAND, STATE_DEBUG_EXPAND, STATE_DEBUG_REPORT, STATE_IS_OPENED
             states.element("resources", new int[]{0});
             states.element("interfaces", new int[]{0});
             states.element("testsuites", new int[]{1});
@@ -1129,6 +1093,10 @@ public final class MainPanel extends javax.swing.JPanel {
         }
         
         debugProjectNode.info = collection.project.info;
+        
+        amphibia.enableSave(true);
+        amphibia.mnuOpen.setEnabled(!collection.isOpen());
+        amphibia.mnuClose.setEnabled(collection.isOpen());
 
         if (!json.containsKey("expandResources")) {
             json.element("expandResources", new JSONObject());
@@ -1137,17 +1105,24 @@ public final class MainPanel extends javax.swing.JPanel {
         IO.write(collection.profile, editor);
         return true;
     }
-
+    
     public void reloadAll() {
-        List<TreeIconNode> nodes = new ArrayList<>();
-        for (int i = 0; i < treeModel.getChildCount(treeNode); i++) {
-            TreeIconNode node = (TreeIconNode) treeModel.getChild(treeNode, i);
-            nodes.add(node);
+        int index = -1;
+        String uid = null;
+        if (selectedNode != null && selectedNode.getType() == PROJECT) {
+            uid = selectedNode.getUID();
         }
-        treeNode.removeAllChildren();
-        nodes.forEach((node) -> {
-            reloadCollection(node.getCollection());
-        });
+        for (int i = 0; i < treeModel.getChildCount(treeNode); i++) {
+            TreeIconNode projectNode = (TreeIconNode) treeModel.getChild(treeNode, i);
+            projectNode.removeAllChildren();
+            reloadCollection(projectNode.getCollection());
+            if (projectNode.getUID().equals(uid)) {
+                index = i;
+            }
+        }
+        if (index != -1) {
+            selectNode((TreeIconNode) treeModel.getChild(treeNode, index));
+        }
     }
 
     public void reloadCollection(TreeCollection collection) {
