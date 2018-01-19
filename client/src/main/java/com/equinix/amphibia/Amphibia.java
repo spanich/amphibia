@@ -247,6 +247,7 @@ public final class Amphibia extends JFrame {
         }
         userPreferences.put(Amphibia.P_PROJECT_UUIDS, list.toString());
         createRecentProjectMenu(collection);
+        mainPanel.treeModel.reload();
         mainPanel.reloadAll();
 
         mainPanel.profile.openReport();
@@ -329,6 +330,8 @@ public final class Amphibia extends JFrame {
         updateRecentProjects(collection.getProjectFile(), null);
         createRecentProjectMenu(collection);
         mainPanel.loadProject(collection);
+        mainPanel.treeModel.reload();
+        mainPanel.reloadAll();
         return collection;
     }
     
@@ -356,9 +359,6 @@ public final class Amphibia extends JFrame {
     }
 
     public void createRecentProjectMenu(TreeCollection collection) {
-        if (collection != null) {
-            mainPanel.selectNode(collection.project);
-        }
         menuRecentProject.removeAll();
         String projects = userPreferences.get(P_RECENT_PROJECTS, "[]");
         JSONArray recentProjects = JSONArray.fromObject(projects);
@@ -1295,6 +1295,17 @@ public final class Amphibia extends JFrame {
         jf.showOpenDialog(null);
         if (jf.getSelectedFile() != null) {
             saveFileChooserDir(jf);
+            Enumeration children = mainPanel.treeNode.children();
+            while (children.hasMoreElements()) {
+                TreeIconNode node = (TreeIconNode)children.nextElement();
+                if (node.getCollection().getProjectFile().getAbsolutePath().equals(jf.getSelectedFile().getAbsolutePath())) {
+                    JOptionPane.showMessageDialog(mainPanel,
+                        bundle.getString("error_project_exists"),
+                        bundle.getString("title"),
+                        JOptionPane.ERROR_MESSAGE);
+                        return;
+                }
+            }
             String name;
             try {
                 JSONObject json = (JSONObject) IO.getJSON(jf.getSelectedFile());
@@ -1303,14 +1314,18 @@ public final class Amphibia extends JFrame {
                 mainPanel.addError(e);
                 return;
             }
-            Enumeration children = mainPanel.treeNode.children();
+            children = mainPanel.treeNode.children();
             while (children.hasMoreElements()) {
-                if (name.equals(((TreeIconNode)children.nextElement()).getLabel())) {
-                    JOptionPane.showMessageDialog(mainPanel,
-                    bundle.getString("error_project_exists"),
-                    bundle.getString("title"),
-                    JOptionPane.ERROR_MESSAGE);
-                    return;
+                TreeIconNode node = (TreeIconNode)children.nextElement();
+                if (name.equals(node.getLabel())) {
+                    int option = JOptionPane.showOptionDialog(mainPanel,
+                                bundle.getString("error_duplicate_project"),
+                                bundle.getString("title"),
+                                JOptionPane.WARNING_MESSAGE,
+                                JOptionPane.OK_CANCEL_OPTION, null, null, null);
+                    if (option != JOptionPane.OK_OPTION) {
+                        return;
+                    }
                 }
             }
             registerProject(jf.getSelectedFile());

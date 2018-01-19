@@ -44,6 +44,7 @@ public class Profile {
 
         profile = new LinkedHashMap<Object, Object>() {{
                 put("project", new LinkedHashMap<Object, Object>() {{
+                        put("version", "1.0.0");
                         put("id", UUID.randomUUID().toString());
                         put("name", null);
                         put("appendLogs", false);

@@ -32,11 +32,13 @@ import com.equinix.amphibia.agent.builder.Properties;
 public final class TreeIconNode extends DefaultMutableTreeNode {
 
     private final TreeIconUserObject nodeUserObject;
+    
+    private int nodeType; //0 - Project Node, 1 - Debug Node 
 
     private static final Logger logger = Logger.getLogger(TreeIconNode.class.getName());
     private static final Preferences userPreferences = getUserPreferences();
     private static String selectedUIDName;
-
+    
     public static final Icon runIcon;
     public static final Icon runningIcon;
     public static final Icon passedIcon;
@@ -87,6 +89,7 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
 
     public TreeIconNode(TreeIconNode source, TreeCollection.TYPE type) {
         this(source.getCollection(), source.getLabel(), type, false);
+        this.nodeType = 1;
         this.source = source;
         this.info = source.info;
         this.addType(source.getType());
@@ -137,6 +140,7 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
     public TreeIconNode(TreeIconUserObject nodeUserObject) {
         super(nodeUserObject);
         this.nodeUserObject = nodeUserObject;
+        this.nodeType = 0;
     }
 
     public TreeCollection getCollection() {
@@ -178,9 +182,8 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
     @Override
     public void setParent(MutableTreeNode newParent) {
         super.setParent(newParent);
-        String path = getNodePath();
-        if (getUID(path).equals(selectedUIDName)) {
-            MainPanel.setSelectedNode(this);
+        if (getUID(getNodePath()).equals(selectedUIDName)) {
+            MainPanel.setSelectedNode(this.source != null ? this.source : this);
         }
     }
 
@@ -198,7 +201,7 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
     }
 
     public String getUID(String path) {
-        return getCollection().getUUID() + "_" + path;
+        return nodeType + "_" + getCollection().getUUID() + "_" + path;
     }
 
     public TreeIconUserObject getTreeIconUserObject() {

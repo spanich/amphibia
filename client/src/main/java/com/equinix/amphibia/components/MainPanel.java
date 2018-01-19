@@ -264,6 +264,11 @@ public final class MainPanel extends javax.swing.JPanel {
                 if (path == null) {
                     return;
                 }
+                
+                if (e.isPopupTrigger()) {
+                    treeNav.setSelectionPath(path); 
+                }
+
                 TreeIconNode selectedNode = (TreeIconNode) treeNav.getLastSelectedPathComponent();
                 if (selectedNode != null) {
                     selectedNode.saveSelection();
@@ -273,10 +278,8 @@ public final class MainPanel extends javax.swing.JPanel {
                         JPopupMenu popup = menuBuilder.createPopupMenu(selectedNode);
                         popup.show(treeNav, e.getX(), e.getY());
                     }
-                    if (selectedNode.getCollection().isOpen()) {
-                        selectNode(selectedNode);
-                    }
-                    
+                    selectNode(selectedNode);
+
                     if(e.getClickCount() == 2 && selectedUserObject.getType() == TESTCASE) {
                         wizard.openTestCase();
                     }
@@ -375,8 +378,7 @@ public final class MainPanel extends javax.swing.JPanel {
         if (selectedNode != null) {
             TreeCollection collection = selectedNode.getCollection();
             collection.setOpen(isOpen);
-            openCloseProject(collection, isOpen);
-            reloadCollection(collection);
+            saveNodeValue(collection.profile);
         }
     }
 
@@ -398,6 +400,9 @@ public final class MainPanel extends javax.swing.JPanel {
 
     public void selectNode(TreeIconNode node) {
         setSelectedNode(node);
+        if (node == null) {
+            return;
+        }
         TreeCollection collection = node.getCollection();
         
         debugTreeNode.removeAllChildren();
@@ -1107,22 +1112,12 @@ public final class MainPanel extends javax.swing.JPanel {
     }
     
     public void reloadAll() {
-        int index = -1;
-        String uid = null;
-        if (selectedNode != null && selectedNode.getType() == PROJECT) {
-            uid = selectedNode.getUID();
-        }
         for (int i = 0; i < treeModel.getChildCount(treeNode); i++) {
             TreeIconNode projectNode = (TreeIconNode) treeModel.getChild(treeNode, i);
             projectNode.removeAllChildren();
             reloadCollection(projectNode.getCollection());
-            if (projectNode.getUID().equals(uid)) {
-                index = i;
-            }
         }
-        if (index != -1) {
-            selectNode((TreeIconNode) treeModel.getChild(treeNode, index));
-        }
+        selectNode(selectedNode);
     }
 
     public void reloadCollection(TreeCollection collection) {
@@ -1131,11 +1126,9 @@ public final class MainPanel extends javax.swing.JPanel {
     }
 
     public void refreshCollection(TreeCollection collection) {
+        openCloseProject(collection, collection.isOpen());
         if (collection.isOpen()) {
             try {
-                if (selectedNode != null) {
-                    selectNode(selectedNode);
-                }
                 JSONObject expandResources = collection.profile.jsonObject().getJSONObject("expandResources");
                 Enumeration children = collection.project.preorderEnumeration();
                 while (children.hasMoreElements()) {
@@ -1153,8 +1146,6 @@ public final class MainPanel extends javax.swing.JPanel {
             } catch (Exception e) {
                 logger.log(Level.SEVERE, e.toString(), e);
             }
-        } else {
-            openCloseProject(collection, false);
         }
     }
 

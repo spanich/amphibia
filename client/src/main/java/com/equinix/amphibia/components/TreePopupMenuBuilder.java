@@ -107,17 +107,20 @@ public final class TreePopupMenuBuilder implements ActionListener {
                 mainPanel.reloadCollection(collection);
                 break;
             case "DELETE":
-                int dialogResult = JOptionPane.showConfirmDialog(null, bundle.getString("tip_deleting"), bundle.getString("deleteResources"), JOptionPane.YES_NO_OPTION);
+                int dialogResult = JOptionPane.showConfirmDialog(mainPanel, bundle.getString("tip_deleting"), bundle.getString("title"), JOptionPane.YES_NO_OPTION);
                 if (dialogResult == JOptionPane.YES_OPTION) {
                     mainPanel.deleteProject(collection);
                     JSONArray list = JSONArray.fromObject(userPreferences.get(Amphibia.P_PROJECT_UUIDS, "[]"));
                     for (int i = 0; i < list.size(); i++) {
-                        if (collection.getUUID().equals(list.getString(i))) {
+                        if (collection.getProjectFile().getAbsolutePath().equals(list.getString(i))) {
                             list.remove(i);
                             userPreferences.put(Amphibia.P_PROJECT_UUIDS, list.toString());
                             break;
                         }
                     }
+                    mainPanel.treeModel.removeNodeFromParent(collection.project);
+                    mainPanel.debugTreeModel.removeNodeFromParent(collection.project.debugNode);
+                    mainPanel.deleteProject(collection);
                 }
                 break;
         }

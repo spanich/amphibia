@@ -315,11 +315,11 @@ public final class TreeCollection {
     }
 
     public boolean isOpen() {
-        return projectProfile.getJSONObject("states").getJSONArray("project").getInt(TreeIconNode.STATE_IS_OPENED) == 1;
+        return project.info.states.getInt(TreeIconNode.STATE_IS_OPENED) == 1;
     }
 
     public void setOpen(boolean isOpen) {
-        projectProfile.getJSONObject("states").getJSONArray("project").set(TreeIconNode.STATE_IS_OPENED, isOpen ? 1 : 0);
+        project.info.states.set(TreeIconNode.STATE_IS_OPENED, isOpen ? 1 : 0);
     }
 
     public void setProjectFile(File file) {
