@@ -365,8 +365,8 @@ public final class Amphibia extends JFrame {
         for (int i = recentProjects.size() - 1; i >= 0; i--) {
             File projectFile = new File(recentProjects.getString(i));
             if (projectFile.exists()) {
-                File profileBakcupFile = new File(projectFile.getParentFile(), "data/profile.bak");
-                JSONObject profile = mainPanel.getProfileJSON(profileBakcupFile);
+                File profileFile = new File(projectFile.getParentFile(), "data/profile.json");
+                JSONObject profile = IO.getBackupJSON(profileFile, mainPanel.editor);
                 String projectName = profile.getJSONObject("project").getString("name");
                 JMenuItem menu = new JMenuItem(projectName);
                 menu.setToolTipText(projectFile.getAbsolutePath());
@@ -1227,6 +1227,7 @@ public final class Amphibia extends JFrame {
         jc.setSelectedFile(file);
         int rVal = jc.showSaveDialog(null);
         if (rVal != JFileChooser.CANCEL_OPTION) {
+            mnuSaveActionPerformed(evt);
             mainPanel.reset(collection);
             try {
                 IO.copy(file, jc.getSelectedFile());
@@ -1243,9 +1244,11 @@ public final class Amphibia extends JFrame {
         mainPanel.history.resetHistory(false);
         if (MainPanel.selectedNode != null) {
             try {
-                File dir = MainPanel.selectedNode.getCollection().getProjectDir();
-                IO.copy(new File(dir, "data/profile.bak"), new File(dir, "data/profile.json"));
-            } catch (IOException ex) {
+                TreeCollection collection = MainPanel.selectedNode.getCollection();
+                IO.copy(IO.getBackupFile(collection.getProjectFile()), collection.getProjectFile());
+                IO.copy(collection.profile.backupFile, collection.profile.profileFile);
+                collection.profile.reloadJSON();
+            } catch (Exception ex) {
                 logger.log(Level.SEVERE, null, ex);
             }
         }
@@ -1349,10 +1352,6 @@ public final class Amphibia extends JFrame {
     private void mnuUserActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuUserActionPerformed
         userPreferences.putBoolean(P_MENU_VIEW, false);
         isExpertView = false;
-        if (MainPanel.selectedNode != null) {
-            MainPanel.selectedNode.getCollection().profile.jsonObject().element("expandResources", new JSONObject());
-            IO.write(MainPanel.selectedNode.getCollection().profile, mainPanel.editor);
-        }
         mainPanel.reloadAll();
     }//GEN-LAST:event_mnuUserActionPerformed
 

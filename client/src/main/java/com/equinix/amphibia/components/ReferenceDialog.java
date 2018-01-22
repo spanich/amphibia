@@ -79,8 +79,7 @@ public final class ReferenceDialog extends javax.swing.JPanel {
             String[] contents = null;
             if (item.file != null && item.file.exists()) {
                 try {
-                    String json = IO.prettyJson(txtPreview.getText());
-                    contents = IO.write(json, item.file);
+                    contents = IO.write(txtPreview.getText(), item.file, true);
                 } catch (Exception ex) {
                     lblError.setText(String.format(bundle.getString("error_convert"), "JSON"));
                     return;

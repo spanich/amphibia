@@ -184,7 +184,7 @@ public final class ResourceAddDialog extends javax.swing.JPanel {
             JSONObject json = new JSONObject();
             json.element("name", name);
             steps.add(json);
-            mainPanel.saveNodeValue(selectedNode.getCollection().profile);
+            mainPanel.saveNodeValue((TreeIconNode.ProfileNode)selectedNode.getCollection().profile);
         }
     }
     

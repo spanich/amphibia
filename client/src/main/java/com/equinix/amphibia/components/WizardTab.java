@@ -904,6 +904,9 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     private void btnCloseActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnCloseActionPerformed
         for (int i = 0; i < wizard.tabNav.getTabCount(); i++) {
             if (wizard.tabNav.getComponent(i) == this) {
+                TreeIconNode node = MainPanel.selectedNode;
+                node.info.states.set(TreeIconNode.STATE_OPEN_PROJECT_OR_WIZARD_TAB,  0);
+                node.getCollection().profile.saveState(node);
                 wizard.tabNav.remove(i);
                 break;
             }

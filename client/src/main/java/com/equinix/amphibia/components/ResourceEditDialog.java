@@ -102,7 +102,6 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
                     if (type == TreeCollection.TYPE.INTERFACE) {
                         JSONObject json = collection.project.jsonObject();
                         JSONArray interfaces = json.getJSONArray("interfaces");
-                        JSONArray projectResources = json.getJSONArray("projectResources");
                         String currentName = ((JSONObject)entry.json).getString("name");
                         for (Object item : interfaces) {
                             JSONObject itf = (JSONObject) item;
@@ -113,22 +112,6 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
                             }
                             if (currentName.equals(itf.getString("name"))) {
                                 itf.element("name", value);
-                            }
-                        }
-                        for (Object item : projectResources) {
-                            JSONObject resource = (JSONObject) item;
-                            if (currentName.equals(resource.getString("interface"))) {
-                                resource.element("interface", value);
-                                break;
-                            }
-                        }
-                        JSONArray resources = collection.profile.jsonObject().getJSONArray("resources");
-                        for (int i = 0; i < resources.size(); i++) {
-                            JSONObject resource = resources.getJSONObject(i);
-                            if (resource.containsKey("interface") && currentName.equals(resource.getString("interface"))) {
-                                resource.put("interface", value);
-                                mainPanel.history.saveAndAddHistory(collection.profile);
-                                break;
                             }
                         }
                     } else {
@@ -270,7 +253,7 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
     }
 
     public static String getType(Object value) {
-        if (value == null) {
+        if (value == null || value == JSONNull.getInstance()) {
             return "NULL";
         }
         if (value instanceof Integer || value instanceof Long || value instanceof Double) {

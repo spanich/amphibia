@@ -47,9 +47,12 @@ public class HistoryManager {
     }
     
     public void saveEntry(Editor.Entry entry, TreeCollection collection) {
-        TreeIconNode node = collection.profile;
         TreeIconNode.ResourceInfo info = MainPanel.selectedNode.info;
         TreeCollection.TYPE type = MainPanel.selectedNode.getType();
+        TreeIconNode node = collection.profile;
+        if (type == PROJECT || type == INTERFACE) {
+            node = collection.project;
+        }
         if ("disabled".equals(entry.name)) {
             JSONObject json;
             switch (type) {

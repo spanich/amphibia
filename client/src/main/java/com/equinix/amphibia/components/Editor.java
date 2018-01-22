@@ -260,7 +260,12 @@ public final class Editor extends BaseTaskPane {
                     String filePath = tblHistory.getValueAt(row, 1).toString();
                     String oldContent = tblHistory.getValueAt(row, 2).toString();
                     try {
-                        mainPanel.resourceEditDialog.openEditDialog(null, filePath, DIFF.patch_toText(DIFF.patch_make(IO.readFile(new File(filePath)), oldContent)), false);
+                        File file = new File(filePath);
+                        File backup = IO.getBackupFile(file);
+                        if (backup.exists()) {
+                            file = backup;
+                        }
+                        mainPanel.resourceEditDialog.openEditDialog(null, filePath, DIFF.patch_toText(DIFF.patch_make(IO.readFile(file), oldContent)), false);
                     } catch (IOException ex) {
                         addError(ex);
                     }

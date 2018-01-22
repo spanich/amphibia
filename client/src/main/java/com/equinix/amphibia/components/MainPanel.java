@@ -72,7 +72,7 @@ public final class MainPanel extends javax.swing.JPanel {
 
     public final TreeIconNode treeNode;
     public final TreeIconNode debugTreeNode;
-    
+
     public final TreeIconNode reportTreeNode;
     public final DefaultTreeModel treeModel;
     public final DefaultTreeModel debugTreeModel;
@@ -138,23 +138,23 @@ public final class MainPanel extends javax.swing.JPanel {
 
         final JTextArea errors = new JTextArea();
         final FontMetrics fm = getFontMetrics(errors.getFont());
-        final Border border = BorderFactory.createEmptyBorder (2, 0, 2, 0);
+        final Border border = BorderFactory.createEmptyBorder(2, 0, 2, 0);
         errors.setBorder(border);
         errors.setWrapStyleWord(true);
         errors.setLineWrap(true);
         errors.setOpaque(true);
         errors.setForeground(Color.red);
-      
+
         DefaultTreeCellRenderer treeCellRenderer = new DefaultTreeCellRenderer() {
             @Override
             public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean isLeaf, int row, boolean hasFocus) {
-                
+
                 TreeIconNode node = ((TreeIconNode) value);
                 if (node.getType() == ERRORS) {
                     int width = 0;
                     String[] lines = value.toString().split("\n");
                     for (String line : lines) {
-                        width = Math.max(width, (int)fm.getStringBounds(line, errors.getGraphics()).getWidth());
+                        width = Math.max(width, (int) fm.getStringBounds(line, errors.getGraphics()).getWidth());
                     }
                     errors.setText(value.toString());
                     errors.setSize(width + 10, Short.MAX_VALUE);
@@ -207,15 +207,16 @@ public final class MainPanel extends javax.swing.JPanel {
                 TreePath path = event.getPath();
                 TreeIconNode node = (TreeIconNode) path.getLastPathComponent();
                 if (!node.getTreeIconUserObject().isEnabled()) {
-                    ((JTree)event.getSource()).collapsePath(path);
+                    ((JTree) event.getSource()).collapsePath(path);
                 } else if (!profile.isRunning() && node.info != null) {
                     TreeCollection collection = node.getCollection();
                     if (node.info.states != null) {
                         node.info.states.set(getStateIndex(event.getSource()), 1);
                     } else {
-                        collection.profile.jsonObject().getJSONObject("expandResources").element(node.info.file.getAbsolutePath(), true);
+                        JSONObject expandResources = collection.profile.jsonObject().getJSONObject("expandResources");
+                        expandResources.element(node.info.file.getAbsolutePath(), true);
                     }
-                    IO.write(collection.profile, editor);
+                    collection.profile.saveState(node);
                 }
             }
 
@@ -245,7 +246,7 @@ public final class MainPanel extends javax.swing.JPanel {
                     } else {
                         expandResources.remove(node.info.file.getAbsolutePath());
                     }
-                    IO.write(collection.profile, editor);
+                    collection.profile.saveState(node);
                 }
             }
         };
@@ -264,9 +265,9 @@ public final class MainPanel extends javax.swing.JPanel {
                 if (path == null) {
                     return;
                 }
-                
+
                 if (e.isPopupTrigger()) {
-                    treeNav.setSelectionPath(path); 
+                    treeNav.setSelectionPath(path);
                 }
 
                 TreeIconNode selectedNode = (TreeIconNode) treeNav.getLastSelectedPathComponent();
@@ -280,7 +281,7 @@ public final class MainPanel extends javax.swing.JPanel {
                     }
                     selectNode(selectedNode);
 
-                    if(e.getClickCount() == 2 && selectedUserObject.getType() == TESTCASE) {
+                    if (e.getClickCount() == 2 && selectedUserObject.getType() == TESTCASE) {
                         wizard.openTestCase();
                     }
                 }
@@ -305,12 +306,12 @@ public final class MainPanel extends javax.swing.JPanel {
                 if (selectedNode != null && selectedNode.source != null) {
                     selectedNode.source.saveSelection();
                     selectNode(selectedNode.source);
-                    
+
                     if (selectedNode.info != null) {
                         editor.spnConsole.getVerticalScrollBar().setValue(selectedNode.info.consoleLine);
-                    } 
-                    
-                    if(e.getClickCount() == 2 && selectedNode.getTreeIconUserObject().getType() == TESTCASE) {
+                    }
+
+                    if (e.getClickCount() == 2 && selectedNode.getTreeIconUserObject().getType() == TESTCASE) {
                         wizard.openTestCase();
                     }
                 }
@@ -357,7 +358,7 @@ public final class MainPanel extends javax.swing.JPanel {
         editor.selectedTreeNode(collection.project);
         editor.reset();
     }
-    
+
     public void saveNodeValue(TreeIconNode node) {
         history.saveNodeValue(node);
     }
@@ -393,7 +394,7 @@ public final class MainPanel extends javax.swing.JPanel {
     public void expandParendNode(TreeIconNode parent) {
         parent.getCollection().expandNode(treeNav, parent);
     }
-    
+
     public static void setSelectedNode(TreeIconNode node) {
         selectedNode = node;
     }
@@ -404,7 +405,7 @@ public final class MainPanel extends javax.swing.JPanel {
             return;
         }
         TreeCollection collection = node.getCollection();
-        
+
         debugTreeNode.removeAllChildren();
         debugTreeNode.add(collection.project.debugNode);
         debugTreeModel.reload(debugTreeNode);
@@ -417,7 +418,7 @@ public final class MainPanel extends javax.swing.JPanel {
                 }
             }
         }
-                
+
         TreeIconNode debugNode = (node.debugNode != null) ? node.debugNode : collection.project.debugNode;
         editor.reset();
         amphibia.btnOpenTestCase.setEnabled(node.getType() == TESTCASE);
@@ -547,12 +548,19 @@ public final class MainPanel extends javax.swing.JPanel {
 
     public boolean loadProject(TreeCollection collection) {
         boolean success;
+
         File projectFile = collection.getProjectFile();
-        
-        JSONObject projectJson = (JSONObject) IO.getJSON(projectFile, editor);
+        try {
+            IO.copy(projectFile, IO.getBackupFile(projectFile));
+            collection.profile.load(projectFile.getParentFile());
+        } catch (Exception e) {
+            addError(e);
+        }
+
+        JSONObject projectJson = (JSONObject) IO.getBackupJSON(projectFile, editor);
         collection.project.addJSON(projectJson);
         collection.project.addTooltip(projectFile.getAbsolutePath());
-        
+
         globalVarsDialog.mergeVariables(projectJson.getJSONArray("globals"));
         wizard.updateEndPoints();
 
@@ -563,18 +571,10 @@ public final class MainPanel extends javax.swing.JPanel {
         }
         return success;
     }
-    
-    public JSONObject getProfileJSON(File profileBakcupFile) {
-        if (profileBakcupFile.exists()) {
-            return (JSONObject) IO.getJSON(profileBakcupFile, editor);
-        } else {
-            return (JSONObject) IO.getJSON(new File(profileBakcupFile.getParentFile(), "profile.json"), editor);
-        }
-    }
 
     public boolean reloadProject(TreeCollection collection) {
         reset(collection);
-        
+
         TreeIconNode debugProjectNode = new TreeIconNode(collection.project);
         JSONObject projectJson = collection.project.jsonObject();
         Properties projectProperties;
@@ -585,35 +585,35 @@ public final class MainPanel extends javax.swing.JPanel {
             return false;
         }
 
-        File profileBakcupFile = IO.getFile(collection, "data/profile.bak");
-        JSONObject json = getProfileJSON(profileBakcupFile);
+        File profileFile = IO.getFile(collection, "data/profile.json");
+        JSONObject json = IO.getBackupJSON(profileFile, editor);
         collection.profile.addJSON(json)
-                  .addTooltip(profileBakcupFile.getAbsolutePath());
-        
+                .addTooltip(profileFile.getAbsolutePath());
+
         collection.setProjectProfile(json);
         collection.project.getTreeIconUserObject().setLabel(collection.getProjectName());
-        
+
         collection.project.add(collection.resources);
         collection.project.add(collection.interfaces);
         collection.project.add(collection.profile);
         collection.project.add(collection.testsuites);
-  
+
         String dirFormat = "data/%s/tests/%s";
         String pathFormat = dirFormat + "/%s.json";
-        
+
         Map<String, TreeIconNode.ResourceInfo> testcasesMap = new HashMap<>();
 
         JSONArray projectResources = projectJson.getJSONArray("projectResources");
         JSONArray interfacesJSON = projectJson.getJSONArray("interfaces");
         JSONArray resources = json.getJSONArray("resources");
         JSONArray testsuites = json.getJSONArray("testsuites");
-        
+
         JSONObject resourceMap = new JSONObject();
         projectResources.forEach((item) -> {
-            JSONObject resource = (JSONObject)item;
+            JSONObject resource = (JSONObject) item;
             resourceMap.element(resource.getString("resourceId"), resource);
         });
-        
+
         Map<Object, JSONObject> interfacesMap = new HashMap<>();
         interfacesJSON.forEach((item) -> {
             JSONObject interfaceJSON = (JSONObject) item;
@@ -624,7 +624,7 @@ public final class MainPanel extends javax.swing.JPanel {
                     .addJSON(interfaceJSON);
         });
         collection.interfaces.addJSON(interfacesJSON);
-        
+
         testsuites.forEach((item) -> {
             JSONObject testsuite = (JSONObject) item;
             String resourceId = testsuite.getString("resource");
@@ -678,12 +678,12 @@ public final class MainPanel extends javax.swing.JPanel {
                         .addProperties(RESOURCE_PROPERTIES)
                         .addJSON(resource);
             }
-            
+
             if (!resource.containsKey("states")) {
                 resource.element("states", new int[]{0});
             }
             resourceNode.info = new TreeIconNode.ResourceInfo(resource.getJSONArray("states"));
-            
+
             if (resource.containsKey("interface")) {
                 JSONObject interfaceJSON = interfacesMap.get(resource.getString("interface"));
                 if (interfaceJSON != null) {
@@ -803,8 +803,8 @@ public final class MainPanel extends javax.swing.JPanel {
                             transferProps.keySet().forEach((key) -> {
                                 String values;
                                 if (testCaseInheritedProperties.containsKey(key)) {
-                                    values = testCaseInheritedProperties.get(key) +
-                                            ", \n${#TestCase:" + transferProps.get(key) + "}";
+                                    values = testCaseInheritedProperties.get(key)
+                                            + ", \n${#TestCase:" + transferProps.get(key) + "}";
                                 } else {
                                     values = "${#TestCase:" + transferProps.get(key) + "}";
                                 }
@@ -812,11 +812,11 @@ public final class MainPanel extends javax.swing.JPanel {
                             });
                             testcaseJSON.element("transfer", transferProps);
                         }
-                        
+
                         JSONObject config = info.testCaseInfo.getJSONObject("config");
                         JSONObject replace = config.getJSONObject("replace");
                         String url = "${#Global#" + resource.getString("endpoint") + "}" + interfaceJSON.getString("basePath") + replace.getString("path");
-                        
+
                         testcaseJSON.element("name", testcase.getString("name"));
                         testcaseJSON.element("disabled", testcase.get("disabled") == Boolean.TRUE);
                         testcaseJSON.element("path", info.file.getAbsolutePath());
@@ -856,53 +856,53 @@ public final class MainPanel extends javax.swing.JPanel {
                                 HistoryManager.replace(step, testStepJSON);
                             });
                             testStepJSON.element("disabled", step.get("disabled") == Boolean.TRUE);
-    
+
                             JSONObject requestProp = info.testStepInfo.getJSONObject("request").getJSONObject("properties");
                             if (step.containsKey("request")) {
                                 requestProp = step.getJSONObject("request").getJSONObject("properties");
                             }
-                            
+
                             JSONObject stepInheritedProperties = JSONObject.fromObject(inheritedProperties);
                             requestProp.keySet().forEach((key) -> {
                                 stepInheritedProperties.put(key, "${#TestStep$" + key + "}");
                             });
-                            
+
                             JSONObject responseProp = info.testStepInfo.getJSONObject("response").getJSONObject("properties");
                             if (step.containsKey("response")) {
                                 responseProp = step.getJSONObject("response").getJSONObject("properties");
                             }
-                            
+
                             responseProp.keySet().forEach((key) -> {
                                 if (!stepInheritedProperties.containsKey(key)) {
                                     stepInheritedProperties.put(key, "${#TestStep$" + key + "}");
                                 }
                             });
-                            
+
                             if (step.containsKey("transfer")) {
                                 JSONObject transferProps = step.getJSONObject("transfer");
                                 transferProps.keySet().forEach((key) -> {
                                     String values;
                                     if (stepInheritedProperties.containsKey(key)) {
-                                        values = stepInheritedProperties.get(key) + 
-                                                ", \n${#TestStep:" + transferProps.get(key) + "}";
+                                        values = stepInheritedProperties.get(key)
+                                                + ", \n${#TestStep:" + transferProps.get(key) + "}";
                                     } else {
                                         values = "${#TestStep:" + transferProps.get(key) + "}";
                                     }
                                     stepInheritedProperties.put(key, values);
-                                    
+
                                     if (testCaseInheritedProperties.containsKey(key)) {
-                                        values = testCaseInheritedProperties.get(key) + 
-                                                ", \n${#TestStep#" + step.getString("name") + ":" + transferProps.get(key) + "}";
+                                        values = testCaseInheritedProperties.get(key)
+                                                + ", \n${#TestStep#" + step.getString("name") + ":" + transferProps.get(key) + "}";
                                     } else {
                                         values = "${#TestStep#" + step.getString("name") + ":" + transferProps.get(key) + "}";
                                     }
-                                    testCaseInheritedProperties.put(key, values);                                    
+                                    testCaseInheritedProperties.put(key, values);
                                 });
                                 testStepJSON.getJSONObject("response").element("transfer", transferProps);
                             }
-                            
+
                             testStepJSON.element("inherited-properties", stepInheritedProperties);
-                            
+
                             String tootltip = info.properties.cloneProperties().setTestStep(requestProp).replace(url).replaceAll("&amp;", "&");
                             TreeIconNode testStepNode = collection.insertTreeNode(testcaseNode, step.getString("name"), TEST_STEP_ITEM)
                                     .addProperties(TEST_STEP_ITEM_PROPERTIES)
@@ -914,7 +914,7 @@ public final class MainPanel extends javax.swing.JPanel {
                                 testStepNode.info.consoleLine = step.getInt("line");
                             }
                             if (!step.containsKey("states")) {
-                                step.element("states", new int[]{0, 0, 0, 0});
+                                step.element("states", new int[]{-1, -1, 0, 0});
                             }
                             testStepNode.info.states = step.getJSONArray("states");
 
@@ -1068,22 +1068,8 @@ public final class MainPanel extends javax.swing.JPanel {
             treeModel.reload(collection.project);
         }
         debugTreeModel.reload();
-        
-        JSONObject states;
-        if (!json.containsKey("states")) {
-            states = new JSONObject();
-            states.element("project", new int[]{1,1,0,1}); //STATE_PROJECT_EXPAND, STATE_DEBUG_EXPAND, STATE_DEBUG_REPORT, STATE_IS_OPENED
-            states.element("resources", new int[]{0});
-            states.element("interfaces", new int[]{0});
-            states.element("testsuites", new int[]{1});
-            states.element("tests", new int[]{0});
-            states.element("schemas", new int[]{0});
-            states.element("requests", new int[]{0});
-            states.element("responses", new int[]{0});
-            json.element("states", states);
-        } else {
-            states = json.getJSONObject("states");
-        }
+
+        JSONObject states = json.getJSONObject("states");
         try {
             collection.project.info = new TreeIconNode.ResourceInfo(states.getJSONArray("project"));
             collection.resources.info = new TreeIconNode.ResourceInfo(states.getJSONArray("resources"));
@@ -1096,33 +1082,36 @@ public final class MainPanel extends javax.swing.JPanel {
         } catch (Exception e) {
             logger.log(Level.SEVERE, null, e);
         }
-        
+
         debugProjectNode.info = collection.project.info;
-        
+
         amphibia.enableSave(true);
         amphibia.mnuOpen.setEnabled(!collection.isOpen());
         amphibia.mnuClose.setEnabled(collection.isOpen());
 
-        if (!json.containsKey("expandResources")) {
-            json.element("expandResources", new JSONObject());
-        }
-
         IO.write(collection.profile, editor);
         return true;
     }
-    
+
     public void reloadAll() {
         for (int i = 0; i < treeModel.getChildCount(treeNode); i++) {
             TreeIconNode projectNode = (TreeIconNode) treeModel.getChild(treeNode, i);
             projectNode.removeAllChildren();
-            reloadCollection(projectNode.getCollection());
+            reloadCollection(projectNode.getCollection(), false);
         }
         selectNode(selectedNode);
     }
 
     public void reloadCollection(TreeCollection collection) {
+        reloadCollection(collection, true);
+    }
+
+    private void reloadCollection(TreeCollection collection, boolean isSelectNode) {
         reloadProject(collection);
         refreshCollection(collection);
+        if (isSelectNode) {
+            selectNode(selectedNode);
+        }
     }
 
     public void refreshCollection(TreeCollection collection) {

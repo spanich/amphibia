@@ -227,7 +227,7 @@ public final class Profile extends BaseTaskPane implements IHttpConnection {
         lineIndex = 0;
         editor.txtConsole.setText("");
         if (MainPanel.selectedNode != null) {
-            TreeIconNode profile = MainPanel.selectedNode.getCollection().profile;
+            TreeIconNode.ProfileNode profile = MainPanel.selectedNode.getCollection().profile;
             JSONArray testsuites = profile.jsonObject().getJSONArray("testsuites");
             testsuites.forEach((testsuite) -> {
                 JSONArray testcases = ((JSONObject) testsuite).getJSONArray("testcases");

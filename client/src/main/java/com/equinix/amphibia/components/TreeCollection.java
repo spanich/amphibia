@@ -30,10 +30,10 @@ public final class TreeCollection {
     private File projectFile;
     private JSONObject projectProfile;
 
+    public final TreeIconNode.ProfileNode profile;
     public final TreeIconNode project;
     public final TreeIconNode resources;
     public final TreeIconNode interfaces;
-    public final TreeIconNode profile;
     public final TreeIconNode testsuites;
     public final TreeIconNode tests;
     public final TreeIconNode schemas;
@@ -215,10 +215,10 @@ public final class TreeCollection {
 
     public TreeCollection() {
         ResourceBundle bundle = Amphibia.getBundle();
+        profile = new TreeIconNode.ProfileNode(this, bundle.getString("profile"), PROFILE, false, PROFILE_PROPERTIES);
         project = new TreeIconNode(this, bundle.getString("project"), PROJECT, false, PROJECT_PROPERTIES);
         resources = new TreeIconNode(this, bundle.getString("resources"), RESOURCES, false, RESOURCE_PROPERTIES);
         interfaces = new TreeIconNode(this, bundle.getString("interfaces"), INTERFACES, false, INTERFACES_PROPERTIES);
-        profile = new TreeIconNode(this, bundle.getString("profile"), PROFILE, false, PROFILE_PROPERTIES);
         testsuites = new TreeIconNode(this, bundle.getString("testcases"), TESTCASES, false);
         tests = new TreeIconNode(this, bundle.getString("tests"), TESTS, false);
         schemas = new TreeIconNode(this, bundle.getString("schemas"), SCHEMAS, false);
@@ -315,11 +315,11 @@ public final class TreeCollection {
     }
 
     public boolean isOpen() {
-        return project.info.states.getInt(TreeIconNode.STATE_IS_OPENED) == 1;
+        return project.info.states.getInt(TreeIconNode.STATE_OPEN_PROJECT_OR_WIZARD_TAB) == 1;
     }
 
     public void setOpen(boolean isOpen) {
-        project.info.states.set(TreeIconNode.STATE_IS_OPENED, isOpen ? 1 : 0);
+        project.info.states.set(TreeIconNode.STATE_OPEN_PROJECT_OR_WIZARD_TAB, isOpen ? 1 : 0);
     }
 
     public void setProjectFile(File file) {

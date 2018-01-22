@@ -74,12 +74,19 @@ public class SaveDialog extends javax.swing.JPanel {
         JSONArray list = JSONArray.fromObject(userPreferences.get(P_PROJECT_UUIDS, "[]"));
         list.forEach((path) -> {
             try {
+                File target = new File(path.toString());
+                File source = IO.getBackupFile(target);
                 File dir = new File(path.toString()).getParentFile();
-                File source = new File(dir, "data/profile.bak");
-                File target = new File(dir, "data/profile.json");
+                if (source.exists() && target.exists() && !IO.readFile(source).equals(IO.readFile(target))) {
+                    model.addElement(new Item(dir.getName() + "/" + source.getName(), source, target));
+                }
+
+                target = new File(dir, "data/profile.json");
+                source = IO.getBackupFile(target);
                 if (source.exists() && target.exists() && !IO.readFile(source).equals(IO.readFile(target))) {
                     model.addElement(new Item(dir.getName() + "/data/profile.json", source, target));
                 }
+                
             } catch (IOException ex) {
                 logger.log(Level.SEVERE, null, ex);
             }
@@ -97,7 +104,13 @@ public class SaveDialog extends javax.swing.JPanel {
         }
         if (isSame && !isRestore) { //try to delete all backup files
             list.forEach((path) -> {
-               File bak = new File(new File(path.toString()).getParentFile(), "data/profile.bak");
+               File profileFile = new File(path.toString());
+               File bak = IO.getBackupFile(profileFile);
+               if (bak.exists()) {
+                    bak.deleteOnExit();
+                    bak.delete();
+               }
+               bak = IO.getBackupFile(new File(profileFile.getParentFile(), "data/profile.bak"));
                if (bak.exists()) {
                     bak.deleteOnExit();
                     bak.delete();

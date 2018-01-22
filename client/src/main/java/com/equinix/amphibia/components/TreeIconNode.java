@@ -6,8 +6,10 @@
 package com.equinix.amphibia.components;
 
 import static com.equinix.amphibia.Amphibia.getUserPreferences;
+import static com.equinix.amphibia.components.TreeCollection.TYPE.*;
 
 import com.equinix.amphibia.Amphibia;
+import com.equinix.amphibia.IO;
 
 import java.io.File;
 import java.util.Arrays;
@@ -23,22 +25,24 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import com.equinix.amphibia.agent.builder.Properties;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  *
  * @author dgofman
  */
 @SuppressWarnings("NonPublicExported")
-public final class TreeIconNode extends DefaultMutableTreeNode {
+public class TreeIconNode extends DefaultMutableTreeNode {
 
     private final TreeIconUserObject nodeUserObject;
-    
+
     private int nodeType; //0 - Project Node, 1 - Debug Node 
 
     private static final Logger logger = Logger.getLogger(TreeIconNode.class.getName());
     private static final Preferences userPreferences = getUserPreferences();
     private static String selectedUIDName;
-    
+
     public static final Icon runIcon;
     public static final Icon runningIcon;
     public static final Icon passedIcon;
@@ -52,7 +56,7 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
     public static final int STATE_PROJECT_EXPAND = 0;
     public static final int STATE_DEBUG_EXPAND = 1;
     public static final int STATE_DEBUG_REPORT = 2;
-    public static final int STATE_IS_OPENED = 3;
+    public static final int STATE_OPEN_PROJECT_OR_WIZARD_TAB = 3; //Project is open or close, or TestCase/TestStep open in Wizard tab
 
     public static final int REPORT_INIT_STATE = 0;
     public static final int REPORT_RUN_STATE = 1;
@@ -74,6 +78,7 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
         skippedIcon = new ImageIcon(TreeIconNode.class.getResource("/com/equinix/amphibia/icons/testcase_skipped_16.png"));
     }
 
+    @SuppressWarnings("OverridableMethodCallInConstructor")
     public TreeIconNode() {
         this(null, "root", null, false);
         this.addType(TreeCollection.TYPE.ROOT);
@@ -87,6 +92,7 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
         this(new TreeIconUserObject(collection, label, type, truncate, properties));
     }
 
+    @SuppressWarnings("OverridableMethodCallInConstructor")
     public TreeIconNode(TreeIconNode source, TreeCollection.TYPE type) {
         this(source.getCollection(), source.getLabel(), type, false);
         this.nodeType = 1;
@@ -110,7 +116,7 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
         nodeUserObject.json = json;
         return this;
     }
-    
+
     public TreeIconNode addType(TreeCollection.TYPE type) {
         nodeUserObject.type = type;
         return this;
@@ -190,12 +196,12 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
     public String getNodePath() {
         return Arrays.toString(this.getPath());
     }
-    
+
     public void saveSelection() {
         setSelectedUIDName(getUID());
         userPreferences.putByteArray(Amphibia.P_SELECTED_NODE, selectedUIDName.getBytes());
     }
-    
+
     public String getUID() {
         return getUID(getNodePath());
     }
@@ -217,7 +223,7 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
     public TreeIconNode getSource() {
         return source;
     }
-    
+
     private static void setSelectedUIDName(String name) {
         selectedUIDName = name;
     }
@@ -366,6 +372,116 @@ public final class TreeIconNode extends DefaultMutableTreeNode {
         @Override
         public String toString() {
             return label;
+        }
+    }
+
+    public static class ProfileNode extends TreeIconNode {
+
+        private Timer timer;
+        public File profileFile;
+        public File backupFile;
+        public JSONObject profileJSON;
+
+        ProfileNode(TreeCollection collection, String label, TreeCollection.TYPE type, boolean truncate, Object[][] properties) {
+            super(collection, label, type, truncate, properties);
+        }
+
+        public void load(File dir) throws Exception {
+            profileFile = new File(dir, "data/profile.json");
+            reloadJSON();
+            if (!profileJSON.containsKey("states")) {
+                JSONObject states = new JSONObject();
+                states.element("project", new int[]{1, 1, 0, 1}); //STATE_PROJECT_EXPAND, STATE_DEBUG_EXPAND, STATE_DEBUG_REPORT, STATE_OPEN_PROJECT_OR_WIZARD_TAB
+                states.element("resources", new int[]{0});
+                states.element("interfaces", new int[]{0});
+                states.element("testsuites", new int[]{1});
+                states.element("tests", new int[]{0});
+                states.element("schemas", new int[]{0});
+                states.element("requests", new int[]{0});
+                states.element("responses", new int[]{0});
+                profileJSON.element("states", states);
+            }
+
+            if (!Amphibia.isExpertView() || !profileJSON.containsKey("expandResources")) {
+                profileJSON.element("expandResources", new JSONObject());
+            }
+            IO.write(profileJSON.toString(), profileFile, true);
+            IO.copy(profileFile, backupFile = IO.getBackupFile(profileFile));
+        }
+        
+        public JSONObject reloadJSON() throws Exception {
+            profileJSON = (JSONObject) IO.getJSON(profileFile);
+            return profileJSON;
+        }
+        
+        public void saveState(TreeIconNode node) {
+            if (timer != null) {
+                timer.cancel();
+            }
+            timer = new Timer();
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    try {
+                        TreeCollection collection = node.getCollection();
+                        JSONObject json = collection.profile.jsonObject();
+                        IO.write(IO.prettyJson(json.toString()), backupFile);
+                        
+                        //update states
+                        TreeCollection.TYPE type = node.getType();
+
+                        if (type == TESTSUITE || type == TESTCASE || type == TEST_STEP_ITEM) {
+                            for (Object item1 : json.getJSONArray("testsuites")) {
+                                JSONObject testsuite1 = (JSONObject) item1;
+                                for (Object item2 : profileJSON.getJSONArray("testsuites")) {
+                                    JSONObject testsuite2 = (JSONObject) item2;
+                                    if (testsuite1.getString("name").equals(testsuite2.getString("name"))) {
+                                        testsuite2.element("states", testsuite1.getJSONArray("states"));
+                                        for (Object item3 : testsuite1.getJSONArray("testcases")) {
+                                            JSONObject testcase1 = (JSONObject) item3;
+                                            for (Object item4 : testsuite2.getJSONArray("testcases")) {
+                                                JSONObject testcase2 = (JSONObject) item4;
+                                                if (testcase1.getString("name").equals(testcase2.getString("name"))) {
+                                                    testcase2.element("states", testcase1.getJSONArray("states"));
+                                                    for (Object item5 : testcase1.getJSONArray("steps")) {
+                                                        JSONObject step1 = (JSONObject) item5;
+                                                        for (Object item6 : testcase2.getJSONArray("steps")) {
+                                                            JSONObject step2 = (JSONObject) item6;
+                                                            if (step1.getString("name").equals(step2.getString("name"))) {
+                                                                step2.element("states", step1.getJSONArray("states"));
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        for (Object item1 : json.getJSONArray("resources")) {
+                            JSONObject resource1 = (JSONObject) item1;
+                            for (Object item2 : profileJSON.getJSONArray("resources")) {
+                                JSONObject resource2 = (JSONObject) item2;
+                                if (resource1.getString("id").equals(resource2.getString("id"))) {
+                                    resource2.element("states", resource1.getJSONArray("states"));
+                                    break;
+                                }
+                            }
+                        }
+
+                        profileJSON.element("states", json.getJSONObject("states"));
+                        profileJSON.element("expandResources", json.getJSONObject("expandResources"));
+                        IO.write(IO.prettyJson(profileJSON.toString()), profileFile);
+                    } catch (Exception e) {
+                        logger.log(Level.SEVERE, null, e);
+                    }
+                }
+            }, 100);
         }
     }
 }

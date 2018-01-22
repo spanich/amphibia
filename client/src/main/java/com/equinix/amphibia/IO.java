@@ -24,6 +24,7 @@ import net.sf.json.JSONNull;
 import net.sf.json.JSONObject;
 import org.apache.commons.collections.map.ListOrderedMap;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 
 /**
@@ -54,10 +55,27 @@ public class IO {
     }
 
     public static JSON getJSON(File file) throws Exception {
-        FileInputStream fis = new FileInputStream(file);
-        JSON json = (JSON) toJSON(IOUtils.toString(fis));
-        fis.close();
+        JSON json = null;
+        try {
+            FileInputStream fis = new FileInputStream(file);
+            json = (JSON) toJSON(IOUtils.toString(fis));
+            fis.close();
+        } catch (Exception ex) {
+            throw new Exception("File: " + file.getAbsolutePath() + "\n" + ex.toString(), ex);
+        }
         return json;
+    }
+    
+    public static JSONObject getBackupJSON(File file, BaseTaskPane pane) {
+        File backupFile = getBackupFile(file);
+        if (backupFile.exists()) {
+            file = backupFile;
+        }
+        return (JSONObject) getJSON(getBackupFile(file), pane);
+    }
+    
+    public static File getBackupFile(File file) {
+        return new File(file.getParentFile(), FilenameUtils.getBaseName(file.getName()) + ".bak");
     }
 
     public static String prettyJson(String value) throws Exception {
@@ -133,24 +151,29 @@ public class IO {
 
     public static String[] write(TreeIconNode node) throws Exception {
         TreeIconNode.TreeIconUserObject userObject = node.getTreeIconUserObject();
-        return write(userObject.json.toString(), new File(userObject.getFullPath()), true);
+        File file = new File(userObject.getFullPath());
+        File backup = getBackupFile(file);
+        if (backup.exists()) {
+            file = backup;
+        }
+        return write(userObject.json.toString(), file, true);
     }
     
     public static String[] write(String content, File file, boolean isJSON) throws Exception {
         if (isJSON) {
-            return write(prettyJson(content), file);
-        } else {
-            return write(content, file);
+            content = prettyJson(content);
         }
-    }
 
-    public static String[] write(String content, File file) throws IOException {
         if (!file.exists()) {
             file.createNewFile();
         }
         String oldContent = readFile(file);
-        IOUtils.write(content, new FileOutputStream(file));
+        write(content, file);
         return new String[] { oldContent, content };
+    }
+    
+    public static void write(String content, File file) throws IOException {
+        IOUtils.write(content, new FileOutputStream(file));
     }
 
     public static void copy(File source, File target) throws IOException {

@@ -255,6 +255,8 @@ public class Wizard extends javax.swing.JPanel {
         int index = tabNav.getTabCount();
         TreeIconNode node = MainPanel.selectedNode;
         WizardTab newTab = new WizardTab(this, node);
+        node.info.states.set(TreeIconNode.STATE_OPEN_PROJECT_OR_WIZARD_TAB,  1);
+        node.getCollection().profile.saveState(node);
         tabNav.addTab(node.getLabel(), node.getTreeIconUserObject().getIcon(), newTab);
         tabNav.setComponentAt(index, newTab);
         tabNav.setSelectedIndex(index);
