@@ -96,10 +96,10 @@ public final class TreeCollection {
     };
 
     public static final Object[][] RULES_PROPERTIES = new Object[][]{
-        {"headers", ADD},
-        {"globalProperties", ADD},
-        {"projectProperties", ADD},
-        {"testSuiteProperties", ADD},
+        {"headers", null, VIEW},
+        {"globalProperties", null, VIEW},
+        {"projectProperties", null, VIEW},
+        {"testSuiteProperties", null, VIEW},
         {"asserts", null, VIEW}
     };
 
@@ -116,7 +116,7 @@ public final class TreeCollection {
     };
 
     public static final Object[][] TESTSUITE_PROPERTIES = new Object[][]{
-        {"disabled", EDIT},
+        {"disabled", EDIT_LIMIT},
         {"name", VIEW},
         {"endpoint", VIEW},
         {"interface", VIEW},

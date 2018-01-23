@@ -72,7 +72,7 @@ public final class ResourceOrderDialog extends javax.swing.JPanel {
                 for (int i = 0; i < resourceModel.size(); i++) {
                     source.add(((ResourceItem) resourceModel.getElementAt(i)).json);
                 }
-                mainPanel.saveNodeValue(collection.profile);
+                mainPanel.saveNodeValue((TreeIconNode.ProfileNode)collection.profile);
                 dialog.setVisible(false);
             } catch (Exception ex) {
                 logger.log(Level.SEVERE, ex.toString(), ex);
@@ -236,7 +236,7 @@ public final class ResourceOrderDialog extends javax.swing.JPanel {
         int index = lstResource.getSelectedIndex();
         JSONObject json = ((ResourceItem) resourceModel.getElementAt(index)).json;
         source.add(json);
-        mainPanel.saveNodeValue(collection.profile);
+        mainPanel.saveNodeValue((TreeIconNode.ProfileNode)collection.profile);
         dialog.setVisible(false);
     }//GEN-LAST:event_btnCloneActionPerformed
 

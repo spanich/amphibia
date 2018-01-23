@@ -12,12 +12,11 @@ import com.equinix.amphibia.components.Editor;
 import com.equinix.amphibia.components.MainPanel;
 import com.equinix.amphibia.components.TreeCollection;
 import com.equinix.amphibia.components.TreeIconNode;
+import java.util.Enumeration;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import net.sf.json.JSONArray;
-import net.sf.json.JSONNull;
 import net.sf.json.JSONObject;
 
 /**
@@ -37,28 +36,41 @@ public class HistoryManager {
         this.mainPanel = mainPanel;
         this.editor = editor;
     }
-
-    public void renameProject(String oldName, String newName, TreeCollection collection) {
-        try {
-            mainPanel.selectNode(collection.project);
-        } catch (Exception ex) {
-            logger.log(Level.SEVERE, null, ex);
-        }
-    }
     
     public void saveEntry(Editor.Entry entry, TreeCollection collection) {
-        TreeIconNode.ResourceInfo info = MainPanel.selectedNode.info;
-        TreeCollection.TYPE type = MainPanel.selectedNode.getType();
-        TreeIconNode node = collection.profile;
+        TreeIconNode selectedNode = MainPanel.selectedNode;
+        TreeIconNode.ResourceInfo info = selectedNode.info;
+        TreeCollection.TYPE type = selectedNode.getType();
+        TreeIconNode node = (TreeIconNode.ProfileNode) collection.profile;
         if (type == PROJECT || type == INTERFACE) {
             node = collection.project;
         }
-        if ("disabled".equals(entry.name)) {
+        if ("name".equals(entry.name)) {
+            TreeIconNode saveNode = collection.profile;
+            if (type == TESTCASE) {
+                info.testCase.element(entry.name, entry.value);
+            } else if (type == TEST_STEP_ITEM) {
+                info.testStep.element("name", entry.value);
+            } else {
+                JSONObject json = selectedNode.jsonObject();
+                if (type == PROJECT) {
+                    json = saveNode.jsonObject().getJSONObject("project");
+                } else if (type == INTERFACE) {
+                    saveNode = collection.project;
+                }
+                json.element(entry.name, entry.value);
+            }
+            saveAndAddHistory(saveNode);
+            //Save new selection name
+            selectedNode.getTreeIconUserObject().setLabel(entry.value.toString());
+            selectedNode.saveSelection();
+            mainPanel.reloadCollection(collection);
+        } else if ("disabled".equals(entry.name)) {
             JSONObject json;
             switch (type) {
                 case TESTSUITE:
                     JSONArray testsuites = node.jsonObject().getJSONArray("testsuites");
-                    int index = MainPanel.selectedNode.jsonObject().getInt("index");
+                    int index = selectedNode.jsonObject().getInt("index");
                     json = testsuites.getJSONObject(index);
                     break;
                 case TESTCASE:
@@ -75,10 +87,12 @@ public class HistoryManager {
             } else {
                 json.element("disabled", true);
             }
+        } else if (type == TESTSUITE) {
+            if ("properties".equals(entry.getParent().toString())) {
+                updateValues(entry, info.testSuiteInfo.getJSONObject("properties"), info.testSuite, "properties");
+            }
         } else if (type == TESTCASE) {
-            if ("name".equals(entry.name)) {
-                info.testCase.element(entry.name, entry.value);
-            } else if ("summary".equals(entry.name)) {
+            if ("summary".equals(entry.name)) {
                 info.testCaseInfo.element(entry.name, entry.value);
             } else if ("operationId".equals(entry.name)) {
                 info.testCaseInfo.getJSONObject("config").element(entry.name, entry.value);
@@ -96,13 +110,11 @@ public class HistoryManager {
                 return;
             }
         } else if (type == RULES || type == TEST_ITEM || type == SCHEMA_ITEM) {
-            node = MainPanel.selectedNode;
+            node = selectedNode;
         } else if (type == TEST_STEP_ITEM) {
-            JSONObject json = MainPanel.selectedNode.jsonObject();
+            JSONObject json = selectedNode.jsonObject();
             info.testStep.remove("request");
             info.testStep.remove("response");
-
-            info.testStep.element("name", json.getString("name"));
             JSONObject request = compare(info.testStepInfo.getJSONObject("request"), json.getJSONObject("request"), false);
             if (!request.isEmpty()) {
                 info.testStep.element("request", request);
@@ -151,26 +163,22 @@ public class HistoryManager {
         });
     }
 
-    private void updateValues(Editor.Entry entry, JSONObject source, JSONObject testCase, String name) {
-        JSONObject json = testCase.getJSONObject(name);
+    private void updateValues(Editor.Entry entry, JSONObject source, JSONObject target, String name) {
+        JSONObject json = target.getJSONObject(name);
         if (json.isNullObject()) {
             json = new JSONObject();
         }
         if (entry.isDelete) {
-            if (source.containsKey(entry.name)) {
-                json.element(entry.name, JSONNull.getInstance());
-            } else {
-                json.remove(entry.name);
-            }
+            json.remove(entry.name);
         } else if (source.containsKey(entry.name) && String.valueOf(source.get(entry.name)).equals(String.valueOf(entry.value))) {
             json.remove(entry.name);
         } else {
             json.element(entry.name, entry.value);
         }
         if (json.isEmpty()) {
-            testCase.remove(name);
+            target.remove(name);
         } else {
-            testCase.element(name, json);
+            target.element(name, json);
         }
     }
     
@@ -183,16 +191,21 @@ public class HistoryManager {
         editor.resetHistory();
     }
 
-    public void renameResource(boolean isProject, TreeCollection collection) {
-        TreeIconNode.TreeIconUserObject userObject = MainPanel.selectedNode.getTreeIconUserObject();
-        String name = Amphibia.instance.inputDialog("renameResources", userObject.getLabel(), new String[] {});
-        if (name != null && !name.isEmpty()) {
-            if (isProject) {
-                renameProject(userObject.getLabel(), name, collection);
+    public void renameResource() {
+        int index = 0;
+        String[] names = new String[MainPanel.selectedNode.getParent().getChildCount() - 1];
+        Enumeration children = MainPanel.selectedNode.getParent().children();
+        while (children.hasMoreElements()) {
+            Object node = children.nextElement();
+            if (node != MainPanel.selectedNode) {
+                names[index++] = node.toString();
             }
-            ((JSONObject) userObject.json).element("name", name);
-            saveAndAddHistory(collection.project);
-            mainPanel.reloadCollection(collection);
+        }
+        String name = Amphibia.instance.inputDialog("renameResources", MainPanel.selectedNode.getLabel(), names);
+        if (name != null && !name.isEmpty()) {
+            Editor.Entry entry = new Editor.Entry("name");
+            entry.value = name;
+            saveEntry(entry, MainPanel.selectedNode.getCollection());
         }
     }
 

@@ -518,7 +518,7 @@ public final class Amphibia extends JFrame {
         btnStop = new JButton();
         spr4 = new JToolBar.Separator();
         btnReport = new JButton();
-        btnOpenTestCase = new JButton();
+        btnAddToWizard = new JButton();
         pnlEnv = new JPanel();
         lblEnvironment = new JLabel();
         cmbEnvironment = new JComboBox<>();
@@ -596,7 +596,6 @@ public final class Amphibia extends JFrame {
         ResourceBundle bundle = ResourceBundle.getBundle("com/equinix/amphibia/messages"); // NOI18N
         setTitle(bundle.getString("title")); // NOI18N
         setMinimumSize(new Dimension(90, 140));
-        setPreferredSize(new Dimension(1300, 690));
 
         tlbTop.setBorder(null);
         tlbTop.setRollover(true);
@@ -740,18 +739,18 @@ public final class Amphibia extends JFrame {
         });
         tlbTop.add(btnReport);
 
-        btnOpenTestCase.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/open_env_16.png"))); // NOI18N
-        btnOpenTestCase.setToolTipText(bundle.getString("openTestcase")); // NOI18N
-        btnOpenTestCase.setEnabled(false);
-        btnOpenTestCase.setFocusable(false);
-        btnOpenTestCase.setHorizontalTextPosition(SwingConstants.CENTER);
-        btnOpenTestCase.setVerticalTextPosition(SwingConstants.BOTTOM);
-        btnOpenTestCase.addActionListener(new ActionListener() {
+        btnAddToWizard.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/open_env_16.png"))); // NOI18N
+        btnAddToWizard.setToolTipText(bundle.getString("addToWizard")); // NOI18N
+        btnAddToWizard.setEnabled(false);
+        btnAddToWizard.setFocusable(false);
+        btnAddToWizard.setHorizontalTextPosition(SwingConstants.CENTER);
+        btnAddToWizard.setVerticalTextPosition(SwingConstants.BOTTOM);
+        btnAddToWizard.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                btnOpenTestCaseActionPerformed(evt);
+                btnAddToWizardActionPerformed(evt);
             }
         });
-        tlbTop.add(btnOpenTestCase);
+        tlbTop.add(btnAddToWizard);
 
         pnlEnv.setLayout(new FlowLayout(FlowLayout.RIGHT));
 
@@ -1388,7 +1387,7 @@ public final class Amphibia extends JFrame {
 
     private void mnuRenameActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuRenameActionPerformed
         if (MainPanel.selectedNode != null) {
-            mainPanel.history.renameResource(true, MainPanel.selectedNode.getCollection());
+            mainPanel.history.renameResource();
         }
     }//GEN-LAST:event_mnuRenameActionPerformed
 
@@ -1466,9 +1465,9 @@ public final class Amphibia extends JFrame {
         }
     }//GEN-LAST:event_mnuEmptyProjectActionPerformed
 
-    private void btnOpenTestCaseActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnOpenTestCaseActionPerformed
-        mainPanel.wizard.openTestCase();
-    }//GEN-LAST:event_btnOpenTestCaseActionPerformed
+    private void btnAddToWizardActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnAddToWizardActionPerformed
+        mainPanel.wizard.addWizardTab();
+    }//GEN-LAST:event_btnAddToWizardActionPerformed
 
     private void cmbEnvironmentActionPerformed(ActionEvent evt) {//GEN-FIRST:event_cmbEnvironmentActionPerformed
         if (cmbEnvironment.getSelectedIndex() == cmbEnvironment.getItemCount() - 1) {
@@ -1622,8 +1621,8 @@ public final class Amphibia extends JFrame {
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    public JButton btnAddToWizard;
     private JButton btnCreate;
-    public JButton btnOpenTestCase;
     public JToggleButton btnPause;
     private JButton btnReport;
     private JButton btnStop;

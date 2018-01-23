@@ -15,6 +15,7 @@ import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -68,6 +69,14 @@ public final class TreePopupMenuBuilder implements ActionListener {
             case INTERFACE:
                 addMenu(popup, "mnuRename", "RENAME:INTERFACE");
                 break;
+            case TESTCASE:
+            case TEST_STEP_ITEM:
+                addMenu(popup, "mnuRename", "RENAME:" + userObject.getType());
+                addMenu(popup, "addToWizard", "OPEN_TESTCASE");
+            case TESTSUITE:
+                JMenuItem menu = addMenu(popup, "disable", "DISABLED");
+                menu.setSelected(!userObject.isEnabled());
+                break;
             default:
                 break;
 
@@ -80,7 +89,12 @@ public final class TreePopupMenuBuilder implements ActionListener {
     }
 
     private JMenuItem addMenu(JComponent parent, String label, String actionCommand, boolean localize) {
-        JMenuItem menu = new JMenuItem(localize ? bundle.getString(label) : label);
+        JMenuItem menu;
+        if ("DISABLED".equals(actionCommand)) {
+            menu = new JCheckBoxMenuItem(localize ? bundle.getString(label) : label);
+        } else {
+            menu = new JMenuItem(localize ? bundle.getString(label) : label);
+        }
         menu.setActionCommand(actionCommand);
         menu.setMargin(new java.awt.Insets(0, 0, 0, 25));
         menu.addActionListener(this);
@@ -95,7 +109,7 @@ public final class TreePopupMenuBuilder implements ActionListener {
         TreeCollection collection = selectedNode.getCollection();
         switch (commands[0]) {
             case "RENAME":
-                mainPanel.history.renameResource(commands[1].equals("PROJECT"), collection);
+                mainPanel.history.renameResource();
                 break;
             case "CLOSE":
                 mainPanel.openCloseProject(false);
@@ -105,6 +119,14 @@ public final class TreePopupMenuBuilder implements ActionListener {
                 break;
             case "RELOAD":
                 mainPanel.reloadCollection(collection);
+                break;
+            case "OPEN_TESTCASE":
+                mainPanel.wizard.addWizardTab();
+                break;
+            case "DISABLED":
+                Editor.Entry entry = new Editor.Entry("disabled");
+                entry.value = menuitem.isSelected();
+                mainPanel.history.saveEntry(entry, collection);
                 break;
             case "DELETE":
                 int dialogResult = JOptionPane.showConfirmDialog(mainPanel, bundle.getString("tip_deleting"), bundle.getString("title"), JOptionPane.YES_NO_OPTION);

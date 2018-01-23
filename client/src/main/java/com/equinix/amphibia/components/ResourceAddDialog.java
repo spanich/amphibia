@@ -151,6 +151,7 @@ public final class ResourceAddDialog extends javax.swing.JPanel {
     
     public void showTestCaseDialog(TreeIconNode selectedNode) {
         this.selectedNode = null; //reset last seletion
+        txtName.setText("");
         lblError.setVisible(false);
         testRootNode.removeAllChildren();
         Enumeration<TreeIconNode> tests = selectedNode.getCollection().tests.children();

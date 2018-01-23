@@ -193,4 +193,11 @@ public class IO {
             }
         });
     }
+    
+    public static void replaceValues(JSONObject source, JSONObject target) {
+        Set<ListOrderedMap.Entry> entries = source.entrySet();
+        entries.forEach((Map.Entry entry) -> {
+            target.put(entry.getKey(), entry.getValue());
+        });
+    }
 }

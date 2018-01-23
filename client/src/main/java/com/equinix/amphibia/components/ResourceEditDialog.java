@@ -110,9 +110,6 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
                                 lblError.setVisible(true);
                                 return;
                             }
-                            if (currentName.equals(itf.getString("name"))) {
-                                itf.element("name", value);
-                            }
                         }
                     } else {
                         Enumeration children = node.getParent().children();
@@ -123,11 +120,6 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
                                 lblError.setVisible(true);
                                 return;
                             }
-                        }
-                    }
-                    if (type == TreeCollection.TYPE.PROJECT || type == TreeCollection.TYPE.INTERFACE) {
-                        if (type == TreeCollection.TYPE.PROJECT) {
-                            mainPanel.history.renameProject(node.getLabel(), value.toString(), collection);
                         }
                     }
                 }
