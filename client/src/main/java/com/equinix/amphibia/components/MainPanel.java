@@ -311,7 +311,7 @@ public final class MainPanel extends javax.swing.JPanel {
                         editor.spnConsole.getVerticalScrollBar().setValue(selectedNode.info.consoleLine);
                     }
 
-                    if (e.getClickCount() == 2 && selectedNode.getTreeIconUserObject().getType() == TESTCASE) {
+                    if (e.getClickCount() == 2 && amphibia.btnAddToWizard.isEnabled()) {
                         wizard.addWizardTab();
                     }
                 }

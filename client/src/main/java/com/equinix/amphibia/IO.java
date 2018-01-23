@@ -68,10 +68,10 @@ public class IO {
     
     public static JSONObject getBackupJSON(File file, BaseTaskPane pane) {
         File backupFile = getBackupFile(file);
-        if (backupFile.exists()) {
-            file = backupFile;
+        if (!backupFile.exists()) {
+            backupFile = file;
         }
-        return (JSONObject) getJSON(getBackupFile(file), pane);
+        return (JSONObject) getJSON(backupFile, pane);
     }
     
     public static File getBackupFile(File file) {

@@ -22,6 +22,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -249,11 +250,14 @@ public class Wizard extends javax.swing.JPanel {
             updateInterfaces();
         }
     }
-
+    
     public void addWizardTab() {
+        addWizardTab(MainPanel.selectedNode);
         mainPanel.tabRight.setSelectedIndex(1);
+    }
+
+    private void addWizardTab(TreeIconNode node) {
         int index = tabNav.getTabCount();
-        TreeIconNode node = MainPanel.selectedNode;
         WizardTab newTab = new WizardTab(this, node);
         node.info.states.set(TreeIconNode.STATE_OPEN_PROJECT_OR_WIZARD_TAB,  1);
         node.getCollection().profile.saveState(node);
@@ -262,6 +266,34 @@ public class Wizard extends javax.swing.JPanel {
         tabNav.setSelectedIndex(index);
         newTab.updateEndPoints(endpoints);
         newTab.refresh();
+    }
+    
+    public void openTabs() {
+        Enumeration projects = mainPanel.treeNode.children();
+        while (projects.hasMoreElements()) {
+            TreeIconNode project = (TreeIconNode) projects.nextElement();
+            TreeCollection collection = project.getCollection();
+            if (collection.isOpen()) {
+                Enumeration testsuites = collection.testsuites.children();
+                while (testsuites.hasMoreElements()) {
+                    TreeIconNode testsuite = (TreeIconNode) testsuites.nextElement();
+                    Enumeration testcases = testsuite.children();
+                    while (testcases.hasMoreElements()) {
+                        TreeIconNode testcase = (TreeIconNode) testcases.nextElement();
+                        if (testcase.info.states.getInt(TreeIconNode.STATE_OPEN_PROJECT_OR_WIZARD_TAB) == 1) {
+                            addWizardTab(testcase);
+                        }
+                        Enumeration teststeps = testcase.children();
+                        while (teststeps.hasMoreElements()) {
+                            TreeIconNode teststep = (TreeIconNode) teststeps.nextElement();
+                                if (teststep.info.states.getInt(TreeIconNode.STATE_OPEN_PROJECT_OR_WIZARD_TAB) == 1) {
+                                addWizardTab(teststep);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     
     /**

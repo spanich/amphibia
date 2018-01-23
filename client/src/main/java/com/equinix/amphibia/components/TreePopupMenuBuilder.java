@@ -69,13 +69,16 @@ public final class TreePopupMenuBuilder implements ActionListener {
             case INTERFACE:
                 addMenu(popup, "mnuRename", "RENAME:INTERFACE");
                 break;
-            case TESTCASE:
-            case TEST_STEP_ITEM:
-                addMenu(popup, "mnuRename", "RENAME:" + userObject.getType());
-                addMenu(popup, "addToWizard", "OPEN_TESTCASE");
             case TESTSUITE:
-                JMenuItem menu = addMenu(popup, "disable", "DISABLED");
-                menu.setSelected(!userObject.isEnabled());
+                addMenu(popup, "addResources", "ADD_TESTCASES");
+                addMenu(popup, "disable", "DISABLED").setSelected(!userObject.isEnabled());
+                break;
+            case TESTCASE:
+                addMenu(popup, "addResources", "ADD_TESTSTEPS");
+            case TEST_STEP_ITEM:
+                addMenu(popup, "addToWizard", "OPEN_TESTCASE");
+                addMenu(popup, "mnuRename", "RENAME:" + userObject.getType());
+                addMenu(popup, "disable", "DISABLED").setSelected(!userObject.isEnabled());
                 break;
             default:
                 break;
@@ -119,6 +122,12 @@ public final class TreePopupMenuBuilder implements ActionListener {
                 break;
             case "RELOAD":
                 mainPanel.reloadCollection(collection);
+                break;
+            case "ADD_TESTCASES":
+                mainPanel.resourceAddDialog.showTestCaseDialog(selectedNode);
+                break;
+            case "ADD_TESTSTEPS":
+                mainPanel.resourceAddDialog.showTestStepDialog(selectedNode);
                 break;
             case "OPEN_TESTCASE":
                 mainPanel.wizard.addWizardTab();

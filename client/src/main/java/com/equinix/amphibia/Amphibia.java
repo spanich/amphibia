@@ -203,6 +203,7 @@ public final class Amphibia extends JFrame {
         }
 
         initComponents();
+        setSize(1300, 690);
 
         resetEnvironmentModel();
 
