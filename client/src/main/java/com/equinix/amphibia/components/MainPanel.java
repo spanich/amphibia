@@ -28,7 +28,10 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -472,7 +475,7 @@ public final class MainPanel extends javax.swing.JPanel {
                     });
                 }
                 testCaseHeaders.keySet().forEach((key) -> {
-                    sb.append("<li><b>").append(key).append(":</b> ").append(testCaseHeaders.get(key)).append("</li>");
+                    sb.append("<li><b>").append(key).append(":</b> ").append(node.info.properties.replace(testCaseHeaders.get(key))).append("</li>");
                 });
                 sb.append("</ul><br/><b>Request Body</b>");
                 JSONObject request = node.info.testStepInfo.getJSONObject("request");
@@ -579,11 +582,26 @@ public final class MainPanel extends javax.swing.JPanel {
         JSONObject projectJson = collection.project.jsonObject();
         Properties projectProperties;
         try {
-            projectProperties = new Properties(projectJson.getJSONArray("globals"), projectJson.getJSONObject("properties"));
+            JSONArray globals;
+            Object[][] vars = GlobalVariableDialog.getGlobalVarData();
+            if (vars == null) {
+                globals = projectJson.getJSONArray("globals");
+            } else {
+               globals = new JSONArray();
+               int columnIndex = Amphibia.instance.getSelectedEnvDataIndex();
+               for (Object[] data : vars) {
+                   globals.add(new HashMap<Object,Object>() {{
+                       put("name", data[1]);
+                       put("value", data[columnIndex]);
+                   }});
+               }
+            }
+            projectProperties = new Properties(globals, projectJson.getJSONObject("properties"));
         } catch (Exception e) {
             editor.addError(e, Amphibia.getBundle().getString("error_open_json"));
             return false;
         }
+        collection.setProjectProperties(projectProperties);
 
         File profileFile = IO.getFile(collection, "data/profile.json");
         JSONObject json = IO.getBackupJSON(profileFile, editor);
@@ -608,10 +626,10 @@ public final class MainPanel extends javax.swing.JPanel {
         JSONArray resources = json.getJSONArray("resources");
         JSONArray testsuites = json.getJSONArray("testsuites");
 
-        JSONObject resourceMap = new JSONObject();
+        Map<String, JSONObject> resourceMap = new HashMap<>();
         projectResources.forEach((item) -> {
             JSONObject resource = (JSONObject) item;
-            resourceMap.element(resource.getString("resourceId"), resource);
+            resourceMap.put(resource.getString("resourceId"), resource);
         });
 
         Map<Object, JSONObject> interfacesMap = new HashMap<>();
@@ -628,7 +646,7 @@ public final class MainPanel extends javax.swing.JPanel {
         testsuites.forEach((item) -> {
             JSONObject testsuite = (JSONObject) item;
             String resourceId = testsuite.getString("resource");
-            JSONObject resource = resourceMap.getJSONObject(resourceId);
+            JSONObject resource = resourceMap.get(resourceId);
             JSONObject testSuiteInfo = resource.getJSONObject("testsuites").getJSONObject(testsuite.getString("name"));
             String dirPath = String.format(dirFormat, resourceId, testsuite.getString("name"));
             File dir = IO.getFile(collection, dirPath);
@@ -645,8 +663,8 @@ public final class MainPanel extends javax.swing.JPanel {
                     for (int i = 0; i < testcases.size(); i++) {
                         JSONObject testCaseInfo = testcases.getJSONObject(i);
                         JSONObject interfaceJSON = null;
-                        if (resource.containsKey("interface") && !resource.getString("interface").isEmpty()) {
-                            interfaceJSON = interfacesMap.get(resource.getString("interface"));
+                        if (resource.containsKey("interfaceId") && !resource.getString("interfaceId").isEmpty()) {
+                            interfaceJSON = interfacesMap.get(resource.getString("interfaceId"));
                         }
                         JSONObject testCaseHeaders = interfaceJSON == null ? new JSONObject() : JSONObject.fromObject(interfaceJSON.getJSONObject("headers").toString());
                         if (testCaseInfo.containsKey("headers")) {
@@ -713,7 +731,7 @@ public final class MainPanel extends javax.swing.JPanel {
             JSONObject testsuite = testsuites.getJSONObject(i);
             String name = testsuite.getString("name");
             String resourceId = testsuite.getString("resource");
-            JSONObject resource = resourceMap.getJSONObject(resourceId);
+            JSONObject resource = resourceMap.get(resourceId);
             JSONObject interfaceJSON;
             if (resource.containsKey("interfaceId")) {
                 interfaceJSON = interfacesMap.get(resource.getString("interfaceId"));
@@ -726,7 +744,7 @@ public final class MainPanel extends javax.swing.JPanel {
             JSONObject testsuiteJSON = new JSONObject();
             testsuiteJSON.put("disabled", testsuite.get("disabled") == Boolean.TRUE);
             testsuiteJSON.put("name", name);
-            testsuiteJSON.put("endpoint", "${#Global#" + resource.getString("endpoint") + "}");
+            testsuiteJSON.put("endpoint", resource.getString("endpoint"));
             testsuiteJSON.put("properties", JSONNull.getInstance());
             testsuiteJSON.put("testcases", JSONNull.getInstance());
             testsuiteJSON.put("index", i);

@@ -5,6 +5,8 @@
  */
 package com.equinix.amphibia;
 
+import com.equinix.amphibia.agent.builder.Properties;
+import com.equinix.amphibia.components.TreeCollection;
 import com.equinix.amphibia.components.TreeIconNode;
 
 import java.io.BufferedReader;
@@ -45,6 +47,7 @@ public final class HttpConnection {
     
     @SuppressWarnings("NonPublicExported")
     public Result request(String name, String method, TreeIconNode node) throws Exception {
+        final TreeCollection collection = node.getCollection();
         final JSONObject testCaseHeaders = JSONObject.fromObject(node.info.testCaseHeaders);
         if (node.info.testCase != null && node.info.testCase.containsKey("headers")) {
             JSONObject headers = node.info.testCase.getJSONObject("headers");
@@ -62,7 +65,7 @@ public final class HttpConnection {
         if (request.get("body") instanceof String) {
             reqBody = request.getString("body");
             try {
-                reqBody = IO.readFile(node.getCollection(), reqBody);
+                reqBody = IO.readFile(collection, reqBody);
                 reqBody = IO.prettyJson(reqBody);
                 reqBody = node.info.properties.cloneProperties().setTestStep(request.getJSONObject("properties")).replace(reqBody);
             } catch (Exception ex) {
@@ -70,7 +73,7 @@ public final class HttpConnection {
             }
         }
         
-        Result result = request(name, method, node.getTreeIconUserObject().getTooltip(), testCaseHeaders, reqBody);
+        Result result = request(collection.getProjectProperties(), name, method, node.getTreeIconUserObject().getTooltip(), testCaseHeaders, reqBody);
         try {
             int expected = node.info.testCaseInfo.getJSONObject("properties").getInt("HTTPStatusCode");
             if (result.statusCode != expected) {
@@ -84,7 +87,7 @@ public final class HttpConnection {
     }
     
     @SuppressWarnings("NonPublicExported")
-    public Result request(String name, String method, String url, JSONObject headers, String reqBody) throws Exception {
+    public Result request(Properties properties, String name, String method, String url, JSONObject headers, String reqBody) throws Exception {
         conn = null;
         Result result = new Result();
         BufferedReader in;
@@ -107,8 +110,9 @@ public final class HttpConnection {
             out.info("HEADER:\n", true);
             if (conn != null) {
                 headers.keySet().forEach((key) -> {
-                    out.info(key + ": " + headers.get(key) + "\n");
-                    conn.setRequestProperty(key.toString().toLowerCase(), String.valueOf(headers.get(key)));
+                    String value = properties.replace(headers.get(key));
+                    out.info(key + ": " + value + "\n");
+                    conn.setRequestProperty(key.toString().toLowerCase(), value);
                 });
             }
 

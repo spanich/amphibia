@@ -204,9 +204,7 @@ public final class Amphibia extends JFrame {
 
         initComponents();
         setSize(1300, 690);
-
-        resetEnvironmentModel();
-
+        
         String[] tabs = userPreferences.get(P_VIEW_TABS, OPEN_TABS).split("");
         for (int i = 0; i < tabs.length; i++) {
             showHideTab(i, "1".equals(tabs[i]));
@@ -231,7 +229,7 @@ public final class Amphibia extends JFrame {
         inheritProp.setSelected(userPreferences.getBoolean(Amphibia.P_INHERIT_PROPERTIES, true));
 
         mainPanel.saveDialog.validateAndSave(bundle.getString("restore"), true);
-           
+        
         JSONArray recentProjects = JSONArray.fromObject(userPreferences.get(P_RECENT_PROJECTS, "[]"));
         JSONArray list = JSONArray.fromObject(userPreferences.get(P_PROJECT_UUIDS, "[]"));
         TreeCollection collection = null;
@@ -250,9 +248,11 @@ public final class Amphibia extends JFrame {
         createRecentProjectMenu(collection);
         mainPanel.treeModel.reload();
         mainPanel.reloadAll();
+        resetEnvironmentModel();
 
         mainPanel.profile.openReport();
-
+        mainPanel.wizard.openTabs();
+        
         this.addComponentListener(new ComponentAdapter() {
             Timer timer = new Timer();
 
@@ -375,7 +375,7 @@ public final class Amphibia extends JFrame {
                     try {
                         TreeCollection selectedProject = mainPanel.getSelectedProject(projectFile);
                         selectedProject.setProjectFile(projectFile);
-                        mainPanel.loadProject(selectedProject);
+                        registerProject(selectedProject);
                     } catch (Exception e) {
                         mainPanel.addError(e);
                     }
@@ -470,24 +470,32 @@ public final class Amphibia extends JFrame {
         tipDialog.openDialog(bundle.getString(msgKey), preferenceKey);
     }
     
+    public int getSelectedEnvDataIndex() {
+        int columnEnv = 2; //0 - column type, 1 - environment name
+        String[] columns = GlobalVariableDialog.getGlobalVarColumns();
+        String selectedEnv = userPreferences.get(P_SELECTED_ENVIRONMENT, null);
+        for (int c = columnEnv + 1; c < columns.length; c++) {
+            if (columns[c].equals(selectedEnv)) {
+                return c;
+            }
+        }
+        return columnEnv; //Default
+    }
+    
     public void resetEnvironmentModel() {
         int columnIndex = 0;
-        int selectedIndex = 0;
         int columnEnv = 2; //0 - column type, 1 - environment name
-        String selectedEnv = userPreferences.get(P_SELECTED_ENVIRONMENT, null);
+        
         String[] columns = GlobalVariableDialog.getGlobalVarColumns();
         Object[][] data = GlobalVariableDialog.getGlobalVarData();
         SelectedEnvironment[] model = new SelectedEnvironment[columns.length - columnEnv + 1];
         model[columnIndex++] = new SelectedEnvironment(bundle.getString("default"), data, columnEnv);
         for (int c = columnEnv + 1; c < columns.length; c++) {
-            if (columns[c].equals(selectedEnv)) {
-                selectedIndex = columnIndex;
-            }
             model[columnIndex++] = new SelectedEnvironment(columns[c], data, c);
         }
         model[columnIndex++] = new SelectedEnvironment(bundle.getString("addEnvironment"), new Object[][]{}, -1);
         cmbEnvironment.setModel(new DefaultComboBoxModel(model));
-        cmbEnvironment.setSelectedIndex(selectedIndex);
+        cmbEnvironment.setSelectedIndex(getSelectedEnvDataIndex() - columnEnv);
         mainPanel.wizard.updateEndPoints();
     }
 
@@ -1477,6 +1485,9 @@ public final class Amphibia extends JFrame {
             userPreferences.put(P_SELECTED_ENVIRONMENT, cmbEnvironment.getSelectedItem().toString());
         }
         resetEnvironmentModel();
+        if (MainPanel.selectedNode != null) {
+            mainPanel.reloadCollection(MainPanel.selectedNode.getCollection());
+        }
     }//GEN-LAST:event_cmbEnvironmentActionPerformed
 
     private void mnuGlobalVarsActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuGlobalVarsActionPerformed
@@ -1618,7 +1629,7 @@ public final class Amphibia extends JFrame {
     
     public SelectedEnvironment getSelectedEnvironment() {
         SelectedEnvironment env = (SelectedEnvironment) cmbEnvironment.getSelectedItem();
-        return env.columnIndex != -1 ? env : null;
+        return env != null && env.columnIndex != -1 ? env : null;
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables

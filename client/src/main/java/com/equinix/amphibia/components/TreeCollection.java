@@ -9,6 +9,7 @@ import static com.equinix.amphibia.components.JTreeTable.EditValueRenderer.TYPE.
 import static com.equinix.amphibia.components.TreeCollection.TYPE.*;
 
 import com.equinix.amphibia.Amphibia;
+import com.equinix.amphibia.agent.builder.Properties;
 
 import java.io.File;
 import java.util.Enumeration;
@@ -29,6 +30,7 @@ public final class TreeCollection {
 
     private File projectFile;
     private JSONObject projectProfile;
+    private Properties projectProperties;
 
     public final TreeIconNode.ProfileNode profile;
     public final TreeIconNode project;
@@ -117,8 +119,8 @@ public final class TreeCollection {
 
     public static final Object[][] TESTSUITE_PROPERTIES = new Object[][]{
         {"disabled", EDIT_LIMIT},
-        {"name", VIEW},
-        {"endpoint", VIEW},
+        {"endpoint", EDIT},
+        {"name", VIEW},  
         {"interface", VIEW},
         {"properties", ADD},
         {"testcases", ADD_RESOURCES, REFERENCE_EDIT}
@@ -320,6 +322,14 @@ public final class TreeCollection {
 
     public void setOpen(boolean isOpen) {
         project.info.states.set(TreeIconNode.STATE_OPEN_PROJECT_OR_WIZARD_TAB, isOpen ? 1 : 0);
+    }
+    
+    public Properties getProjectProperties() {
+        return projectProperties;
+    }
+
+    public void setProjectProperties(Properties properties) {
+        this.projectProperties = properties;
     }
 
     public void setProjectFile(File file) {

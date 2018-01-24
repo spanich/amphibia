@@ -852,6 +852,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
         btnSwaggerUrl.setEnabled(isURL);
         txtSwaggerFile.setEnabled(!isURL);
         btnSwaggerFile.setEnabled(!isURL);
+        btnFinish.setEnabled(resourceModel.getRowCount() > 0);
     }
 
     private boolean isExists(String filePath) {

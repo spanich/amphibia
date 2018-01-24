@@ -104,15 +104,20 @@ public final class Swagger {
     }
 
     protected void parse(int index, String inputParam, boolean isURL, String propertiesFile) throws Exception {
-        JSONArray schemes = new JSONArray();
-        if (doc.containsKey("schemes")) {
-            schemes = doc.getJSONArray("schemes");
+        String host = doc.getString("host");
+        if (!host.startsWith("http")) {
+            JSONArray schemes = new JSONArray();
+            if (doc.containsKey("schemes")) {
+                schemes = doc.getJSONArray("schemes");
+            } else {
+                schemes.add("http");
+            }
+            String[] pair = host.split(":");
+            host = schemes.get(0) + "://" + pair[0] + ':'
+                    + ((pair.length == 2 ? pair[1] : "http".equals(schemes.get(0)) ? 80 : 443));
         } else {
-            schemes.add("http");
+            Converter.addResult(RESOURCE_TYPE.warnings, "Please fix a host value. https://swagger.io/docs/specification/2-0/api-host-and-base-path/");
         }
-        String[] pair = doc.getString("host").split(":");
-        String host = schemes.get(0) + "://" + pair[0] + ':'
-                + ((pair.length == 2 ? pair[1] : "http".equals(schemes.get(0)) ? 80 : 443));
 
         JSONArray hosts = output.containsKey("hosts") ? output.getJSONArray("hosts") : new JSONArray();
         JSONArray globals = output.containsKey("globals") ? output.getJSONArray("globals") : new JSONArray();
@@ -162,8 +167,7 @@ public final class Swagger {
             hosts.add(host);
         }
         output.element("hosts", hosts);
-        output.element("globals", globals);
-
+        
         JSONArray interfaces = output.containsKey("interfaces") ? output.getJSONArray("interfaces") : new JSONArray();
         String interfaceBasePath = doc.getString("basePath");
         String interfaceName = interfaceBasePath;
@@ -182,9 +186,29 @@ public final class Swagger {
         } else {
             headers.element("CONTENT-TYPE", "application/json");
         }
-
+        
         final String name = interfaceName;
         final JSONObject hs = headers;
+        
+        hs.keySet().forEach((key) -> {
+            boolean replace = true;
+            for (Object item : globals) {
+                if (((JSONObject) item).getString("name").equals(key)) {
+                    replace = false;
+                    break;
+                }
+            }
+            if (replace) {
+                globals.add(new LinkedHashMap<String, Object>() {
+                    {
+                        put("name", key);
+                        put("value", hs.get(key));
+                    }
+                });
+                hs.put(key, "${#Global#" + key + "}");
+            }
+        });
+        
         interfaces.add(new LinkedHashMap<String, Object>() {
             {
                 put("id", interfaceId);
@@ -195,6 +219,7 @@ public final class Swagger {
             }
         });
         output.element("interfaces", interfaces);
+        output.element("globals", globals);
 
         profile.addResource(resourceId, interfaceId, inputParam, isURL, propertiesFile);
 

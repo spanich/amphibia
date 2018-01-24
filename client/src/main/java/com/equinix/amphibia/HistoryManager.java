@@ -90,6 +90,9 @@ public class HistoryManager {
         } else if (type == TESTSUITE) {
             if ("properties".equals(entry.getParent().toString())) {
                 updateValues(entry, info.testSuiteInfo.getJSONObject("properties"), info.testSuite, "properties");
+            } else if ("endpoint".equals(entry.name)) {
+                selectedNode.info.resource.element("endpoint", entry.value);
+                node = collection.project;
             }
         } else if (type == TESTCASE) {
             if ("summary".equals(entry.name)) {

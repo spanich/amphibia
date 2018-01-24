@@ -2,6 +2,7 @@ package com.equinix.amphibia.agent.converter;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
@@ -114,7 +115,7 @@ public class Converter {
         }
         try {
             FileUtils.deleteDirectory(new File(Profile.PROJECT_DIR, Profile.DATA_DIR));
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             LOGGER.log(Level.SEVERE, null, ex);
         }
         Profile profile = new Profile();

@@ -32,6 +32,7 @@ import javax.swing.CellEditor;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -60,6 +61,7 @@ public class Wizard extends javax.swing.JPanel {
     private int headerSaveIndex;
     private TreeCollection selectedCollection;
     private Map<Object, Object> endpoints;
+    private JSONArray globalVariables;
     
     MainPanel mainPanel;
    
@@ -73,6 +75,8 @@ public class Wizard extends javax.swing.JPanel {
      */
     public Wizard() {
         bundle = Amphibia.getBundle();
+        
+        endpoints = new HashMap<>();
 
         headerColumns = new String [] {
             bundle.getString("key"),
@@ -94,6 +98,22 @@ public class Wizard extends javax.swing.JPanel {
                 interfaces.add(((ComboItem)interfaceNameModel.getElementAt(i)).json);
             }
             node.jsonObject().element("interfaces", interfaces);
+            
+            if (!globalVariables.isEmpty()) {
+                mainPanel.globalVarsDialog.mergeVariables(globalVariables);
+                JSONArray globals = node.jsonObject().getJSONArray("globals");
+                globalVariables.forEach((newItem) -> {
+                    for (int i = globals.size() - 1; i >= 0; i--) {
+                        if (globals.getJSONObject(i).getString("name").equals(((JSONObject)newItem).getString("name"))) {
+                            globals.remove(i);
+                            break;
+                        }
+                    }
+                    globals.add(newItem);
+                });
+                globalVariables = new JSONArray();
+            }
+            
             mainPanel.saveNodeValue(node);
             interfaceDialog.setVisible(false);
             updateInterfaces();
@@ -224,6 +244,7 @@ public class Wizard extends javax.swing.JPanel {
     private void reset() {
         lblError.setVisible(false);
         txtBasePath.setText("/");
+        globalVariables = new JSONArray();
         headersModel.setDataVector(new Object [][] {
             {null, null},
             {null, null},
@@ -322,6 +343,12 @@ public class Wizard extends javax.swing.JPanel {
         btnAddRow = new JButton();
         btnDeleteRow = new JButton();
         lblError = new JLabel();
+        pnlAddHeader = new JPanel();
+        lblHeaderName = new JLabel();
+        txtHeaderName = new JTextField();
+        lblHeaderValue = new JLabel();
+        txtHeaderValue = new JTextField();
+        ckbAsGlobal = new JCheckBox();
         tabNav = new JTabbedPane();
 
         pnlInterface.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -424,6 +451,44 @@ public class Wizard extends javax.swing.JPanel {
 
         pnlInterface.add(pnlEnvCenter, BorderLayout.CENTER);
 
+        pnlAddHeader.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        GridBagLayout pnlAddHeaderLayout = new GridBagLayout();
+        pnlAddHeaderLayout.columnWidths = new int[] {0, 5, 0};
+        pnlAddHeaderLayout.rowHeights = new int[] {0, 5, 0, 5, 0, 5, 0};
+        pnlAddHeader.setLayout(pnlAddHeaderLayout);
+
+        lblHeaderName.setText(bundle.getString("name")); // NOI18N
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.anchor = GridBagConstraints.WEST;
+        pnlAddHeader.add(lblHeaderName, gridBagConstraints);
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 1.0;
+        pnlAddHeader.add(txtHeaderName, gridBagConstraints);
+
+        lblHeaderValue.setText(bundle.getString("value")); // NOI18N
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.anchor = GridBagConstraints.WEST;
+        pnlAddHeader.add(lblHeaderValue, gridBagConstraints);
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
+        pnlAddHeader.add(txtHeaderValue, gridBagConstraints);
+
+        ckbAsGlobal.setText(bundle.getString("addToGlobal")); // NOI18N
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 6;
+        gridBagConstraints.anchor = GridBagConstraints.WEST;
+        pnlAddHeader.add(ckbAsGlobal, gridBagConstraints);
+
         setBorder(BorderFactory.createLineBorder(new Color(0, 0, 0)));
         setLayout(new BorderLayout());
 
@@ -444,22 +509,53 @@ public class Wizard extends javax.swing.JPanel {
     }//GEN-LAST:event_btnCloneActionPerformed
 
     private void btnAddRowActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnAddRowActionPerformed
-        int row = tblEnvHeaders.getSelectedRow();
-        if (row == -1) {
-            headersModel.addRow(new Object[]{null, null});
-        } else {
-            headersModel.insertRow(row + 1, new Object[]{null, null});
-        }
+        JButton applyButton = new JButton(bundle.getString("apply"));
+        JButton cancelButton = new JButton(bundle.getString("cancel"));
+        txtHeaderName.setText("");
+        txtHeaderValue.setText("");
+        JDialog dialog = Amphibia.createDialog(pnlAddHeader, new Object[]{applyButton, cancelButton}, true);
+        dialog.setSize(new Dimension(400, 200));
+        java.awt.EventQueue.invokeLater(() -> {
+            dialog.setLocationRelativeTo(mainPanel);
+        });
+        cancelButton.addActionListener((ActionEvent e) -> {
+            dialog.setVisible(false);
+        });
+        applyButton.addActionListener((ActionEvent e) -> {
+            String value = ckbAsGlobal.isSelected() ? "${#Global#" + txtHeaderName.getText() + "}" : txtHeaderValue.getText();
+            if (ckbAsGlobal.isSelected()) {
+                globalVariables.add(new HashMap() {
+                    {
+                        put("name", txtHeaderName.getText());
+                        put("value", txtHeaderValue.getText());
+                    } 
+                });
+            }
+            int row = tblEnvHeaders.getSelectedRow();
+            if (row == -1) {
+                headersModel.addRow(new Object[]{txtHeaderName.getText(), value});
+            } else {
+                headersModel.insertRow(row + 1, new Object[]{txtHeaderName.getText(), value});
+            }
+            dialog.setVisible(false);
+        });
+        dialog.setVisible(true);
     }//GEN-LAST:event_btnAddRowActionPerformed
 
     private void btnDeleteRowActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnDeleteRowActionPerformed
         if (headersModel.getRowCount() > 0) {
             int row = tblEnvHeaders.getSelectedRow();
             if (row == -1) {
-                headersModel.removeRow(headersModel.getRowCount() - 1);
-            } else {
-                headersModel.removeRow(row);
+                row = headersModel.getRowCount() - 1;
             }
+            Object key = headersModel.getValueAt(row, 0);
+            for (int i = globalVariables.size() - 1; i >= 0; i--) {
+                if (globalVariables.getJSONObject(i).getString("name").equals(key)) {
+                    globalVariables.remove(i);
+                    break;
+                }
+            }
+            headersModel.removeRow(row);
         }
     }//GEN-LAST:event_btnDeleteRowActionPerformed
 
@@ -507,11 +603,15 @@ public class Wizard extends javax.swing.JPanel {
     private JButton btnClone;
     private JButton btnDelete;
     private JButton btnDeleteRow;
+    private JCheckBox ckbAsGlobal;
     private JComboBox<String> cmdName;
     private JLabel lblBasePath;
     private JLabel lblEnvHeaders;
     private JLabel lblError;
+    private JLabel lblHeaderName;
+    private JLabel lblHeaderValue;
     private JLabel lblName;
+    private JPanel pnlAddHeader;
     private JPanel pnlEnvCenter;
     private JPanel pnlEnvFooter;
     private JPanel pnlEnvTop;
@@ -520,6 +620,8 @@ public class Wizard extends javax.swing.JPanel {
     JTabbedPane tabNav;
     private JTable tblEnvHeaders;
     private JTextField txtBasePath;
+    private JTextField txtHeaderName;
+    private JTextField txtHeaderValue;
     // End of variables declaration//GEN-END:variables
 
 
