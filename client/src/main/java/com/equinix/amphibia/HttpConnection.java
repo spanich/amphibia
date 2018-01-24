@@ -113,7 +113,7 @@ public final class HttpConnection {
                     String value = properties.replace(headers.get(key));
                     out.info(key + ": ");
                     out.info(value + "\n", true, true);
-                    conn.setRequestProperty(key.toString().toLowerCase(), value);
+                    conn.setRequestProperty(key.toString(), value);
                 });
             }
 

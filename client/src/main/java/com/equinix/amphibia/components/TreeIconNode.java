@@ -271,6 +271,7 @@ public class TreeIconNode extends DefaultMutableTreeNode {
 
         public ResourceInfo clone(JSONObject testCase, JSONObject testStep) {
             ResourceInfo clone = clone(testCase);
+            clone.properties = properties.cloneProperties();
             clone.testStep = testStep;
             return clone;
         }

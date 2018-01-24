@@ -28,10 +28,7 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -483,10 +480,9 @@ public final class MainPanel extends javax.swing.JPanel {
                 if (request.get("body") instanceof String) {
                     json = request.getString("body");
                     try {
-                        JSONObject properties = request.getJSONObject("properties");
                         json = IO.readFile(node.getCollection(), json);
                         json = IO.prettyJson(json);
-                        json = node.info.properties.cloneProperties().setTestStep(properties).replace(json);
+                        json = node.info.properties.replace(json);
                     } catch (Exception ex) {
                         logger.log(Level.SEVERE, null, ex);
                     }
@@ -587,14 +583,16 @@ public final class MainPanel extends javax.swing.JPanel {
             if (vars == null) {
                 globals = projectJson.getJSONArray("globals");
             } else {
-               globals = new JSONArray();
-               int columnIndex = Amphibia.instance.getSelectedEnvDataIndex();
-               for (Object[] data : vars) {
-                   globals.add(new HashMap<Object,Object>() {{
-                       put("name", data[1]);
-                       put("value", data[columnIndex]);
-                   }});
-               }
+                globals = new JSONArray();
+                int columnIndex = Amphibia.instance.getSelectedEnvDataIndex();
+                for (Object[] data : vars) {
+                    globals.add(new HashMap<Object, Object>() {
+                        {
+                            put("name", data[1]);
+                            put("value", data[columnIndex]);
+                        }
+                    });
+                }
             }
             projectProperties = new Properties(globals, projectJson.getJSONObject("properties"));
         } catch (Exception e) {
@@ -749,7 +747,7 @@ public final class MainPanel extends javax.swing.JPanel {
             testsuiteJSON.put("testcases", JSONNull.getInstance());
             testsuiteJSON.put("index", i);
             testsuiteJSON.put("interface", interfaceJSON.getString("name"));
-            
+
             if (dir.exists()) {
                 TreeIconNode testsuiteNode = collection.addTreeNode(collection.testsuites, name, TESTSUITE, false)
                         .addProperties(TESTSUITE_PROPERTIES);
@@ -760,7 +758,7 @@ public final class MainPanel extends javax.swing.JPanel {
                     testsuite.element("states", new int[]{0, 0, 0});
                 }
                 testsuiteNode.info.states = testsuite.getJSONArray("states");
-                
+
                 testsuiteJSON.element("properties", testsuiteNode.info.testSuiteInfo.getJSONObject("properties"));
                 if (testsuiteNode.info.testSuite.containsKey("properties")) {
                     IO.replaceValues(testsuiteNode.info.testSuite.getJSONObject("properties"), testsuiteJSON.getJSONObject("properties"));
@@ -857,6 +855,7 @@ public final class MainPanel extends javax.swing.JPanel {
                                 .addTooltip(tooltipURL);
                         testcaseNode.getTreeIconUserObject().setEnabled(testcase.get("disabled") != Boolean.TRUE);
                         testcaseNode.info = info.clone(testcase);
+                        testcaseNode.info.properties.setTestCase(JSONObject.fromObject(testcaseNode.info.testStepInfo.getJSONObject("request").getJSONObject("properties")));
                         if (testcase.containsKey("line")) {
                             testcaseNode.info.consoleLine = testcase.getInt("line");
                         }
@@ -872,9 +871,11 @@ public final class MainPanel extends javax.swing.JPanel {
                         JSONObject inheritedProperties = JSONObject.fromObject(testCaseInheritedProperties);
                         testcase.getJSONArray("steps").forEach((item) -> {
                             JSONObject step = (JSONObject) item;
+                            TreeIconNode.ResourceInfo stepInfo = info.clone(testcase, step);
+
                             teststeps.add(step.getString("name"));
                             JSONObject testStepJSON = JSONObject.fromObject(testcaseNode.info.testStepInfo);
-                            testStepJSON.element("path", info.file.getAbsolutePath());
+                            testStepJSON.element("path", stepInfo.file.getAbsolutePath());
                             testStepJSON.element("method", replace.getString("method"));
                             testStepJSON.element("url", url);
                             testStepJSON.element("reqPath", properties.replace(replace.getString("path")).replaceAll("&amp;", "&"));
@@ -883,17 +884,18 @@ public final class MainPanel extends javax.swing.JPanel {
                             });
                             testStepJSON.element("disabled", step.get("disabled") == Boolean.TRUE);
 
-                            JSONObject requestProp = info.testStepInfo.getJSONObject("request").getJSONObject("properties");
-                            if (step.containsKey("request")) {
-                                requestProp = step.getJSONObject("request").getJSONObject("properties");
-                            }
-
                             JSONObject stepInheritedProperties = JSONObject.fromObject(inheritedProperties);
-                            requestProp.keySet().forEach((key) -> {
-                                stepInheritedProperties.put(key, "${#TestStep$" + key + "}");
-                            });
+                            JSONObject requestProp = JSONObject.fromObject(stepInfo.testStepInfo.getJSONObject("request").getJSONObject("properties"));
+                            if (step.containsKey("request")) {
+                                JSONObject customStepProps = step.getJSONObject("request").getJSONObject("properties");
+                                customStepProps.keySet().forEach((key) -> {
+                                    requestProp.put(key, customStepProps.get(key));
+                                    stepInheritedProperties.put(key, "${#TestStep$" + key + "}");
+                                });
+                            }
+                            stepInfo.properties.setTestStep(requestProp);
 
-                            JSONObject responseProp = info.testStepInfo.getJSONObject("response").getJSONObject("properties");
+                            JSONObject responseProp = stepInfo.testStepInfo.getJSONObject("response").getJSONObject("properties");
                             if (step.containsKey("response")) {
                                 responseProp = step.getJSONObject("response").getJSONObject("properties");
                             }
@@ -929,13 +931,13 @@ public final class MainPanel extends javax.swing.JPanel {
 
                             testStepJSON.element("inherited-properties", stepInheritedProperties);
 
-                            String tootltip = info.properties.cloneProperties().setTestStep(requestProp).replace(url).replaceAll("&amp;", "&");
+                            String tootltip = stepInfo.properties.replace(url).replaceAll("&amp;", "&");
                             TreeIconNode testStepNode = collection.insertTreeNode(testcaseNode, step.getString("name"), TEST_STEP_ITEM)
                                     .addProperties(TEST_STEP_ITEM_PROPERTIES)
                                     .addTooltip(tootltip)
                                     .addJSON(testStepJSON);
                             testStepNode.getTreeIconUserObject().setEnabled(step.get("disabled") != Boolean.TRUE);
-                            testStepNode.info = info.clone(testcase, step);
+                            testStepNode.info = stepInfo;
                             if (step.containsKey("line")) {
                                 testStepNode.info.consoleLine = step.getInt("line");
                             }
@@ -978,12 +980,12 @@ public final class MainPanel extends javax.swing.JPanel {
                 testSuiteJSON.element("endpoint", resourseJSON.getString("endpoint"));
                 testSuiteJSON.element("interface", interfaceJSON == null ? "" : interfaceJSON.getString("name"));
                 testSuiteJSON.element("properties", testSuiteItem.getJSONObject("properties"));
-                
+
                 TreeIconNode node = collection.addTreeNode(collection.tests, name.toString(), TESTSUITE, false)
                         .addProperties(TEST_TESTSUITE_PROPERTIES)
                         .addJSON(testSuiteJSON);
                 node.info = resourceInfoMap.get(file.getAbsolutePath());
-                
+
                 if (node.info.testSuite.containsKey("properties")) {
                     IO.replaceValues(node.info.testSuite.getJSONObject("properties"), testSuiteJSON.getJSONObject("properties"));
                 }
