@@ -111,7 +111,8 @@ public final class HttpConnection {
             if (conn != null) {
                 headers.keySet().forEach((key) -> {
                     String value = properties.replace(headers.get(key));
-                    out.info(key + ": " + value + "\n");
+                    out.info(key + ": ");
+                    out.info(value + "\n", true, true);
                     conn.setRequestProperty(key.toString().toLowerCase(), value);
                 });
             }

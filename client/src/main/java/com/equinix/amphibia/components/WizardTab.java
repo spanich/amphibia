@@ -56,10 +56,17 @@ import javax.swing.OverlayLayout;
 import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.AbstractDocument;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.Element;
+import javax.swing.text.ParagraphView;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
+import javax.swing.text.StyledEditorKit;
+import javax.swing.text.View;
+import javax.swing.text.ViewFactory;
 import javax.swing.tree.DefaultMutableTreeNode;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -69,7 +76,7 @@ import net.sf.json.JSONObject;
  * @author dgofman
  */
 public final class WizardTab extends javax.swing.JPanel implements IHttpConnection {
-    
+
     private ResourceBundle bundle;
     private Wizard wizard;
     private TreeIconNode openedNode;
@@ -82,40 +89,47 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     private DefaultTableModel testCaseHeaders;
     private DefaultComboBoxModel testSuitesModel;
     private Object[][] lastSavedDataModel;
-    
+    private ExtendedStyledEditorKit editorKit;
+
     private final Border DEFAULT_BORDER;
     private final Border ERROR_BORDER = BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(Color.RED),
             BorderFactory.createEmptyBorder(2, 2, 2, 2));
 
     private static final Logger logger = Logger.getLogger(WizardTab.class.getName());
-    
+
     /**
      * Creates new form WizardTab
+     *
      * @param wizard the value of wizard
      */
     public WizardTab(Wizard wizard) {
         this(wizard, null);
     }
-    
+
     public WizardTab(Wizard wizard, TreeIconNode node) {
         this.wizard = wizard;
         this.openedNode = node;
-        
+
         bundle = Amphibia.getBundle();
-        
+
         lastSavedDataModel = new Object[][]{};
         testCaseHeaders = new DefaultTableModel(lastSavedDataModel, wizard.headerColumns);
-        
+
         testSuitesModel = new DefaultComboBoxModel();
-        
+
         initComponents();
+
+        editorKit = new ExtendedStyledEditorKit();
+        String contentType = editorKit.getContentType();
+        txtConsole.setEditorKitForContentType(contentType, editorKit);
+        txtConsole.setEditorKit(editorKit);
 
         add(pnlWaitOverlay, 0, 0);
         pnlWaitOverlay.setVisible(false);
 
         DEFAULT_BORDER = txtTestCase.getBorder();
-                
+
         if (openedNode != null) {
             cmdInterface.setEnabled(false);
             cmdMethod.setEnabled(false);
@@ -126,9 +140,9 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
                     break;
                 }
             }
-            
+
             txtPath.setText(node.jsonObject().getString("reqPath"));
-            
+
             JSONObject request = node.info.testStepInfo.getJSONObject("request");
             String json = null;
             if (request.get("body") instanceof String) {
@@ -142,11 +156,11 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
                 }
             }
             txtReqBody.setText(json);
-            
+
             testSuitesModel.addElement(node.info.testSuite.getString("name"));
             cmbTestSuite.setEnabled(false);
             btnAddTestSuite.setEnabled(false);
-            
+
             txtTestCase.setText(node.jsonObject().getString("name"));
             txtTestCase.setEditable(false);
             txtSummary.setText(node.info.testCaseInfo.getString("summary"));
@@ -154,9 +168,9 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         } else {
             btnClose.setVisible(false);
         }
-        
+
         updateInterfaces();
-        
+
         applyHeadersButton = new JButton(bundle.getString("apply"));
         applyHeadersButton.addActionListener((ActionEvent evt) -> {
             CellEditor cellEditor = tblHeadersBottom.getCellEditor();
@@ -171,13 +185,13 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
                         lblHeadersBottomError.setVisible(true);
                         return;
                     }
-                    map.put(key, new Object[] {key, tblHeadersBottom.getValueAt(r, 1)});
+                    map.put(key, new Object[]{key, tblHeadersBottom.getValueAt(r, 1)});
                 }
             }
             lastSavedDataModel = map.values().toArray(new Object[map.size()][2]);
             headersDialog.setVisible(false);
         });
-        
+
         applyTestCaseButton = new JButton(bundle.getString("apply"));
         applyTestCaseButton.addActionListener((ActionEvent evt) -> {
             String testCaseName = txtTestCase.getText().trim();
@@ -185,7 +199,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
                 txtTestCase.setBorder(ERROR_BORDER);
                 return;
             }
-            
+
             TreeIconNode project = MainPanel.selectedNode.getCollection().project;
             JSONArray projectResources = project.jsonObject().getJSONArray("projectResources");
             String interfaceName = "";
@@ -212,12 +226,12 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
             if (resource == null) {
                 resource = new JSONObject();
                 resource.element("resourceId", UUID.randomUUID().toString());
-                resource.element("endpoint", ((EndPoint)cmdEndpoint.getSelectedItem()).endPointName);
+                resource.element("endpoint", ((EndPoint) cmdEndpoint.getSelectedItem()).endPointName);
                 resource.element("interface", interfaceName);
                 resource.element("testsuites", new JSONObject());
                 addResource = true;
             }
-            
+
             String testSuiteName = cmbTestSuite.getSelectedItem().toString();
             JSONObject testsuites = resource.getJSONObject("testsuites");
             JSONObject testsuite;
@@ -262,7 +276,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
                 config.element("assertions", JSONArray.fromObject("[{\"replace\": {\"value\": \"${#HTTPStatusCode}\"},\"type\": \"ValidHTTPStatusCodes\"}]"));
             }
             config.element("operationId", txtTestCaseFuncName.getText());
-            
+
             JSONObject replace = config.getJSONObject("replace");
             replace.element("path", txtPath.getText());
             replace.element("method", cmdMethod.getSelectedItem().toString());
@@ -272,7 +286,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
                 } catch (Exception ex) {
                 }
             }
-            
+
             if (addTestCase) {
                 testcases.add(testcase);
             }
@@ -280,47 +294,46 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
             if (addResource) {
                 projectResources.add(resource);
             }
-            
+
             wizard.mainPanel.saveNodeValue(project);
             saveTestCase.setVisible(false);
         });
-        
+
         headersCancelButton = new JButton(bundle.getString("cancel"));
         headersCancelButton.addActionListener((ActionEvent evt) -> {
             headersDialog.setVisible(false);
         });
-        
+
         testcaseCancelButton = new JButton(bundle.getString("cancel"));
         testcaseCancelButton.addActionListener((ActionEvent evt) -> {
             saveTestCase.setVisible(false);
         });
-        
+
         headersDialog = Amphibia.createDialog(pnlHeaders, new Object[]{applyHeadersButton, headersCancelButton}, true);
         headersDialog.setSize(new Dimension(500, 500));
-        
+
         saveTestCase = Amphibia.createDialog(pnlSaveTestCase, new Object[]{applyTestCaseButton, testcaseCancelButton}, true);
         saveTestCase.setSize(new Dimension(500, 400));
-        
+
         EventQueue.invokeLater(() -> {
             headersDialog.setLocationRelativeTo(this);
             saveTestCase.setLocationRelativeTo(this);
-        });        
+        });
     }
-    
+
     public void refresh() {
         btnSend.setEnabled(cmdEndpoint.getSelectedItem() != null);
         if (btnSend.isEnabled()) {
             String basePath = "/";
             if (cmdInterface.getSelectedItem() != null) {
-                basePath = ((Wizard.ComboItem)cmdInterface.getSelectedItem()).json.getString("basePath");
+                basePath = ((Wizard.ComboItem) cmdInterface.getSelectedItem()).json.getString("basePath");
             }
-            lblURI.setText(((EndPoint)cmdEndpoint.getSelectedItem()).endPointValue + basePath + 
-                    (txtPath.getText().startsWith("/")  ? "" : "/") + txtPath.getText());
+            lblURI.setText(((EndPoint) cmdEndpoint.getSelectedItem()).endPointValue + basePath
+                    + (txtPath.getText().startsWith("/") ? "" : "/") + txtPath.getText());
         } else {
             lblURI.setText("http://");
         }
     }
-    
 
     public void updateInterfaces() {
         String selected = String.valueOf(cmdInterface.getSelectedItem());
@@ -343,7 +356,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         } else {
             DefaultComboBoxModel interfaceModel = wizard.getInterfaceNameModel();
             for (int i = 0; i < interfaceModel.getSize(); i++) {
-                Wizard.ComboItem item = (Wizard.ComboItem)interfaceModel.getElementAt(i);
+                Wizard.ComboItem item = (Wizard.ComboItem) interfaceModel.getElementAt(i);
                 model.addElement(item);
                 if (item.toString().equals(selected)) {
                     cmdInterface.setSelectedItem(item);
@@ -351,12 +364,12 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
             }
         }
     }
-    
+
     public void updateEndPoints(Map<Object, Object> endpoints) {
         int index = -1;
         Object endPoint = null;
         if (cmdEndpoint.getSelectedItem() != null) {
-            endPoint = ((EndPoint)cmdEndpoint.getSelectedItem()).endPointName;
+            endPoint = ((EndPoint) cmdEndpoint.getSelectedItem()).endPointName;
         } else if (openedNode != null) {
             endPoint = openedNode.info.resource.getString("endpoint");
         }
@@ -367,12 +380,12 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
             }
             model.addElement(new EndPoint(name, endpoints.get(name)));
         }
-        
+
         cmdEndpoint.setModel(model);
         cmdEndpoint.setSelectedIndex(Math.max(0, index));
         refresh();
     }
-    
+
     public void openTestCaseDialog() {
         if (MainPanel.selectedNode == null) {
             return;
@@ -401,7 +414,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
             ckbResSchema.setEnabled(false);
             ckbSaveExample.setEnabled(false);
         }
-        
+
         saveTestCase.setVisible(true);
     }
 
@@ -879,6 +892,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
             public void run() {
                 HttpConnection.Result result = new HttpConnection.Result();
                 txtConsole.setText("");
+                txtConsole.setAlignmentX(0);
                 txtResBody.setText("");
                 lblCode.setText("");
                 lblTimeValue.setText("");
@@ -892,7 +906,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
                             lblHeadersBottomError.setVisible(true);
                             return;
                         }
-                        headers.put(key, new Object[] {key, tblHeadersBottom.getValueAt(r, 1)});
+                        headers.put(key, new Object[]{key, tblHeadersBottom.getValueAt(r, 1)});
                     }
                 }
 
@@ -929,7 +943,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     }//GEN-LAST:event_btnSaveActionPerformed
 
     private void btnInterfaceInfoActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnInterfaceInfoActionPerformed
-        wizard.openInterfacePanel((Wizard.ComboItem)cmdInterface.getSelectedItem());
+        wizard.openInterfacePanel((Wizard.ComboItem) cmdInterface.getSelectedItem());
     }//GEN-LAST:event_btnInterfaceInfoActionPerformed
 
     private void cmdEndpointItemStateChanged(ItemEvent evt) {//GEN-FIRST:event_cmdEndpointItemStateChanged
@@ -958,7 +972,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     private void btnCloseActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnCloseActionPerformed
         for (int i = 0; i < wizard.tabNav.getTabCount(); i++) {
             if (wizard.tabNav.getComponent(i) == this) {
-                openedNode.info.states.set(TreeIconNode.STATE_OPEN_PROJECT_OR_WIZARD_TAB,  0);
+                openedNode.info.states.set(TreeIconNode.STATE_OPEN_PROJECT_OR_WIZARD_TAB, 0);
                 openedNode.getCollection().profile.saveState(openedNode);
                 wizard.tabNav.remove(i);
                 break;
@@ -1059,9 +1073,15 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
 
     @Override
     public IHttpConnection info(String text, boolean isBold) {
+        return info(text, isBold, false);
+    }
+
+    @Override
+    public IHttpConnection info(String text, boolean isBold, boolean isItalic) {
         StyledDocument doc = txtConsole.getStyledDocument();
         SimpleAttributeSet attr = new SimpleAttributeSet();
         StyleConstants.setBold(attr, isBold);
+        StyleConstants.setItalic(attr, isItalic);
         try {
             doc.insertString(doc.getLength(), text, attr);
         } catch (BadLocationException ex) {
@@ -1079,19 +1099,53 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     public DefaultMutableTreeNode addError(Throwable t, String error) {
         return wizard.mainPanel.editor.addError(t, error);
     }
-    
+
     class EndPoint {
+
         Object endPointName;
         Object endPointValue;
-        
+
         public EndPoint(Object name, Object value) {
             endPointName = name;
             endPointValue = value;
         }
-        
+
         @Override
         public String toString() {
             return endPointName + ": " + endPointValue;
+        }
+    }
+
+    public static class ExtendedStyledEditorKit extends StyledEditorKit {
+        private static final ViewFactory defaultFactory = new ViewFactory() {
+            final ViewFactory styledEditorKitFactory = new StyledEditorKit().getViewFactory();
+            
+            @Override
+            public View create(Element elem) {
+                String elementName = elem.getName();
+                if (elementName != null) {
+                    if (elementName.equals(AbstractDocument.ParagraphElementName)) {
+                        return new ExtendedParagraphView(elem);
+                    }
+                }
+                return styledEditorKitFactory.create(elem);
+            }
+        };
+        
+        @Override
+        public ViewFactory getViewFactory() {
+            return defaultFactory;
+        }
+    }
+
+    static class ExtendedParagraphView extends ParagraphView {
+        public ExtendedParagraphView(Element elem) {
+            super(elem);
+        }
+
+        @Override
+        public float getMinimumSpan(int axis) {
+            return super.getPreferredSpan(axis);
         }
     }
 }

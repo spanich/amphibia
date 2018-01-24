@@ -133,9 +133,14 @@ public final class Profile extends BaseTaskPane implements IHttpConnection {
     public Profile info(String text) {
         return info(text, false);
     }
+    
+    @Override
+    public Profile info(String text, boolean isBold) {
+        return info(text, isBold, false);
+    }
 
     @Override
-    public Profile info(String text, boolean isBool) {
+    public Profile info(String text, boolean isBool, boolean isItalic) {
         return addToConsole(text, Color.BLUE, isBool);
     }
 

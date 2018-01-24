@@ -15,6 +15,7 @@ public interface IHttpConnection {
     
     public IHttpConnection info(String text);
     public IHttpConnection info(String text, boolean isBold);
+    public IHttpConnection info(String text, boolean isBold, boolean isItalic);
     public DefaultMutableTreeNode addError(String error);
     public DefaultMutableTreeNode addError(Throwable t, String error);
 }
