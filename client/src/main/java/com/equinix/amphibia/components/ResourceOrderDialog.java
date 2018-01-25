@@ -5,8 +5,6 @@
  */
 package com.equinix.amphibia.components;
 
-import static com.equinix.amphibia.components.Editor.Entry;
-
 import com.equinix.amphibia.Amphibia;
 
 import java.awt.BorderLayout;
@@ -91,7 +89,7 @@ public final class ResourceOrderDialog extends javax.swing.JPanel {
     }
 
     @SuppressWarnings("NonPublicExported")
-    public void openDialog(TreeIconNode node, Entry entry, int index) {
+    public void openDialog(TreeIconNode node, int index) {
         this.collection = node.getCollection();
         resourceModel.removeAllElements();
         if (node.getType() == TreeCollection.TYPE.TESTSUITE) {

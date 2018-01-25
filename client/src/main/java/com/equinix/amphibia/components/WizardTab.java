@@ -58,7 +58,6 @@ import javax.swing.border.Border;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.BadLocationException;
-import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Element;
 import javax.swing.text.ParagraphView;
 import javax.swing.text.SimpleAttributeSet;
@@ -142,20 +141,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
             }
 
             txtPath.setText(node.jsonObject().getString("reqPath"));
-
-            JSONObject request = node.info.testStepInfo.getJSONObject("request");
-            String json = null;
-            if (request.get("body") instanceof String) {
-                json = request.getString("body");
-                try {
-                    json = IO.readFile(node.getCollection(), json);
-                    json = IO.prettyJson(json);
-                    json = node.info.properties.cloneProperties().setTestStep(request.getJSONObject("properties")).replace(json);
-                } catch (Exception ex) {
-                    logger.log(Level.SEVERE, null, ex);
-                }
-            }
-            txtReqBody.setText(json);
+            txtReqBody.setText(node.info.getRequestBody(node.getCollection()));
 
             testSuitesModel.addElement(node.info.testSuite.getString("name"));
             cmbTestSuite.setEnabled(false);
@@ -382,7 +368,9 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         }
 
         cmdEndpoint.setModel(model);
-        cmdEndpoint.setSelectedIndex(Math.max(0, index));
+        if (model.getSize() > 0) {
+            cmdEndpoint.setSelectedIndex(Math.max(0, index));
+        }
         refresh();
     }
 
@@ -906,7 +894,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
                             lblHeadersBottomError.setVisible(true);
                             return;
                         }
-                        headers.put(key, new Object[]{key, tblHeadersBottom.getValueAt(r, 1)});
+                        headers.put(key, tblHeadersBottom.getValueAt(r, 1));
                     }
                 }
 
@@ -943,7 +931,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     }//GEN-LAST:event_btnSaveActionPerformed
 
     private void btnInterfaceInfoActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnInterfaceInfoActionPerformed
-        wizard.openInterfacePanel((Wizard.ComboItem) cmdInterface.getSelectedItem());
+        wizard.openInterfacePanel(((Wizard.ComboItem) cmdInterface.getSelectedItem()).id);
     }//GEN-LAST:event_btnInterfaceInfoActionPerformed
 
     private void cmdEndpointItemStateChanged(ItemEvent evt) {//GEN-FIRST:event_cmdEndpointItemStateChanged

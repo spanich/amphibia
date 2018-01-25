@@ -6,6 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.sf.json.JSONArray;
+import net.sf.json.JSONNull;
 import net.sf.json.JSONObject;
 
 /**
@@ -38,33 +39,36 @@ public class Properties {
 
     public Properties setTestSuite(JSONObject testsuite) {
         this.testsuite = testsuite;
-        testsuite.keySet().forEach((key) -> {
-            replace(testsuite.get(key), testsuite);
+        JSONObject.fromObject(testsuite).keySet().forEach((key) -> {
+            replace(testsuite.get(key), testsuite, key);
         });
         return this;
     }
 
     public Properties setTestStep(JSONObject teststep) {
         this.teststep = teststep;
-        teststep.keySet().forEach((key) -> {
-            replace(teststep.get(key), teststep);
+        JSONObject.fromObject(teststep).keySet().forEach((key) -> {
+            replace(teststep.get(key), teststep, key);
         });
         return this;
     }
 
     public Properties setTestCase(JSONObject testcase) {
         this.testcase = testcase;
-        testcase.keySet().forEach((key) -> {
-            replace(testcase.get(key), testcase);
+        JSONObject.fromObject(testcase).keySet().forEach((key) -> {
+            replace(testcase.get(key), testcase, key);
         });
         return this;
     }
 
     public String replace(Object replace) {
-        return replace(replace, null);
+        return replace(replace, null, null);
     }
 
-    protected String replace(Object replace, JSONObject target) {
+    protected String replace(Object replace, JSONObject target, Object propKey) {
+        if (replace == null || replace == JSONNull.getInstance()) {
+            return null;
+        }
         String value = String.valueOf(replace);
         if (replace instanceof String) {
             value = value.replaceAll("\"`\\$\\{#(.*?)\\}`\"", "\\${#$1}");
@@ -80,7 +84,7 @@ public class Properties {
                         sb.replace(m.start(0) - offset, m.end(2) - offset + 1, "${#" + m.group(2) + "}");
                         LOGGER.log(Level.WARNING, "Value is undefined: {0}", m.group());
                     } else if (target != null) {
-                        target.put(key, source.get(key));
+                        target.put(propKey, source.get(key));
                     } else {
                         sb.replace(m.start(0) - offset, m.end(2) - offset + 1, String.valueOf(source.get(key)));
                     }

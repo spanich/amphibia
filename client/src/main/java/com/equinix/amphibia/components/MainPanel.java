@@ -475,33 +475,11 @@ public final class MainPanel extends javax.swing.JPanel {
                     sb.append("<li><b>").append(key).append(":</b> ").append(node.info.properties.replace(testCaseHeaders.get(key))).append("</li>");
                 });
                 sb.append("</ul><br/><b>Request Body</b>");
-                JSONObject request = node.info.testStepInfo.getJSONObject("request");
-                String json = null;
-                if (request.get("body") instanceof String) {
-                    json = request.getString("body");
-                    try {
-                        json = IO.readFile(node.getCollection(), json);
-                        json = IO.prettyJson(json);
-                        json = node.info.properties.replace(json);
-                    } catch (Exception ex) {
-                        logger.log(Level.SEVERE, null, ex);
-                    }
-                }
+                String json = node.info.getRequestBody(collection);
                 sb.append("<pre>").append(json).append("</pre>");
 
                 sb.append("<br/><b>Expected Response Body</b>");
-                JSONObject response = node.info.testStepInfo.getJSONObject("response");
-                json = null;
-                if (response.get("body") instanceof String) {
-                    json = response.getString("body");
-                    try {
-                        json = IO.readFile(node.getCollection(), json);
-                        json = IO.prettyJson(json);
-                        json = node.info.properties.cloneProperties().setTestStep(response.getJSONObject("properties")).replace(json);
-                    } catch (Exception ex) {
-                        logger.log(Level.SEVERE, null, ex);
-                    }
-                }
+                json = node.info.getResponseBody(collection);
                 sb.append("<pre>").append(json).append("</pre>");
                 sb.append("</html>");
                 raw = sb.toString();

@@ -38,7 +38,6 @@ import javax.swing.UIManager;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.tree.TreeNode;
 import net.sf.json.JSONNull;
 import net.sf.json.JSONObject;
 
@@ -117,7 +116,7 @@ public final class ReferenceDialog extends javax.swing.JPanel {
         txtPreview.setEditable(MainPanel.selectedNode.getType() == TreeCollection.TYPE.TEST_ITEM);
         Object[] info = getFileInfo();
         if (info != null) {
-            txtPath.setText((String) entry.value);
+            txtPath.setText(String.valueOf(entry.value));
             txtName.setText(entry.name);
             reviewPath((File) info[2]);
         } else {
@@ -185,19 +184,23 @@ public final class ReferenceDialog extends javax.swing.JPanel {
     }
 
     public Object[] getFileInfo() {
-        String dirPath = "data/%s/%s";
-        TreeNode testSuiteNode = MainPanel.selectedNode.getParent().getParent();
-        File file;
+        TreeIconNode.ResourceInfo info = MainPanel.selectedNode.info;
+        if (info == null) {
+            return null;
+        }
+        String dirPath = "data/%s/%s/%s";
+        String resourceId = info.resource.getString("resourceId");
+        String testSuiteName = info.testSuite.getString("name");
         if ("path".equals(entry.name)) {
-            file = new File(entry.value.toString());
+            File file = new File(entry.value.toString());
             return new Object[]{null, file.getParentFile(), file};
         } else if ("request".equals(entry.getParent().toString())) {
             switch (entry.name) {
                 case "body":
-                    dirPath = String.format(dirPath, "requests", testSuiteNode.toString());
+                    dirPath = String.format(dirPath, resourceId, "requests", testSuiteName);
                     break;
                 case "schema":
-                    dirPath = String.format(dirPath, "schemas", "requests");
+                    dirPath = String.format(dirPath, resourceId, "schemas", "requests");
                     break;
                 default:
                     return new Object[]{};
@@ -205,20 +208,28 @@ public final class ReferenceDialog extends javax.swing.JPanel {
         } else {
             switch (entry.name) {
                 case "body":
-                    dirPath = String.format(dirPath, "responses", testSuiteNode.toString());
+                    dirPath = String.format(dirPath, resourceId, "responses", testSuiteName);
                     break;
                 case "schema":
-                    dirPath = String.format(dirPath, "schemas", "responses");
+                    dirPath = String.format(dirPath, resourceId, "schemas", "responses");
                     break;
                 case "asserts":
-                    dirPath = String.format(dirPath, "schemas", "asserts");
+                    dirPath = String.format(dirPath, resourceId, "schemas", "asserts");
                     break;
                 default:
                     return null;
             }
         }
-        file = IO.getFile(collection, dirPath);
-        return new Object[]{dirPath, file, entry.value instanceof String && !entry.value.toString().isEmpty() ? new File(file, new File(entry.value.toString()).getName()) : null};
+        File file;
+        if (entry.value instanceof String && !entry.value.toString().isEmpty()) {
+            file = IO.getFile(collection, entry.value.toString());
+            if (!file.exists()) {
+                file = new File(entry.value.toString());
+            }
+        } else {
+            return new Object[]{dirPath, IO.getFile(collection, dirPath), null};
+        }
+        return new Object[]{dirPath, file.getParentFile(), file};
     }
 
     /**

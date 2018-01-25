@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import net.sf.json.JSONObject;
@@ -46,34 +45,9 @@ public final class HttpConnection {
     }
     
     @SuppressWarnings("NonPublicExported")
-    public Result request(String name, String method, TreeIconNode node) throws Exception {
-        final TreeCollection collection = node.getCollection();
-        final JSONObject testCaseHeaders = JSONObject.fromObject(node.info.testCaseHeaders);
-        if (node.info.testCase != null && node.info.testCase.containsKey("headers")) {
-            JSONObject headers = node.info.testCase.getJSONObject("headers");
-            headers.keySet().forEach((key) -> {
-                Object header = headers.get(key);
-                if (header instanceof JSONObject && ((JSONObject) header).isNullObject()) {
-                    testCaseHeaders.remove(key);
-                } else {
-                    testCaseHeaders.put(key, header);
-                }
-            });
-        }
-        JSONObject request = node.info.testStepInfo.getJSONObject("request");
-        String reqBody = null;
-        if (request.get("body") instanceof String) {
-            reqBody = request.getString("body");
-            try {
-                reqBody = IO.readFile(collection, reqBody);
-                reqBody = IO.prettyJson(reqBody);
-                reqBody = node.info.properties.cloneProperties().setTestStep(request.getJSONObject("properties")).replace(reqBody);
-            } catch (Exception ex) {
-                logger.log(Level.SEVERE, null, ex);
-            }
-        }
-        
-        Result result = request(collection.getProjectProperties(), name, method, node.getTreeIconUserObject().getTooltip(), testCaseHeaders, reqBody);
+    public Result request(String name, String method, JSONObject headers, TreeIconNode node) throws Exception {
+        final TreeCollection collection = node.getCollection();        
+        Result result = request(collection.getProjectProperties(), name, method, node.getTreeIconUserObject().getTooltip(), headers, node.info.getRequestBody(collection));
         try {
             int expected = node.info.testCaseInfo.getJSONObject("properties").getInt("HTTPStatusCode");
             if (result.statusCode != expected) {

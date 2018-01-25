@@ -123,9 +123,6 @@ public final class HelpDialog extends javax.swing.JFrame {
             }
         });
         
-        setSize(630, 500);
-        setIconImage(Amphibia.instance.icon.getImage());
-        setLocationRelativeTo(mainPanel);
         txContent.setEditable(false);
         txContent.addHyperlinkListener((HyperlinkEvent event) -> {
             if (event.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
@@ -175,6 +172,13 @@ public final class HelpDialog extends javax.swing.JFrame {
                 setVisible(false);
             }
         });
+        
+        setSize(630, 500);
+        setIconImage(Amphibia.instance.icon.getImage());
+        java.awt.EventQueue.invokeLater(() -> {
+            setLocationRelativeTo(mainPanel);
+        });
+        
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         Amphibia.getBounds(this, Amphibia.P_HELP_BOUNDS);
     }

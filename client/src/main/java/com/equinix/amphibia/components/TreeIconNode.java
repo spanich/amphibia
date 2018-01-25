@@ -275,6 +275,38 @@ public class TreeIconNode extends DefaultMutableTreeNode {
             clone.testStep = testStep;
             return clone;
         }
+        
+        public String getRequestBody(TreeCollection collection) {
+            JSONObject request = testStepInfo.getJSONObject("request");
+            String json = null;
+            if (request.get("body") instanceof String) {
+                json = request.getString("body");
+                try {
+                    json = IO.readFile(collection, json);
+                    json = IO.prettyJson(json);
+                    json = properties.replace(json);
+                } catch (Exception ex) {
+                    logger.log(Level.SEVERE, null, ex);
+                }
+            }
+            return json;
+        }
+        
+        public String getResponseBody(TreeCollection collection) {
+            JSONObject response = testStepInfo.getJSONObject("response");
+            String json = null;
+            if (response.get("body") instanceof String) {
+                json = response.getString("body");
+                try {
+                    json = IO.readFile(collection, json);
+                    json = IO.prettyJson(json);
+                    json = properties.cloneProperties().setTestStep(response.getJSONObject("properties")).replace(json);
+                } catch (Exception ex) {
+                    logger.log(Level.SEVERE, null, ex);
+                }
+            }
+            return json;
+        }
     }
 
     static public class TreeIconUserObject {

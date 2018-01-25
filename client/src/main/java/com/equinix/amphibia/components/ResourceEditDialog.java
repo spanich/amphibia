@@ -21,13 +21,17 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -88,15 +92,47 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
                 txtName.setBorder(ERROR_BORDER);
                 return;
             }
+
+            TreeIconNode node = MainPanel.selectedNode;
+            TreeCollection collection = node.getCollection();
+            TreeCollection.TYPE type = node.getType();
             String dataType = cmbDataType.getSelectedItem().toString();
+            if ("Properties".equals(dataType) && ckbPropertyCreate.isEnabled() && ckbPropertyCreate.isSelected()) {
+                Matcher m = Pattern.compile("\\$\\{#(.*?)#(.*?)\\}", Pattern.DOTALL | Pattern.MULTILINE).matcher(txtEditor.getText());
+                JSONObject properties = null;
+                if (m.groupCount() == 2 && m.find()) {
+                    Object value = ckbPropertyCopy.isSelected() ? entry.value : null;
+                    switch(this.cmbPropertyTypes.getSelectedItem().toString()) {
+                        case "Global":
+                            JSONArray globals = new JSONArray();
+                            globals.add(JSONObject.fromObject(new HashMap<String, Object>(){{
+                               put("name", m.group(2));
+                               put("value", value);
+                            }}));
+                            collection.project.jsonObject().getJSONArray("globals").addAll(globals);
+                            mainPanel.globalVarsDialog.mergeVariables(globals);
+                            break;
+                        case "Project":
+                            properties = collection.project.jsonObject().getJSONObject("properties");
+                            break;
+                        case "TestSuite":
+                            properties = node.info.testSuiteInfo.getJSONObject("properties");
+                            break;
+                        case "TestCase":
+                            properties = node.info.testCaseInfo.getJSONObject("properties");
+                            break;
+                    }
+                    if (properties != null) {
+                        properties.put(m.group(2), value);
+                    }
+                    mainPanel.history.saveAndAddHistory(collection.project);
+                }
+            }
             try {
                 Object value = getValue(dataType, txtEditor.getText().trim());
                 if (value == null) {
                     value = JSONNull.getInstance();
                 }
-                TreeIconNode node = MainPanel.selectedNode;
-                TreeCollection collection = node.getCollection();
-                TreeCollection.TYPE type = node.getType();
                 if ("name".equals(entry.name)) {
                     value = value.toString().trim();
                     if (type == TreeCollection.TYPE.INTERFACE) {
@@ -205,6 +241,9 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
         } else {
             optionPane.setOptions(new Object[]{okButton});
         }
+        ckbPropertyCreate.setSelected(false);
+        ckbPropertyCopy.setSelected(false);
+        ckbPropertyCopy.setEnabled(false);
         txtName.setText(name);
         txtName.setEditable(name == null);
         txtName.setBorder(defaultBorder);
@@ -282,6 +321,11 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        pnlNewProperty = new JPanel();
+        lblTitle = new JLabel();
+        cmbPropertyTypes = new JComboBox<>();
+        ckbPropertyCreate = new JCheckBox();
+        ckbPropertyCopy = new JCheckBox();
         pnlHeader = new JPanel();
         lblName = new JLabel();
         txtName = new JTextField();
@@ -293,6 +337,33 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
         cmbDataType = new JComboBox<>();
         lblError = new JLabel();
 
+        pnlNewProperty.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        pnlNewProperty.setLayout(new GridLayout(4, 0, 0, 5));
+
+        ResourceBundle bundle = ResourceBundle.getBundle("com/equinix/amphibia/messages"); // NOI18N
+        lblTitle.setText(bundle.getString("properties_msg")); // NOI18N
+        pnlNewProperty.add(lblTitle);
+
+        cmbPropertyTypes.setModel(new DefaultComboBoxModel<>(new String[] { "Global", "Project", "TestSuite", "TestCase", "TestStep" }));
+        cmbPropertyTypes.setMaximumSize(new Dimension(32767, 22));
+        cmbPropertyTypes.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                cmbPropertyTypesActionPerformed(evt);
+            }
+        });
+        pnlNewProperty.add(cmbPropertyTypes);
+
+        ckbPropertyCreate.setText(bundle.getString("properties_create")); // NOI18N
+        ckbPropertyCreate.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                ckbPropertyCreateActionPerformed(evt);
+            }
+        });
+        pnlNewProperty.add(ckbPropertyCreate);
+
+        ckbPropertyCopy.setText(bundle.getString("properties_copy")); // NOI18N
+        pnlNewProperty.add(ckbPropertyCopy);
+
         setBorder(BorderFactory.createEmptyBorder(5, 10, 0, 10));
         setLayout(new BorderLayout());
 
@@ -300,7 +371,6 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
         pnlHeader.setLayout(new BoxLayout(pnlHeader, BoxLayout.LINE_AXIS));
 
         lblName.setFont(new Font("Tahoma", 1, 11)); // NOI18N
-        ResourceBundle bundle = ResourceBundle.getBundle("com/equinix/amphibia/messages"); // NOI18N
         lblName.setText(bundle.getString("name")); // NOI18N
         lblName.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 10));
         pnlHeader.add(lblName);
@@ -351,28 +421,45 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
     private void cmbDataTypeActionPerformed(ActionEvent evt) {//GEN-FIRST:event_cmbDataTypeActionPerformed
         if (dialog.isVisible() && "Properties".equals(cmbDataType.getSelectedItem())) {
             java.awt.EventQueue.invokeLater(() -> {
-                String s = (String)JOptionPane.showInputDialog(this,
-                    bundle.getString("properties_msg"),
-                    bundle.getString("properties_title"),
-                    JOptionPane.PLAIN_MESSAGE, null,
-                    new String[] {"Global", "Project", "TestSuite", "TestCase", "TestStep"},
-                    "TestCase");
-                if (s != null && !s.isEmpty()) {
-                    txtEditor.setText("${#" + s + "#...}");
-                }
+                JButton btnOk = new JButton(UIManager.getString("OptionPane.okButtonText"));
+                JButton btnCancel = new JButton(UIManager.getString("OptionPane.cancelButtonText"));
+                JDialog propDialog = Amphibia.createDialog(pnlNewProperty, new Object[] {btnOk, btnCancel}, bundle.getString("properties_title"), false);
+                propDialog.setLocationRelativeTo(mainPanel);
+                btnCancel.addActionListener((ActionEvent e) -> {
+                    propDialog.setVisible(false);
+                });
+                btnOk.addActionListener((ActionEvent e) -> {       
+                    txtEditor.setText("${#" + cmbPropertyTypes.getSelectedItem() + "#" + txtName.getText()  + "}");
+                    propDialog.setVisible(false);
+                });
+                propDialog.setVisible(true);
             });
         }
     }//GEN-LAST:event_cmbDataTypeActionPerformed
 
+    private void cmbPropertyTypesActionPerformed(ActionEvent evt) {//GEN-FIRST:event_cmbPropertyTypesActionPerformed
+        ckbPropertyCreate.setEnabled(!"TestStep".equals(cmbPropertyTypes.getSelectedItem()));
+        ckbPropertyCopy.setEnabled(!"TestStep".equals(cmbPropertyTypes.getSelectedItem()));
+    }//GEN-LAST:event_cmbPropertyTypesActionPerformed
+
+    private void ckbPropertyCreateActionPerformed(ActionEvent evt) {//GEN-FIRST:event_ckbPropertyCreateActionPerformed
+        ckbPropertyCopy.setEnabled(ckbPropertyCreate.isSelected());
+    }//GEN-LAST:event_ckbPropertyCreateActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private JCheckBox ckbPropertyCopy;
+    private JCheckBox ckbPropertyCreate;
     private JComboBox<String> cmbDataType;
+    private JComboBox<String> cmbPropertyTypes;
     private JLabel lblDataType;
     private JLabel lblError;
     private JLabel lblName;
+    private JLabel lblTitle;
     private JPanel pnlDataType;
     private JPanel pnlFooter;
     private JPanel pnlHeader;
+    private JPanel pnlNewProperty;
     private JScrollPane splEditor;
     private JTextArea txtEditor;
     private JTextField txtName;

@@ -78,6 +78,7 @@ public final class TreePopupMenuBuilder implements ActionListener {
             case TEST_STEP_ITEM:
                 addMenu(popup, "addToWizard", "OPEN_TESTCASE");
                 addMenu(popup, "mnuRename", "RENAME:" + userObject.getType());
+                addMenu(popup, bundle.getString("edit") + "/" + bundle.getString("clone") + "/" + bundle.getString("delete"), "EDIT:" + userObject.getType(), false);
                 addMenu(popup, "disable", "DISABLED").setSelected(!userObject.isEnabled());
                 break;
             default:
@@ -136,6 +137,9 @@ public final class TreePopupMenuBuilder implements ActionListener {
                 Editor.Entry entry = new Editor.Entry("disabled");
                 entry.value = menuitem.isSelected();
                 mainPanel.history.saveEntry(entry, collection);
+                break;
+            case "EDIT":
+                mainPanel.resourceOrderDialog.openDialog((TreeIconNode)selectedNode.getParent(), selectedNode.getParent().getIndex(selectedNode));
                 break;
             case "DELETE":
                 int dialogResult = JOptionPane.showConfirmDialog(mainPanel, bundle.getString("tip_deleting"), bundle.getString("title"), JOptionPane.YES_NO_OPTION);

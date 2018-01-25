@@ -110,6 +110,7 @@ public final class Amphibia extends JFrame {
     public static final String P_MENU_VIEW = "view";
     public static final String P_GROUP_ID = "groupId";
     public static final String P_LOCALE = "locale";
+    public static final String P_INTERFACE = "interface";
     public static final String P_HISTORY = "history";
     public static final String P_VIEW_TABS = "tabs";
     public static final String P_SKIPPED_TEST = "skipped";
@@ -418,11 +419,15 @@ public final class Amphibia extends JFrame {
     public static JDialog createDialog(JOptionPane optionPane, boolean isResizable) {
         return createDialog(optionPane, UIManager.getString("OptionPane.title"), isResizable);
     }
-
-    public static JDialog createDialog(Object form, Object[] options, boolean isResizable) {
+    
+    public static JDialog createDialog(Object form, Object[] options, String title, boolean isResizable) {
         JOptionPane optionPane = new JOptionPane(form);
         optionPane.setOptions(options);
-        return createDialog(optionPane, isResizable);
+        return createDialog(optionPane, title, isResizable);
+    }
+
+    public static JDialog createDialog(Object form, Object[] options, boolean isResizable) {
+        return createDialog(form, options, UIManager.getString("OptionPane.title"), isResizable);
     }
 
     public static void setDefaultHTMLStyles(JEditorPane editor) {
@@ -527,6 +532,7 @@ public final class Amphibia extends JFrame {
         btnStop = new JButton();
         spr4 = new JToolBar.Separator();
         btnReport = new JButton();
+        btnGlobalVars = new JButton();
         btnAddToWizard = new JButton();
         pnlEnv = new JPanel();
         lblEnvironment = new JLabel();
@@ -605,6 +611,7 @@ public final class Amphibia extends JFrame {
         ResourceBundle bundle = ResourceBundle.getBundle("com/equinix/amphibia/messages"); // NOI18N
         setTitle(bundle.getString("title")); // NOI18N
         setMinimumSize(new Dimension(90, 140));
+        setSize(new Dimension(1300, 690));
 
         tlbTop.setBorder(null);
         tlbTop.setRollover(true);
@@ -747,6 +754,18 @@ public final class Amphibia extends JFrame {
             }
         });
         tlbTop.add(btnReport);
+
+        btnGlobalVars.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/variable_16.png"))); // NOI18N
+        btnGlobalVars.setToolTipText(bundle.getString("globalVars")); // NOI18N
+        btnGlobalVars.setFocusable(false);
+        btnGlobalVars.setHorizontalTextPosition(SwingConstants.CENTER);
+        btnGlobalVars.setVerticalTextPosition(SwingConstants.BOTTOM);
+        btnGlobalVars.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                btnGlobalVarsActionPerformed(evt);
+            }
+        });
+        tlbTop.add(btnGlobalVars);
 
         btnAddToWizard.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/open_env_16.png"))); // NOI18N
         btnAddToWizard.setToolTipText(bundle.getString("addToWizard")); // NOI18N
@@ -1199,8 +1218,6 @@ public final class Amphibia extends JFrame {
         mnbTop.add(mnuHelp);
 
         setJMenuBar(mnbTop);
-
-        pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void mnuAboutActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuAboutActionPerformed
@@ -1497,7 +1514,7 @@ public final class Amphibia extends JFrame {
 
     private void mnuInterfacesActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuInterfacesActionPerformed
         if (MainPanel.selectedNode != null) {
-            mainPanel.wizard.openInterfacePanel(null);
+            mainPanel.wizard.openInterfacePanel();
         }
     }//GEN-LAST:event_mnuInterfacesActionPerformed
 
@@ -1508,6 +1525,10 @@ public final class Amphibia extends JFrame {
     private void mnuProfileActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuProfileActionPerformed
         showHideTab(TAB_PROFILE, mnuProfile.isSelected());
     }//GEN-LAST:event_mnuProfileActionPerformed
+
+    private void btnGlobalVarsActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnGlobalVarsActionPerformed
+        mnuGlobalVarsActionPerformed(evt);
+    }//GEN-LAST:event_btnGlobalVarsActionPerformed
 
     public void export(String type) {
         Amphibia.setWaitOverlay(true);
@@ -1635,6 +1656,7 @@ public final class Amphibia extends JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     public JButton btnAddToWizard;
     private JButton btnCreate;
+    private JButton btnGlobalVars;
     public JToggleButton btnPause;
     private JButton btnReport;
     private JButton btnStop;

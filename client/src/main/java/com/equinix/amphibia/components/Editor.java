@@ -156,7 +156,7 @@ public final class Editor extends BaseTaskPane {
         Amphibia.setDefaultHTMLStyles(txtRaw);
 
         defaultModel = JSONTableModel.createModel(bundle);
-        treeTable = new JTreeTable(defaultModel, (JTreeTable table, int row, int column, Object cellValue) -> {
+        JTreeTable.RowEventListener rowListener = (JTreeTable table, int row, int column, Object cellValue) -> {
             TreeIconNode node = MainPanel.selectedNode;
             if (node.getParent() == null) {
                 return;
@@ -184,7 +184,7 @@ public final class Editor extends BaseTaskPane {
             } else if (cellValue == REFERENCE_EDIT) {
                 if ((type == TESTSUITE && "testcases".equals(entry.parent.name)) || 
                     (type == TESTCASE && "teststeps".equals(entry.parent.name))) {
-                    mainPanel.resourceOrderDialog.openDialog(node, entry, entry.getParent().getIndex(entry));
+                    mainPanel.resourceOrderDialog.openDialog(node, entry.getParent().getIndex(entry));
                 } else {
                    mainPanel.referenceEditDialog.openEditDialog(collection, entry);
                 }
@@ -193,7 +193,8 @@ public final class Editor extends BaseTaskPane {
             } else if (cellValue == TRANSFER) {
                 mainPanel.transferDialog.openDialog(MainPanel.selectedNode, entry);
             }
-        });
+        };
+        treeTable = new JTreeTable(defaultModel, rowListener);
         treeTable.setAutoCreateColumnsFromModel(false);
         treeTable.getColumnModel().getColumn(0).setPreferredWidth(300);
         treeTable.setAutoResizeMode(JTable.AUTO_RESIZE_NEXT_COLUMN);
@@ -202,6 +203,17 @@ public final class Editor extends BaseTaskPane {
         treeTable.getColumnModel().getColumn(2).setMaxWidth(20);
         treeTable.setShowVerticalLines(true);
         treeTable.setFillsViewportHeight(true);
+        treeTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int row = treeTable.rowAtPoint(e.getPoint());
+                    int col = treeTable.columnAtPoint(e.getPoint());
+                    Object cellValue = treeTable.getValueAt(row, 2);
+                    rowListener.fireEvent(treeTable, row, col, cellValue);
+                }
+            }
+        });
         pnlTop.add(new JScrollPane(treeTable));
 
         JTree tableTree = treeTable.getTree();

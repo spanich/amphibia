@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
@@ -68,13 +69,14 @@ public final class ProjectDialog extends javax.swing.JPanel {
     private JDialog dialog;
     private MainPanel mainPanel;
     private final ResourceBundle bundle;
-    private TreeCollection selectedProject;
+    private TreeCollection collection;
     private DefaultTableModel resourceModel;
     private Map<Integer, String> resourceDocType;
     private int dataModelIndex;
     private boolean isAddResource;
     private String projectName;
 
+    private final Preferences userPreferences = Amphibia.getUserPreferences();
     private final Border DEFAULT_BORDER;
     private final Border ERROR_BORDER = BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(Color.RED),
@@ -143,7 +145,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
 
     public void openDialog(TreeCollection selectedProject) {
         this.projectName = "";
-        this.selectedProject = selectedProject;
+        this.collection = selectedProject;
         pnlSetup.setVisible(true);
         pnlNext.setVisible(false);
         dataModelIndex = 0;
@@ -608,7 +610,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
             projectName = txtProjectName.getText();
             String[] args = new String[]{
                 "-n=" + projectName,
-                "-a=" + selectedProject.getProjectFile(),
+                "-a=" + collection.getProjectFile(),
                 "-i=" + String.join(",", inputs),
                 "-p=" + String.join(",", properties),
                 "-f=" + String.join(",", interfaces),
@@ -685,11 +687,11 @@ public final class ProjectDialog extends javax.swing.JPanel {
                 }
             }
 
-            if (!selectedProject.getProjectDir().exists()) {
-                selectedProject.getProjectDir().mkdirs();
+            if (!collection.getProjectDir().exists()) {
+                collection.getProjectDir().mkdirs();
             }
 
-            if (selectedProject.getProjectDir().list().length > 0) {
+            if (collection.getProjectDir().list().length > 0) {
                 int value = JOptionPane.showConfirmDialog(this,
                         bundle.getString("tip_delete_files") + "\n\n",
                         bundle.getString("title"),
@@ -699,7 +701,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
                 }
             }
 
-            FileUtils.cleanDirectory(selectedProject.getProjectDir());
+            FileUtils.cleanDirectory(collection.getProjectDir());
 
             pnlWaitOverlay.setVisible(true);
             new Thread() {
@@ -710,9 +712,13 @@ public final class ProjectDialog extends javax.swing.JPanel {
                     }
                     pnlWaitOverlay.setVisible(false);
                     mainPanel.editor.getTabs().setSelectedIndex(0);
-                    Amphibia.instance.registerProject(selectedProject);
-                    mainPanel.expandDefaultNodes(selectedProject);
+                    Amphibia.instance.registerProject(collection);
+                    mainPanel.expandDefaultNodes(collection);
+                    mainPanel.selectNode(collection.project);
                     dialog.setVisible(false);
+                    if (userPreferences.getBoolean(Amphibia.P_INTERFACE, true)) {
+                        mainPanel.wizard.openInterfacePanel();
+                    }
                 }
             }.start();
         } catch (IOException ex) {
@@ -736,14 +742,14 @@ public final class ProjectDialog extends javax.swing.JPanel {
                             if (projectName.isEmpty()) {
                                 txtProjectName.setText("Project");
                             }
-                            selectedProject.setProjectFile(new File(jf.getSelectedFile(), projectName + ".json"));
+                            collection.setProjectFile(new File(jf.getSelectedFile(), projectName + ".json"));
                         } else {
-                            if (selectedProject.getProjectFile() != null && selectedProject.getProjectFile().exists()) {
-                                selectedProject.getProjectFile().renameTo(jf.getSelectedFile());
+                            if (collection.getProjectFile() != null && collection.getProjectFile().exists()) {
+                                collection.getProjectFile().renameTo(jf.getSelectedFile());
                             }
-                            selectedProject.setProjectFile(jf.getSelectedFile());
+                            collection.setProjectFile(jf.getSelectedFile());
                         }
-                        txtLocation.setText(selectedProject.getProjectFile().getCanonicalPath());
+                        txtLocation.setText(collection.getProjectFile().getCanonicalPath());
                         lblLocationError.setText("");
                     } catch (IOException ex) {
                         logger.log(Level.SEVERE, ex.toString(), ex);
@@ -796,7 +802,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
                 throw new Exception(bundle.getString("error_swagger_format"));
             }
 
-            if (projectName.isEmpty() || selectedProject.getProjectFile() == null) {
+            if (projectName.isEmpty() || collection.getProjectFile() == null) {
                 JSONObject info = json.getJSONObject("info");
                 if (info != null && info.containsKey("title")) {
                     projectName = info.getString("title").replaceAll("\\s", "");
@@ -815,10 +821,10 @@ public final class ProjectDialog extends javax.swing.JPanel {
                     }
                 }
                 File projectFile = new File("projects", Amphibia.generateTime() + "/" + projectName + ".json");
-                selectedProject.setProjectFile(projectFile);
+                collection.setProjectFile(projectFile);
             }
 
-            txtLocation.setText(selectedProject.getProjectFile().getCanonicalPath());
+            txtLocation.setText(collection.getProjectFile().getCanonicalPath());
             txtProjectName.setText(projectName);
 
             if (resourceModel.getRowCount() <= dataModelIndex) {

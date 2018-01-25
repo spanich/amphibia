@@ -9,7 +9,6 @@ import com.equinix.amphibia.Amphibia;
 import com.equinix.amphibia.IO;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Rectangle;
@@ -33,11 +32,11 @@ import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import javax.swing.border.Border;
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.CellEditor;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -55,10 +54,9 @@ import net.sf.json.JSONObject;
  *
  * @author dgofman
  */
-public class GlobalVariableDialog extends javax.swing.JPanel {
+public final class GlobalVariableDialog extends javax.swing.JFrame {
 
     private final MainPanel mainPanel;
-    private final JDialog dialog;
     private final ResourceBundle bundle;
     private final TableModel globalVarsModel;
 
@@ -130,8 +128,7 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
         tblVars.setAutoCreateColumnsFromModel(false);
         tblVars.setColumnSelectionAllowed(true);
         tblVars.getColumnModel().getColumn(1).setPreferredWidth(secondColumnWidth);
-        resizeThirdColumn();
-        tblVars.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        tblVars.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
 
         Border border = BorderFactory.createEmptyBorder(4, 5, 2, 5);
         TableCellRenderer renderer = tblVars.getDefaultRenderer(Object.class);
@@ -174,7 +171,7 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
                 int columnIndex = tblVars.columnAtPoint(me.getPoint());
                 if (columnIndex == 0) {
                     int rowIndex = tblVars.rowAtPoint(me.getPoint());
-                    int n = JOptionPane.showConfirmDialog(dialog,
+                    int n = JOptionPane.showConfirmDialog(GlobalVariableDialog.this,
                             String.format(bundle.getString("tip_delete_env_var"), globalVarsModel.getValueAt(rowIndex, 1)), bundle.getString("title"),
                             JOptionPane.YES_NO_OPTION);
                     if (n == JOptionPane.YES_OPTION) {
@@ -203,7 +200,7 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
                 Rectangle headerRect = header.getHeaderRect(index);
                 if (headerRect.contains(evt.getX(), evt.getY()) && evt.getX() <= (headerRect.x + closeIcon.getIconWidth())) {
                     String colName = globalVarsSource.columns[index];
-                    int n = JOptionPane.showConfirmDialog(dialog,
+                    int n = JOptionPane.showConfirmDialog(GlobalVariableDialog.this,
                             String.format(bundle.getString("tip_delete_env"), colName), bundle.getString("title"),
                             JOptionPane.YES_NO_OPTION);
                     if (n == JOptionPane.YES_OPTION) {
@@ -224,21 +221,13 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
             }
         });
 
-        dialog = Amphibia.createDialog(this, new Object[]{}, true);
-
-        dialog.setSize(new Dimension(defaultWidth, 450));
-        dialog.setMinimumSize(new Dimension(650, 300));
+        setSize(660, 500);
+        setIconImage(Amphibia.instance.icon.getImage());
         java.awt.EventQueue.invokeLater(() -> {
-            dialog.setLocationRelativeTo(mainPanel);
-        }
-        );
+            setLocationRelativeTo(mainPanel);
+        });
     }
     
-    private void resizeThirdColumn() {
-        tblVars.getColumnModel().getColumn(2).setPreferredWidth(defaultWidth - firstColumnWidth - tblVars.getColumnModel().getColumn(1).getPreferredWidth()
-            - borderGap - ((globalVarsModel.getColumnCount() - 3) * defaultColumnWidth));
-    }
-
     public void openDialog() {
         if (!String.join("~", originalColumns).equals(String.join("~", globalVarsSource.columns))) {
             while(tblVars.getColumnModel().getColumnCount() != defaultHadersNames.length) {
@@ -252,14 +241,13 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
                 globalVarsModel.addColumn(originalColumns[c]);
             }
             originalColumns = globalVarsModel.getColumnNames();
-            resizeThirdColumn();
         }
         
         globalVarsSource.data = originalData;
         globalVarsSource.columns = originalColumns;
         globalVarsModel.setDataVector(globalVarsSource.data, globalVarsSource.columns);
 
-        dialog.setVisible(true);
+        setVisible(true);
     }
     
     @SuppressWarnings("UseOfObsoleteCollectionType")
@@ -308,11 +296,7 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        pnlTop = new JPanel();
-        lblGlobalVars = new JLabel();
-        jLabel1 = new JLabel();
-        spnVars = new JScrollPane();
-        tblVars = new JTable();
+        pnlWrap = new JPanel();
         pnlFooter = new JPanel();
         pnlFooterLeft = new JPanel();
         btnAddEndPoint = new JButton();
@@ -321,27 +305,17 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
         pnlFooterRight = new JPanel();
         btnApply = new JButton();
         btnCancel = new JButton();
+        spnVars = new JScrollPane();
+        tblVars = new JTable();
+        pnlTop = new JPanel();
+        lblHint = new JLabel();
 
-        setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        setLayout(new BorderLayout(0, 5));
-
-        pnlTop.setLayout(new BorderLayout());
-
-        lblGlobalVars.setFont(new Font("Tahoma", 1, 11)); // NOI18N
         ResourceBundle bundle = ResourceBundle.getBundle("com/equinix/amphibia/messages"); // NOI18N
-        lblGlobalVars.setText(bundle.getString("globalVars")); // NOI18N
-        pnlTop.add(lblGlobalVars, BorderLayout.WEST);
+        setTitle(bundle.getString("globalVars")); // NOI18N
+        getContentPane().setLayout(new BoxLayout(getContentPane(), BoxLayout.LINE_AXIS));
 
-        jLabel1.setForeground(new Color(51, 51, 255));
-        jLabel1.setText(bundle.getString("tip_edit_column")); // NOI18N
-        pnlTop.add(jLabel1, BorderLayout.EAST);
-
-        add(pnlTop, BorderLayout.NORTH);
-
-        tblVars.setModel(globalVarsModel);
-        spnVars.setViewportView(tblVars);
-
-        add(spnVars, BorderLayout.CENTER);
+        pnlWrap.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        pnlWrap.setLayout(new BorderLayout(0, 5));
 
         pnlFooter.setLayout(new BorderLayout());
 
@@ -394,18 +368,33 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
 
         pnlFooter.add(pnlFooterRight, BorderLayout.EAST);
 
-        add(pnlFooter, BorderLayout.SOUTH);
+        pnlWrap.add(pnlFooter, BorderLayout.SOUTH);
+
+        tblVars.setModel(globalVarsModel);
+        spnVars.setViewportView(tblVars);
+
+        pnlWrap.add(spnVars, BorderLayout.CENTER);
+
+        pnlTop.setLayout(new BorderLayout());
+
+        lblHint.setForeground(new Color(51, 51, 255));
+        lblHint.setText(bundle.getString("tip_edit_column")); // NOI18N
+        pnlTop.add(lblHint, BorderLayout.EAST);
+
+        pnlWrap.add(pnlTop, BorderLayout.NORTH);
+
+        getContentPane().add(pnlWrap);
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnAddEndPointActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnAddEndPointActionPerformed
-        String name = Amphibia.instance.inputDialog("tip_add_var", "", new String[]{}, dialog.getParent());
+        String name = Amphibia.instance.inputDialog("tip_add_var", "", new String[]{}, this);
         if (name != null && !name.isEmpty()) {
             globalVarsModel.addRow(new Object[]{ENDPOINT, name, "http://"});
         }
     }//GEN-LAST:event_btnAddEndPointActionPerformed
 
     private void btnAddVarActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnAddVarActionPerformed
-        String name = Amphibia.instance.inputDialog("tip_add_var", "", new String[]{}, dialog.getParent());
+        String name = Amphibia.instance.inputDialog("tip_add_var", "", new String[]{}, this);
         if (name != null && !name.isEmpty()) {
             globalVarsModel.addRow(new Object[]{VARIABLE, name});
         }
@@ -413,7 +402,7 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
 
     @SuppressWarnings("UseOfObsoleteCollectionType")
     private void btnAddEnvActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnAddEnvActionPerformed
-        String name = Amphibia.instance.inputDialog("tip_add_env", "", globalVarsSource.columns, dialog.getParent());
+        String name = Amphibia.instance.inputDialog("tip_add_env", "", globalVarsSource.columns, this);
         if (name != null && !name.isEmpty()) {
             userPreferences.put(Amphibia.P_SELECTED_ENVIRONMENT, name);
 
@@ -477,14 +466,17 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
             ObjectOutputStream os = new ObjectOutputStream(out);
             os.writeObject(globalVarsSource);
             userPreferences.putByteArray(Amphibia.P_GLOBAL_VARS, out.toByteArray());
-            dialog.setVisible(false);
+            if (MainPanel.selectedNode != null) {
+                mainPanel.reloadCollection(MainPanel.selectedNode.getCollection());
+            }
+            setVisible(false);
         } catch (IOException ex) {
             mainPanel.addError(ex);
         }
     }//GEN-LAST:event_btnApplyActionPerformed
 
     private void btnCancelActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnCancelActionPerformed
-        dialog.setVisible(false);
+        setVisible(false);
     }//GEN-LAST:event_btnCancelActionPerformed
 
 
@@ -494,12 +486,12 @@ public class GlobalVariableDialog extends javax.swing.JPanel {
     private JButton btnAddVar;
     private JButton btnApply;
     private JButton btnCancel;
-    private JLabel jLabel1;
-    private JLabel lblGlobalVars;
+    private JLabel lblHint;
     private JPanel pnlFooter;
     private JPanel pnlFooterLeft;
     private JPanel pnlFooterRight;
     private JPanel pnlTop;
+    private JPanel pnlWrap;
     private JScrollPane spnVars;
     private JTable tblVars;
     // End of variables declaration//GEN-END:variables

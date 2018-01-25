@@ -97,17 +97,8 @@ public class PreferenceDialog extends javax.swing.JPanel {
         historySelection.put(Amphibia.P_LOCALE, cmbLanguage.getSelectedItem());
         historySelection.put(Amphibia.P_LOOKANDFEEL, themeModel.getSelectedItem());
         
-        chbSwitchDebug.setSelected(userPreferences.getBoolean(Amphibia.P_SWITCH_DEBUGGER, true));
-        chbSwitchProblems.setSelected(userPreferences.getBoolean(Amphibia.P_SWITCH_PROBLEMS, true));
-        chbSwitchConsole.setSelected(userPreferences.getBoolean(Amphibia.P_SWITCH_CONSOLE, true));
-        includeSkipTest.setSelected(userPreferences.getBoolean(Amphibia.P_SKIPPED_TEST, true));
-        
-        sprConnTimeout.setValue(userPreferences.getInt(Amphibia.P_CONN_TIMEOUT, HttpConnection.DEFAULT_TIMEOUT));
-        sprReadTimeout.setValue(userPreferences.getInt(Amphibia.P_READ_TIMEOUT, HttpConnection.DEFAULT_TIMEOUT));
-        chbContinue.setSelected(userPreferences.getBoolean(Amphibia.P_CONTINUE_ON_ERROR, true));
-
         dialog = Amphibia.createDialog(this, new Object[]{}, false);
-        dialog.setSize(new Dimension(520, 530));
+        dialog.setSize(new Dimension(520, 580));
         java.awt.EventQueue.invokeLater(() -> {
             dialog.setLocationRelativeTo(mainPanel);
         });
@@ -151,6 +142,15 @@ public class PreferenceDialog extends javax.swing.JPanel {
     }
     
     public void openDialog() {
+        chbSwitchDebug.setSelected(userPreferences.getBoolean(Amphibia.P_SWITCH_DEBUGGER, true));
+        chbSwitchProblems.setSelected(userPreferences.getBoolean(Amphibia.P_SWITCH_PROBLEMS, true));
+        chbSwitchConsole.setSelected(userPreferences.getBoolean(Amphibia.P_SWITCH_CONSOLE, true));
+        includeSkipTest.setSelected(userPreferences.getBoolean(Amphibia.P_SKIPPED_TEST, true));
+        chbShowInterfaces.setSelected(userPreferences.getBoolean(Amphibia.P_INTERFACE, true));
+        
+        sprConnTimeout.setValue(userPreferences.getInt(Amphibia.P_CONN_TIMEOUT, HttpConnection.DEFAULT_TIMEOUT));
+        sprReadTimeout.setValue(userPreferences.getInt(Amphibia.P_READ_TIMEOUT, HttpConnection.DEFAULT_TIMEOUT));
+        chbContinue.setSelected(userPreferences.getBoolean(Amphibia.P_CONTINUE_ON_ERROR, true));
         dialog.setVisible(true);
     }
     
@@ -195,6 +195,7 @@ public class PreferenceDialog extends javax.swing.JPanel {
         lblReadTimeout = new JLabel();
         sprReadTimeout = new JSpinner();
         chbContinue = new JCheckBox();
+        chbShowInterfaces = new JCheckBox();
         pnlAutoSwitch = new JPanel();
         chbSwitchDebug = new JCheckBox();
         chbSwitchProblems = new JCheckBox();
@@ -254,7 +255,7 @@ public class PreferenceDialog extends javax.swing.JPanel {
             }
         });
         add(btnReset);
-        btnReset.setBounds(10, 450, 160, 23);
+        btnReset.setBounds(10, 490, 160, 23);
 
         btnClose.setText(bundle.getString("close")); // NOI18N
         btnClose.addActionListener(new ActionListener() {
@@ -263,7 +264,7 @@ public class PreferenceDialog extends javax.swing.JPanel {
             }
         });
         add(btnClose);
-        btnClose.setBounds(400, 450, 90, 23);
+        btnClose.setBounds(400, 490, 90, 23);
         add(sprHistory);
         sprHistory.setBounds(110, 110, 90, 20);
 
@@ -300,8 +301,18 @@ public class PreferenceDialog extends javax.swing.JPanel {
         pnlConnection.add(chbContinue);
         chbContinue.setBounds(10, 80, 460, 23);
 
+        chbShowInterfaces.setSelected(true);
+        chbShowInterfaces.setText(bundle.getString("tip_open_interface")); // NOI18N
+        chbShowInterfaces.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                chbShowInterfacesActionPerformed(evt);
+            }
+        });
+        pnlConnection.add(chbShowInterfaces);
+        chbShowInterfaces.setBounds(10, 110, 460, 23);
+
         add(pnlConnection);
-        pnlConnection.setBounds(10, 190, 480, 110);
+        pnlConnection.setBounds(10, 190, 480, 150);
 
         pnlAutoSwitch.setBorder(BorderFactory.createTitledBorder(bundle.getString("autoSwitch"))); // NOI18N
         pnlAutoSwitch.setLayout(null);
@@ -337,7 +348,7 @@ public class PreferenceDialog extends javax.swing.JPanel {
         chbSwitchConsole.setBounds(10, 80, 460, 23);
 
         add(pnlAutoSwitch);
-        pnlAutoSwitch.setBounds(10, 310, 480, 120);
+        pnlAutoSwitch.setBounds(10, 350, 480, 120);
 
         includeSkipTest.setSelected(true);
         includeSkipTest.setText(bundle.getString("includeSkipTest")); // NOI18N
@@ -401,12 +412,17 @@ public class PreferenceDialog extends javax.swing.JPanel {
         userPreferences.putBoolean(Amphibia.P_CONTINUE_ON_ERROR, chbContinue.isSelected());
     }//GEN-LAST:event_chbContinueActionPerformed
 
+    private void chbShowInterfacesActionPerformed(ActionEvent evt) {//GEN-FIRST:event_chbShowInterfacesActionPerformed
+        userPreferences.putBoolean(Amphibia.P_INTERFACE, chbShowInterfaces.isSelected());
+    }//GEN-LAST:event_chbShowInterfacesActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     public JButton btnClose;
     public JButton btnDeleteHistory;
     public JButton btnReset;
     public JCheckBox chbContinue;
+    public JCheckBox chbShowInterfaces;
     public JCheckBox chbSwitchConsole;
     public JCheckBox chbSwitchDebug;
     public JCheckBox chbSwitchProblems;

@@ -26,6 +26,8 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.UUID;
+import java.util.prefs.Preferences;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.CellEditor;
@@ -70,6 +72,8 @@ public class Wizard extends javax.swing.JPanel {
     private final DefaultTableModel headersModel;
     private final DefaultComboBoxModel interfaceNameModel;
 
+    private final Preferences userPreferences = Amphibia.getUserPreferences();
+    
     /**
      * Creates new form Wizard
      */
@@ -206,7 +210,9 @@ public class Wizard extends javax.swing.JPanel {
             String name = Amphibia.instance.inputDialog("newInterfaceName", "", names, interfaceDialog.getParent());
             b = name != null && !name.isEmpty();
             if (b) {
+                json.element("id", UUID.randomUUID().toString());
                 json.element("name", name);
+                json.element("basePath", "");
                 interfaceNameModel.addElement(new ComboItem(json, true));
             }
             headerSaveIndex = interfaceNameModel.getSize() - 1;
@@ -257,16 +263,35 @@ public class Wizard extends javax.swing.JPanel {
     @SuppressWarnings("NonPublicExported")
     public ComboItem createDefaultItem() {
         JSONObject json = new JSONObject();
+        json.element("id", "");
         json.element("name", Amphibia.getBundle().getString("none"));
         json.element("basePath", "");
         return new ComboItem(json, false);
     }
     
-    public void openInterfacePanel(ComboItem item) {
+    public void openInterfacePanel() {
+        TreeIconNode node = MainPanel.selectedNode;
+        if (node != null && node.info != null && node.info.resource != null) {
+            openInterfacePanel(node.info.resource.getString("interfaceId"));
+        } else {
+            openInterfacePanel(null);
+        }
+    }
+    
+    public void openInterfacePanel(String interfaceId) {
         if (MainPanel.selectedNode != null) {
             reset();
+            chbShowInterfaces.setSelected(userPreferences.getBoolean(Amphibia.P_INTERFACE, true));
             cmdNameItemStateChanged(null);
-            cmdName.setSelectedItem(item);
+            if (interfaceId != null) {
+                for (int i = 0; i < interfaceNameModel.getSize(); i++) {
+                    ComboItem comboItem = (ComboItem) interfaceNameModel.getElementAt(i);
+                    if (comboItem.id.equals(interfaceId)) {
+                        cmdName.setSelectedIndex(i);
+                        break;
+                    }
+                }
+            }
             interfaceDialog.setVisible(true);
             updateInterfaces();
         }
@@ -343,6 +368,7 @@ public class Wizard extends javax.swing.JPanel {
         btnAddRow = new JButton();
         btnDeleteRow = new JButton();
         lblError = new JLabel();
+        chbShowInterfaces = new JCheckBox();
         pnlAddHeader = new JPanel();
         lblHeaderName = new JLabel();
         txtHeaderName = new JTextField();
@@ -422,6 +448,7 @@ public class Wizard extends javax.swing.JPanel {
 
         pnlEnvCenter.add(spnEnvHeaders, BorderLayout.CENTER);
 
+        pnlEnvFooter.setBorder(BorderFactory.createEmptyBorder(5, 0, 10, 0));
         pnlEnvFooter.setLayout(new BoxLayout(pnlEnvFooter, BoxLayout.LINE_AXIS));
 
         btnAddRow.setIcon(new ImageIcon(getClass().getResource("/com/equinix/amphibia/icons/plus-icon.png"))); // NOI18N
@@ -450,6 +477,14 @@ public class Wizard extends javax.swing.JPanel {
         pnlEnvCenter.add(pnlEnvFooter, BorderLayout.PAGE_END);
 
         pnlInterface.add(pnlEnvCenter, BorderLayout.CENTER);
+
+        chbShowInterfaces.setText(bundle.getString("tip_open_interface")); // NOI18N
+        chbShowInterfaces.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                chbShowInterfacesActionPerformed(evt);
+            }
+        });
+        pnlInterface.add(chbShowInterfaces, BorderLayout.PAGE_END);
 
         pnlAddHeader.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         GridBagLayout pnlAddHeaderLayout = new GridBagLayout();
@@ -597,12 +632,17 @@ public class Wizard extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_cmdNameItemStateChanged
 
+    private void chbShowInterfacesActionPerformed(ActionEvent evt) {//GEN-FIRST:event_chbShowInterfacesActionPerformed
+        userPreferences.putBoolean(Amphibia.P_INTERFACE, chbShowInterfaces.isSelected());
+    }//GEN-LAST:event_chbShowInterfacesActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private JButton btnAddRow;
     private JButton btnClone;
     private JButton btnDelete;
     private JButton btnDeleteRow;
+    private JCheckBox chbShowInterfaces;
     private JCheckBox ckbAsGlobal;
     private JComboBox<String> cmdName;
     private JLabel lblBasePath;
@@ -626,12 +666,14 @@ public class Wizard extends javax.swing.JPanel {
 
 
     static public class ComboItem {
+        String id;
         String label;
         JSONObject json;
         boolean canDelete;
         
         ComboItem(JSONObject item, boolean canDelete) {
             this.json = item;
+            this.id = item.getString("id");
             this.label = item.getString("name");
             this.canDelete = canDelete;
         }

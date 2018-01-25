@@ -148,13 +148,13 @@ public final class TreeCollection {
         {"url", VIEW},
         {"request", new Object[][]{
             {"properties", ADD},
-            {"body", REFERENCE},
+            {"body", REFERENCE_EDIT},
             {"schema", REFERENCE_EDIT}
         }},
         {"response", new Object[][]{
             {"transfer", TRANSFER, EDIT},
             {"properties", ADD},
-            {"body", REFERENCE},
+            {"body", REFERENCE_EDIT},
             {"schema", REFERENCE_EDIT},
             {"asserts", REFERENCE_EDIT}
         }},
