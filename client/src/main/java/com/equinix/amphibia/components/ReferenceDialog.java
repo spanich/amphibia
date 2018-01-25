@@ -16,14 +16,17 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ResourceBundle;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -76,7 +79,7 @@ public final class ReferenceDialog extends javax.swing.JPanel {
             ComboItem item = (ComboItem) cmbPath.getSelectedItem();
             ((JSONObject) entry.json).element(entry.name, item.file != null ? item.label : JSONNull.getInstance());
             String[] contents = null;
-            if (item.file != null && item.file.exists()) {
+            if (chbEdit.isSelected() && item.file != null && item.file.exists()) {
                 try {
                     contents = IO.write(txtPreview.getText(), item.file, true);
                 } catch (Exception ex) {
@@ -99,7 +102,7 @@ public final class ReferenceDialog extends javax.swing.JPanel {
         optionPane = new JOptionPane(this);
         dialog = Amphibia.createDialog(optionPane, true);
         dialog.setResizable(true);
-        dialog.setSize(new Dimension(700, 400));
+        dialog.setSize(new Dimension(800, 600));
         java.awt.EventQueue.invokeLater(() -> {
             dialog.setLocationRelativeTo(mainPanel);
         });
@@ -112,6 +115,7 @@ public final class ReferenceDialog extends javax.swing.JPanel {
         cmbPath.setVisible(false);
         lblError.setText("");
         txtPreview.setEnabled(true);
+        chbEdit.setSelected(false);
         txtPreview.setBackground(UIManager.getColor("TextArea.background"));
         txtPreview.setEditable(MainPanel.selectedNode.getType() == TreeCollection.TYPE.TEST_ITEM);
         Object[] info = getFileInfo();
@@ -255,6 +259,8 @@ public final class ReferenceDialog extends javax.swing.JPanel {
         lblPreview = new JLabel();
         splPreview = new JScrollPane();
         txtPreview = new JTextArea();
+        pnlFooter = new JPanel();
+        chbEdit = new JCheckBox();
         lblError = new JLabel();
 
         setBorder(BorderFactory.createEmptyBorder(5, 10, 0, 10));
@@ -325,11 +331,23 @@ public final class ReferenceDialog extends javax.swing.JPanel {
 
         add(pnlBottom, BorderLayout.CENTER);
 
+        pnlFooter.setLayout(new GridLayout(2, 0));
+
+        chbEdit.setText(bundle.getString("enableEdit")); // NOI18N
+        chbEdit.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                chbEditActionPerformed(evt);
+            }
+        });
+        pnlFooter.add(chbEdit);
+
         lblError.setFont(new Font("Tahoma", 0, 12)); // NOI18N
         lblError.setForeground(new Color(255, 0, 0));
         lblError.setHorizontalAlignment(SwingConstants.CENTER);
         lblError.setBorder(BorderFactory.createEmptyBorder(5, 1, 5, 1));
-        add(lblError, BorderLayout.PAGE_END);
+        pnlFooter.add(lblError);
+
+        add(pnlFooter, BorderLayout.SOUTH);
     }// </editor-fold>//GEN-END:initComponents
 
     private void cmbPathPopupMenuWillBecomeInvisible(PopupMenuEvent evt) {//GEN-FIRST:event_cmbPathPopupMenuWillBecomeInvisible
@@ -379,13 +397,19 @@ public final class ReferenceDialog extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_cmbPathPopupMenuWillBecomeInvisible
 
+    private void chbEditActionPerformed(ActionEvent evt) {//GEN-FIRST:event_chbEditActionPerformed
+        txtPreview.setEditable(chbEdit.isSelected());
+    }//GEN-LAST:event_chbEditActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    JCheckBox chbEdit;
     JComboBox cmbPath;
     JLabel lblError;
     JLabel lblName;
     JLabel lblPath;
     JLabel lblPreview;
     JPanel pnlBottom;
+    JPanel pnlFooter;
     JPanel pnlHeader;
     JScrollPane splPreview;
     JTextField txtName;

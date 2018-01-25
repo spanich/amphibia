@@ -170,9 +170,6 @@
 							<xsl:with-param name="value" select="$timeCount" />
 						</xsl:call-template>
 					</td>
-					<td nowrap="nowrap">
-						<xsl:value-of select="@timestamp" />
-					</td>
 				</tr>
 			</xsl:for-each>
 		</table>
@@ -200,7 +197,9 @@
 				<!-- match the testsuites of this package -->
 				<xsl:apply-templates
 					select="/testsuites/testsuite[./@package = current()/@package]"
-					mode="print.test" />
+					mode="print.test">
+					<xsl:sort select="@timestamp" />
+				</xsl:apply-templates>
 			</table>
 			<p />
 			<a href="#top">Back to top</a>
@@ -212,6 +211,7 @@
 	<xsl:template name="testcases">
 		<xsl:for-each
 			select="/testsuites/testsuite">
+			<xsl:sort select="@timestamp" />
 			<xsl:variable name="testsuite"
 					select="/testsuites/testsuite[./@name = current()/@name]" />
 					
@@ -329,7 +329,6 @@
 			<th>Failures</th>
 			<th>Skipped</th>
 			<th nowrap="nowrap">Time(s)</th>
-			<th nowrap="nowrap">Time Stamp</th>
 		</tr>
 	</xsl:template>
 	
@@ -342,6 +341,7 @@
 			<th>Failures</th>
 			<th>Skipped</th>
 			<th nowrap="nowrap">Time(s)</th>
+			<th nowrap="nowrap">Time Stamp</th>
 		</tr>
 	</xsl:template>
 
@@ -389,6 +389,9 @@
 				<xsl:call-template name="display-time">
 					<xsl:with-param name="value" select="@time" />
 				</xsl:call-template>
+			</td>
+			<td nowrap="nowrap">
+				<xsl:value-of select="@timestamp" />
 			</td>
 		</tr>
 	</xsl:template>

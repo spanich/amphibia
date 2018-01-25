@@ -11,11 +11,15 @@ import com.equinix.amphibia.Amphibia;
 
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -27,9 +31,11 @@ import java.util.prefs.Preferences;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTree;
+import javax.swing.TransferHandler;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
@@ -48,7 +54,6 @@ public class BaseTaskPane extends javax.swing.JSplitPane {
     protected JTree tree;
     protected MainPanel mainPanel;
     protected ResourceBundle bundle;
-    protected String propertyChangeName;
     protected DateTimeFormatter dateFormat;
     protected DateTimeFormatter dateMediumFormat;
 
@@ -60,6 +65,8 @@ public class BaseTaskPane extends javax.swing.JSplitPane {
     protected static final Logger logger = Logger.getLogger(BaseTaskPane.class.getName());
     protected int defaultDividerLocation;
 
+    protected String propertyChangeName;
+    
     /**
      * Creates new form BaseTaskPane
      */
@@ -87,7 +94,7 @@ public class BaseTaskPane extends javax.swing.JSplitPane {
             }
         });
     }
-    
+
     public void changeLocale() {
         dateFormat = DateTimeFormat.shortDateTime().withLocale(Locale.getDefault());
         dateMediumFormat = DateTimeFormat.mediumDateTime().withLocale(Locale.getDefault());
@@ -99,12 +106,34 @@ public class BaseTaskPane extends javax.swing.JSplitPane {
         tree.setRowHeight(20);
         tree.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
         tree.setCellRenderer(new CustomTreeCellRenderer());
+        tree.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                TreePath path = tree.getPathForLocation(e.getX(), e.getY());
+                if (path == null) {
+                    return;
+                }
+
+                if (e.isPopupTrigger()) {
+                    tree.setSelectionPath(path);
+                    JPopupMenu popup = new JPopupMenu();
+                    JMenuItem menu = new JMenuItem(bundle.getString("copy"));
+                    menu.setMargin(new java.awt.Insets(0, 0, 0, 25));
+                    menu.addActionListener((ActionEvent e1) -> {
+                        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                        tree.getTransferHandler().exportToClipboard(tree, clipboard, TransferHandler.COPY);
+                    });
+                    popup.add(menu);
+                    popup.show(tree, e.getX(), e.getY());
+                }
+            }
+        });
         titles = new ArrayList<>(tbpOutput.getTabCount());
         for (int i = 0; i < tbpOutput.getTabCount(); i++) {
             titles.add(i, tbpOutput.getTitleAt(i));
         }
     }
-    
+
     public void clear() {
         if (tabs.getSelectedIndex() == Amphibia.TAB_PROBLEMS) {
             warnings.removeAllChildren();
@@ -120,7 +149,7 @@ public class BaseTaskPane extends javax.swing.JSplitPane {
     public DefaultMutableTreeNode addError(String error) {
         return addToTree(errors, error);
     }
-    
+
     public DefaultMutableTreeNode addError(Throwable ex, String error) {
         logger.log(Level.SEVERE, ex.toString(), ex);
         return addError(error);
@@ -133,11 +162,11 @@ public class BaseTaskPane extends javax.swing.JSplitPane {
             return addError(ex, ex.toString());
         }
     }
-    
+
     public DefaultMutableTreeNode addError(File file, Exception ex) {
         return addError(ex, String.format(bundle.getString("error_load_file"), file.getAbsolutePath(), ex.toString()));
     }
-    
+
     public void showHideTab(int index, boolean b) {
         Container panel = tabs.getParent();
         tabs.setTitleAt(index, b ? titles.get(index) : "");
@@ -157,7 +186,7 @@ public class BaseTaskPane extends javax.swing.JSplitPane {
         }
         panel.setVisible(false);
     }
-    
+
     public void activateTab(int index, JMenuItem menu) {
         showHideTab(index, true);
         tabs.setSelectedIndex(index);

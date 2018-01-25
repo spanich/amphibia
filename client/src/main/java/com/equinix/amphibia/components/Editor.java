@@ -152,6 +152,8 @@ public final class Editor extends BaseTaskPane {
         }
 
         initComponents();
+        
+        setDividerLocation(userPreferences.getInt(propertyChangeName, getDividerLocation()));
 
         Amphibia.setDefaultHTMLStyles(txtRaw);
 

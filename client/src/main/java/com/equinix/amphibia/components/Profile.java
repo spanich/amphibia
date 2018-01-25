@@ -133,7 +133,7 @@ public final class Profile extends BaseTaskPane implements IHttpConnection {
     public Profile info(String text) {
         return info(text, false);
     }
-    
+
     @Override
     public Profile info(String text, boolean isBold) {
         return info(text, isBold, false);
@@ -286,55 +286,53 @@ public final class Profile extends BaseTaskPane implements IHttpConnection {
                 0 //4 - failures (asserts)
             };
             JSONObject testsuite = testsuites.getJSONObject(index);
-            if (testsuite.containsKey("timestamp")) {
-                JSONArray testcases = testsuite.getJSONArray("testcases");
-                StringBuilder sb = new StringBuilder();
-                String testSuiteName = testsuite.getString("name");
-                testcases.forEach((tc) -> {
-                    JSONObject testcase = (JSONObject) tc;
-                    String classname = testcase.getString("name");
-                    if (testcase.containsKey("steps") && testcase.getJSONArray("steps").size() > 0) {
-                        JSONArray teststeps = testcase.getJSONArray("steps");
-                        teststeps.forEach((ts) -> {
-                            JSONObject step = (JSONObject) ts;
-                            sb.append(addTestCaseInfo(data, testSuiteName, classname, step.getString("name"), step));
-                        });
-                    } else {
-                         sb.append(addTestCaseInfo(data, testSuiteName, classname, "", testcase));
-                    }
-                });
-                
-                StringBuilder sb2 = new StringBuilder();
-                sb2.append("\t<testsuite time=\"")
-                        .append(data[0]).append("\" tests=\"")
-                        .append(data[1]).append("\" skipped=\"")
-                        .append(data[2]).append("\" errors=\"")
-                        .append(data[3]).append("\" failures=\"")
-                        .append(data[4]).append("\" id=\"")
-                        .append(index).append("\" name=\"")
-                        .append(testSuiteName)
-                        .append("\" package=\"")
-                        .append(collection.getProjectName())
-                        .append("\" timestamp=\"")
-                        .append(testsuite.getString("timestamp"))
-                        .append("\">\n");
-                sb2.append(sb.toString());
-                sb2.append("\t</testsuite>");
-                
-                pw.println(sb2.toString());
-                
-                File xmlFile = new File(dir, "TEST-" + testsuite.get("name") + ".xml");
-                PrintWriter xmlPw = new PrintWriter(new FileOutputStream(xmlFile, false));
-                xmlPw.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-                xmlPw.println(sb2.toString());
-                xmlPw.close();
-            }
+            JSONArray testcases = testsuite.getJSONArray("testcases");
+            StringBuilder sb = new StringBuilder();
+            String testSuiteName = testsuite.getString("name");
+            testcases.forEach((tc) -> {
+                JSONObject testcase = (JSONObject) tc;
+                String classname = testcase.getString("name");
+                if (testcase.containsKey("steps") && testcase.getJSONArray("steps").size() > 0) {
+                    JSONArray teststeps = testcase.getJSONArray("steps");
+                    teststeps.forEach((ts) -> {
+                        JSONObject step = (JSONObject) ts;
+                        sb.append(addTestCaseInfo(data, testSuiteName, classname, step.getString("name"), step));
+                    });
+                } else {
+                    sb.append(addTestCaseInfo(data, testSuiteName, classname, "", testcase));
+                }
+            });
+
+            StringBuilder sb2 = new StringBuilder();
+            sb2.append("\t<testsuite time=\"")
+                    .append(data[0]).append("\" tests=\"")
+                    .append(data[1]).append("\" skipped=\"")
+                    .append(data[2]).append("\" errors=\"")
+                    .append(data[3]).append("\" failures=\"")
+                    .append(data[4]).append("\" id=\"")
+                    .append(index).append("\" name=\"")
+                    .append(testSuiteName)
+                    .append("\" package=\"")
+                    .append(collection.getProjectName())
+                    .append("\" timestamp=\"")
+                    .append(testsuite.getOrDefault("timestamp", 0))
+                    .append("\">\n");
+            sb2.append(sb.toString());
+            sb2.append("\t</testsuite>");
+
+            pw.println(sb2.toString());
+
+            File xmlFile = new File(dir, "TEST-" + testsuite.get("name") + ".xml");
+            PrintWriter xmlPw = new PrintWriter(new FileOutputStream(xmlFile, false));
+            xmlPw.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+            xmlPw.println(sb2.toString());
+            xmlPw.close();
         }
         pw.println("</testsuites>");
         pw.close();
 
         System.setProperty("PROJECT_NAME", collection.getProjectName());
-        
+
         Project project = new Project();
         project.init();
 
@@ -345,7 +343,7 @@ public final class Profile extends BaseTaskPane implements IHttpConnection {
         FileSet fs = new FileSet();
         fs.setDir(dir);
         fs.createInclude().setName("TEST-*.xml");
-        
+
         AggregateTransformer.Format format = new AggregateTransformer.Format();
         format.setValue(AggregateTransformer.NOFRAMES);
 
@@ -358,7 +356,7 @@ public final class Profile extends BaseTaskPane implements IHttpConnection {
         transformer.setFormat(format);
         transformer.setStyledir(new File("../resources"));
         transformer.setTodir(dir);
-        
+
         target.addTask(aggregator);
         project.executeTarget("junitreport");
 
@@ -369,7 +367,7 @@ public final class Profile extends BaseTaskPane implements IHttpConnection {
     private String addTestCaseInfo(double[] data, String testSuiteName, String className, String name, JSONObject result) {
         if (result.containsKey("states")) {
             String info = "\n\t\t\t";
-           
+
             switch (result.getJSONArray("states").getInt(2)) {
                 case TreeIconNode.REPORT_PASSED_STATE:
                     info = "";
@@ -385,23 +383,23 @@ public final class Profile extends BaseTaskPane implements IHttpConnection {
                     break;
                 case TreeIconNode.REPORT_FAILED_STATE:
                     JSONArray fail = result.getJSONArray("error");
-                    info += "<failure message=\"" +  StringEscapeUtils.escapeXml(fail.getString(0)) + "\" type=\"" + fail.get(1) + "\"><![CDATA[" + fail.get(2) + "\n\n" + fail.get(3) + "]]></failure>";
+                    info += "<failure message=\"" + StringEscapeUtils.escapeXml(fail.getString(0)) + "\" type=\"" + fail.get(1) + "\"><![CDATA[" + fail.get(2) + "\n\n" + fail.get(3) + "]]></failure>";
                     data[4]++;
                     break;
                 default:
                     return "";
             }
-            
+
             double time = result.containsKey("time") ? result.getDouble("time") / 1000 : 0;
             data[0] += time;
             data[1]++;
-            
+
             return "\t\t<testcase parent=\"" + testSuiteName + "\" classname=\"" + className + "\" name=\"" + name + "\" time=\"" + time + "\">" + info + "\n\t\t</testcase>\n";
         }
         return "";
     }
-    
-     public void openReport() {
+
+    public void openReport() {
         resetConsole();
         if (MainPanel.selectedNode == null) {
             return;
@@ -411,7 +409,7 @@ public final class Profile extends BaseTaskPane implements IHttpConnection {
         TreeIconNode profile = collection.profile;
         JSONArray testsuites = profile.jsonObject().getJSONArray("testsuites");
         testsuites.forEach((ts) -> {
-            JSONArray testcases = ((JSONObject)ts).getJSONArray("testcases");
+            JSONArray testcases = ((JSONObject) ts).getJSONArray("testcases");
             testcases.forEach((tc) -> {
                 JSONObject testcase = (JSONObject) tc;
                 boolean addTascase = testcase.containsKey("time");
@@ -429,8 +427,8 @@ public final class Profile extends BaseTaskPane implements IHttpConnection {
                     if (step.containsKey("time")) {
                         addTascase = true;
                         TreeIconNode testStepNode = new TreeIconNode(collection, step.getString("name"), null, false)
-                                        .addType(TreeCollection.TYPE.TEST_STEP_ITEM)
-                                        .addJSON(step);
+                                .addType(TreeCollection.TYPE.TEST_STEP_ITEM)
+                                .addJSON(step);
                         testCaseNode.add(testStepNode);
                         if (step.containsKey("error")) {
                             List<String> err = new ArrayList<>();
@@ -447,7 +445,7 @@ public final class Profile extends BaseTaskPane implements IHttpConnection {
             });
         });
         mainPanel.reportTreeModel.reload();
-     }
+    }
 
     public boolean isRunning() {
         return isRunning;
@@ -465,6 +463,7 @@ public final class Profile extends BaseTaskPane implements IHttpConnection {
             @Override
             public void run() {
                 Thread thread = currentThread;
+                setTimestamp(selectedNode);
                 executeTest(thread, null, selectedNode, selectedNode.getReportState());
                 if (isRunning(thread)) {
                     stopTests();
@@ -474,6 +473,12 @@ public final class Profile extends BaseTaskPane implements IHttpConnection {
         };
         threads.put(currentThread, true);
         currentThread.start();
+    }
+
+    private void setTimestamp(TreeIconNode node) {
+        if (node.info != null && node.info.testSuiteInfo != null) {
+            node.info.testSuite.element("timestamp", reportDateFormat.format(new Date()));
+        }
     }
 
     private synchronized int executeTest(Thread thread, TreeIconNode parent, TreeIconNode node, int resultState) {
@@ -493,7 +498,7 @@ public final class Profile extends BaseTaskPane implements IHttpConnection {
         }
 
         if (node.getType() == TreeCollection.TYPE.TESTSUITE) {
-            node.jsonObject().element("timestamp", reportDateFormat.format(new Date()));
+            setTimestamp(node);
         }
 
         if (node.source != null && node.source.getTreeIconUserObject().json != null) {

@@ -26,6 +26,7 @@ import java.awt.Font;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -205,8 +206,33 @@ public final class Amphibia extends JFrame {
         }
 
         initComponents();
-        setSize(1300, 690);
-        
+
+        addComponentListener(new ComponentAdapter() {
+            Timer timer = new Timer();
+
+            @Override
+            public void componentResized(ComponentEvent evt) {
+                updatePreferences(timer, () -> {
+                    Amphibia.setBounds(Amphibia.this, P_APP_BOUNDS);
+                    userPreferences.putBoolean(P_MAXIMIZED, Amphibia.this.getExtendedState() == JFrame.MAXIMIZED_BOTH);
+                });
+            }
+
+            @Override
+            public void componentMoved(ComponentEvent e) {
+                updatePreferences(timer, () -> {
+                    Amphibia.setBounds(Amphibia.this, P_APP_BOUNDS);
+                });
+            }
+        });
+        if (userPreferences.getBoolean(P_MAXIMIZED, false)) {
+            setSize(Toolkit.getDefaultToolkit().getScreenSize());
+            this.setExtendedState(JFrame.MAXIMIZED_BOTH);
+        } else {
+            setSize(1300, 690);
+            Amphibia.getBounds(this, P_APP_BOUNDS);
+        }
+
         String[] tabs = userPreferences.get(P_VIEW_TABS, OPEN_TABS).split("");
         for (int i = 0; i < tabs.length; i++) {
             showHideTab(i, "1".equals(tabs[i]));
@@ -254,30 +280,6 @@ public final class Amphibia extends JFrame {
 
         mainPanel.profile.openReport();
         mainPanel.wizard.openTabs();
-        
-        this.addComponentListener(new ComponentAdapter() {
-            Timer timer = new Timer();
-
-            @Override
-            public void componentResized(ComponentEvent evt) {
-                updatePreferences(timer, () -> {
-                    Amphibia.setBounds(Amphibia.this, P_APP_BOUNDS);
-                    userPreferences.putBoolean(P_MAXIMIZED, Amphibia.this.getExtendedState() == JFrame.MAXIMIZED_BOTH);
-                });
-            }
-
-            @Override
-            public void componentMoved(ComponentEvent e) {
-                updatePreferences(timer, () -> {
-                    Amphibia.setBounds(Amphibia.this, P_APP_BOUNDS);
-                });
-            }
-        });
-        if (userPreferences.getBoolean(P_MAXIMIZED, false)) {
-            this.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        } else {
-            Amphibia.getBounds(this, P_APP_BOUNDS);
-        }
     }
 
     public void showHideTab(int index, boolean b) {

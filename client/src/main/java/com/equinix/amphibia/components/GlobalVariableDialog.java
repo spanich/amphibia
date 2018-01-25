@@ -16,9 +16,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -238,9 +236,13 @@ public final class GlobalVariableDialog extends javax.swing.JFrame {
             }
             originalColumns = globalVarsModel.getColumnNames();
         }
-        
+                
         globalVarsSource.data = originalData;
         globalVarsSource.columns = originalColumns;
+        
+        if (globalVarsSource.data.length == 0) {
+            globalVarsSource.data = new Object[][]{{0, "", "http://"}};
+        }
         globalVarsModel.setDataVector(globalVarsSource.data, globalVarsSource.columns);
 
         setVisible(true);
@@ -517,8 +519,6 @@ final class GlobalVarSource implements Serializable {
 
     public GlobalVarSource() {
         columns = new String[]{"", "", ""};
-        data = new Object[][]{
-            new Object[]{0, "", "http://"}
-        };
+        data = new Object[][]{};
     }
 }

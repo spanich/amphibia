@@ -64,7 +64,7 @@ public final class JSONTableModel extends JTreeTable.AbstractTreeTableModel {
                 } else if (prop.length == 2) {
                     JSONObject j = (JSONObject) json;
                     j.keySet().forEach((key) -> {
-                        rootEntry.add(json, key.toString(), j.get(key), prop[1], prop, name);
+                        rootEntry.add(json, key.toString(), j.get(key), prop[1], prop, key.toString());
                     });
                 }
             }
