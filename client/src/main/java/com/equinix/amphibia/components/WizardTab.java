@@ -130,6 +130,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         DEFAULT_BORDER = txtTestCase.getBorder();
 
         if (openedNode != null) {
+            btnReload.setVisible(true);
             cmdInterface.setEnabled(false);
             cmdMethod.setEnabled(false);
             String method = node.jsonObject().getString("method");
@@ -139,19 +140,13 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
                     break;
                 }
             }
+            btnReloadActionPerformed(null);
 
-            txtPath.setText(node.jsonObject().getString("reqPath"));
-            txtReqBody.setText(node.info.getRequestBody(node.getCollection()));
-
-            testSuitesModel.addElement(node.info.testSuite.getString("name"));
             cmbTestSuite.setEnabled(false);
             btnAddTestSuite.setEnabled(false);
-
-            txtTestCase.setText(node.jsonObject().getString("name"));
             txtTestCase.setEditable(false);
-            txtSummary.setText(node.info.testCaseInfo.getString("summary"));
-            txtTestCaseFuncName.setText(node.info.testCaseInfo.getJSONObject("config").getString("operationId"));
         } else {
+            btnReload.setVisible(false);
             btnClose.setVisible(false);
         }
 
@@ -482,6 +477,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         lblCode = new JLabel();
         lblTime = new JLabel();
         lblTimeValue = new JLabel();
+        btnReload = new JButton();
         btnSend = new JButton();
         btnSave = new JButton();
 
@@ -828,6 +824,14 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         gridBagConstraints.weightx = 1.0;
         pnlFooter.add(lblTimeValue, gridBagConstraints);
 
+        btnReload.setText(bundle.getString("mnuReload")); // NOI18N
+        btnReload.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                btnReloadActionPerformed(evt);
+            }
+        });
+        pnlFooter.add(btnReload, new GridBagConstraints());
+
         btnSend.setText(bundle.getString("send")); // NOI18N
         btnSend.setEnabled(false);
         btnSend.addActionListener(new ActionListener() {
@@ -981,6 +985,16 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         }
     }//GEN-LAST:event_btnAddTestSuiteActionPerformed
 
+    private void btnReloadActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnReloadActionPerformed
+        System.out.println(openedNode.getParent() + "+"+ openedNode.getNodePath());
+        txtPath.setText(openedNode.jsonObject().getString("reqPath"));
+        txtReqBody.setText(openedNode.info.getRequestBody(openedNode.getCollection()));
+        testSuitesModel.addElement(openedNode.info.testSuite.getString("name"));
+        txtTestCase.setText(openedNode.jsonObject().getString("name"));
+        txtSummary.setText(openedNode.info.testCaseInfo.getString("summary"));
+        txtTestCaseFuncName.setText(openedNode.info.testCaseInfo.getJSONObject("config").getString("operationId"));
+    }//GEN-LAST:event_btnReloadActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     JButton btnAddTestSuite;
@@ -990,6 +1004,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     JButton btnHeadersBottomAdd;
     JButton btnHeadersBottomDelete;
     JButton btnInterfaceInfo;
+    JButton btnReload;
     JButton btnSave;
     JButton btnSend;
     JCheckBox ckbReqSchema;

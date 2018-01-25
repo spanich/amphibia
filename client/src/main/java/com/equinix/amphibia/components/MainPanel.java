@@ -782,7 +782,7 @@ public final class MainPanel extends javax.swing.JPanel {
                             });
                         }
 
-                        final JSONObject testcaseJSON = new JSONObject();
+                        final JSONObject testcaseJSON = IO.toJSONObject(info.testStepInfo);
                         final JSONObject testCaseInheritedProperties = new JSONObject();
                         info.properties.getProperty("Global").keySet().forEach((key) -> {
                             testCaseInheritedProperties.put(key, "${#Global$" + key + "}");

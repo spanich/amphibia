@@ -66,6 +66,7 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
     private ResourceBundle bundle;
     private Editor.Entry entry;
     private Border defaultBorder;
+    private boolean isTestProperties;
     
     private final Border ERROR_BORDER = BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(Color.RED),
@@ -160,7 +161,7 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
                         }
                     }
                 }
-                if (chbOnlyForTeststep.isVisible() && !chbOnlyForTeststep.isSelected()) {
+                if (isTestProperties && !chbOnlyForTeststep.isSelected()) {
                     File file = IO.getFile(collection, node.jsonObject().getString("file"));
                     if (file.exists()) {
                         JSONObject json = (JSONObject) IO.getJSON(file);
@@ -198,7 +199,7 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
         deleteButton.addActionListener((ActionEvent evt) -> {
             TreeIconNode node = MainPanel.selectedNode;
             TreeCollection collection = node.getCollection();
-            if (chbOnlyForTeststep.isVisible() && !chbOnlyForTeststep.isSelected()) {
+            if (isTestProperties && !chbOnlyForTeststep.isSelected()) {
                 try {
                     File file = IO.getFile(collection, node.jsonObject().getString("file"));
                     if (file.exists()) {
@@ -266,8 +267,9 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
         } else {
             optionPane.setOptions(new Object[]{okButton});
         }
-        chbOnlyForTeststep.setVisible(MainPanel.selectedNode.getType() == TreeCollection.TYPE.TEST_STEP_ITEM && 
-            ("properties".equals(entry.toString()) || "properties".equals(entry.getParent().toString())));
+        isTestProperties = ("request".equals(entry.rootName) || "response".equals(entry.rootName));
+        chbOnlyForTeststep.setVisible(isTestProperties && MainPanel.selectedNode.getType() == TreeCollection.TYPE.TEST_STEP_ITEM);
+        chbOnlyForTeststep.setSelected(false);
         ckbPropertyCreate.setSelected(false);
         ckbPropertyCopy.setSelected(false);
         ckbPropertyCopy.setEnabled(false);

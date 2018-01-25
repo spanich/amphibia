@@ -136,6 +136,18 @@ public final class TreeCollection {
         {"transfer", TRANSFER, EDIT},
         {"headers", ADD},
         {"properties", ADD},
+        {"request", new Object[][]{
+            {"properties", ADD},
+            {"body", REFERENCE_EDIT},
+            {"schema", REFERENCE_EDIT}
+        }},
+        {"response", new Object[][]{
+            {"transfer", TRANSFER, EDIT},
+            {"properties", ADD},
+            {"body", REFERENCE_EDIT},
+            {"schema", REFERENCE_EDIT},
+            {"asserts", REFERENCE_EDIT}
+        }},
         {"inherited-properties", null, VIEW},
         {"teststeps", ADD_RESOURCES, REFERENCE_EDIT}
     };
