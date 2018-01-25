@@ -796,7 +796,7 @@ public final class ProjectDialog extends javax.swing.JPanel {
         txtSwaggerUrl.setText("");
         txtSwaggerFile.setText("");
         try {
-            JSONObject json = JSONObject.fromObject(IOUtils.toString(is));
+            JSONObject json = IO.toJSONObject(IOUtils.toString(is));
             logger.log(Level.INFO, json.toString());
             if (!json.containsKey("swagger") || !json.containsKey("paths")) {
                 throw new Exception(bundle.getString("error_swagger_format"));

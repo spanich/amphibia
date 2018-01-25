@@ -16,6 +16,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -60,13 +63,6 @@ public final class GlobalVariableDialog extends javax.swing.JFrame {
     private final ResourceBundle bundle;
     private final TableModel globalVarsModel;
 
-    private final int firstColumnWidth = 20;
-    private final int secondColumnWidth = 200;
-    private final int defaultColumnWidth = 70;
-    private final int borderGap = 50;
-    private final int defaultWidth = 700;
-    private final int defaultColumnIndex = 2;
-
     private static final GlobalVarSource globalVarsSource = new GlobalVarSource();
     private static final NumberFormat numberFormat = NumberFormat.getInstance();
     private static final Preferences userPreferences = Amphibia.getUserPreferences();
@@ -77,9 +73,10 @@ public final class GlobalVariableDialog extends javax.swing.JFrame {
     private String[] defaultHadersNames;
     private int cloneColumnIndex;
     
-    public static Object ENDPOINT = 0;
-    public static Object VARIABLE = 1;
-
+    public static final Object ENDPOINT = 0;
+    public static final Object VARIABLE = 1;
+    public static final int defaultColumnIndex = 2;
+    
     /**
      * Creates new form GlobalVaraibleDialog
      */
@@ -127,7 +124,6 @@ public final class GlobalVariableDialog extends javax.swing.JFrame {
 
         tblVars.setAutoCreateColumnsFromModel(false);
         tblVars.setColumnSelectionAllowed(true);
-        tblVars.getColumnModel().getColumn(1).setPreferredWidth(secondColumnWidth);
         tblVars.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
 
         Border border = BorderFactory.createEmptyBorder(4, 5, 2, 5);
@@ -206,7 +202,7 @@ public final class GlobalVariableDialog extends javax.swing.JFrame {
                     if (n == JOptionPane.YES_OPTION) {
                         String selectedEnv = userPreferences.get(Amphibia.P_SELECTED_ENVIRONMENT, null);
                         if (colName.equals(selectedEnv)) {
-                            userPreferences.remove(Amphibia.P_SELECTED_ENVIRONMENT);
+                            userPreferences.put(Amphibia.P_SELECTED_ENVIRONMENT, "default");
                         }
 
                         tblVars.removeColumn(tblVars.getColumnModel().getColumn(index));
@@ -221,7 +217,7 @@ public final class GlobalVariableDialog extends javax.swing.JFrame {
             }
         });
 
-        setSize(660, 500);
+        setSize(800, 500);
         setIconImage(Amphibia.instance.icon.getImage());
         java.awt.EventQueue.invokeLater(() -> {
             setLocationRelativeTo(mainPanel);
@@ -466,17 +462,18 @@ public final class GlobalVariableDialog extends javax.swing.JFrame {
             ObjectOutputStream os = new ObjectOutputStream(out);
             os.writeObject(globalVarsSource);
             userPreferences.putByteArray(Amphibia.P_GLOBAL_VARS, out.toByteArray());
+            Amphibia.instance.resetEnvironmentModel();
             if (MainPanel.selectedNode != null) {
                 mainPanel.reloadCollection(MainPanel.selectedNode.getCollection());
             }
-            setVisible(false);
+            dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
         } catch (IOException ex) {
             mainPanel.addError(ex);
         }
     }//GEN-LAST:event_btnApplyActionPerformed
 
     private void btnCancelActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnCancelActionPerformed
-        setVisible(false);
+        dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
     }//GEN-LAST:event_btnCancelActionPerformed
 
 

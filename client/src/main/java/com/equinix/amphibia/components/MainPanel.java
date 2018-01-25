@@ -459,7 +459,7 @@ public final class MainPanel extends javax.swing.JPanel {
                 sb.append("<div><b>Request Method:</b> ").append(node.jsonObject().getString("method")).append("</div>");
                 sb.append("<div><b>Result Status Code:</b> ").append(node.info.testCaseInfo.getJSONObject("properties").get("HTTPStatusCode")).append("</div>");
                 sb.append("<br/><b>Request Headers</b><ul>");
-                JSONObject testCaseHeaders = JSONObject.fromObject(node.info.testCaseHeaders);
+                JSONObject testCaseHeaders = IO.toJSONObject(node.info.testCaseHeaders);
                 if (node.info.testCase != null && node.info.testCase.containsKey("headers")) {
                     JSONObject headers = node.info.testCase.getJSONObject("headers");
                     headers.keySet().forEach((key) -> {
@@ -642,7 +642,7 @@ public final class MainPanel extends javax.swing.JPanel {
                         if (resource.containsKey("interfaceId") && !resource.getString("interfaceId").isEmpty()) {
                             interfaceJSON = interfacesMap.get(resource.getString("interfaceId"));
                         }
-                        JSONObject testCaseHeaders = interfaceJSON == null ? new JSONObject() : JSONObject.fromObject(interfaceJSON.getJSONObject("headers").toString());
+                        JSONObject testCaseHeaders = interfaceJSON == null ? new JSONObject() : IO.toJSONObject(interfaceJSON.getJSONObject("headers").toString());
                         if (testCaseInfo.containsKey("headers")) {
                             JSONObject headers = testCaseInfo.getJSONObject("headers");
                             headers.keySet().forEach((key) -> {
@@ -653,7 +653,7 @@ public final class MainPanel extends javax.swing.JPanel {
                             info = new TreeIconNode.ResourceInfo(file, resource, testsuite, testSuiteInfo, testCaseInfo, testCaseHeaders, (JSONObject) IO.getJSON(file, editor));
                             properties = projectProperties.cloneProperties();
                             properties.setTestSuite(testSuiteInfo.getJSONObject("properties"));
-                            properties.setTestCase(JSONObject.fromObject(testCaseInfo.getJSONObject("properties")));
+                            properties.setTestCase(IO.toJSONObject(testCaseInfo.getJSONObject("properties")));
                             info.properties = properties;
                             resourceInfoMap.put(path, info);
                             break;
@@ -712,7 +712,7 @@ public final class MainPanel extends javax.swing.JPanel {
             if (resource.containsKey("interfaceId")) {
                 interfaceJSON = interfacesMap.get(resource.getString("interfaceId"));
             } else {
-                interfaceJSON = JSONObject.fromObject("{\"name\": \"\", \"basePath\": \"\"}");
+                interfaceJSON = IO.toJSONObject("{\"name\": \"\", \"basePath\": \"\"}");
             }
 
             String relPath = String.format(dirFormat, resourceId, Swagger.stripName(name));
@@ -755,8 +755,8 @@ public final class MainPanel extends javax.swing.JPanel {
                     } else {
                         testcases.add(testcase.getString("name"));
                         Properties properties = info.properties.cloneProperties();
-                        JSONObject testCaseProperties = JSONObject.fromObject(properties.getProperty("TestCase"));
-                        JSONObject testCaseHeaders = JSONObject.fromObject(info.testCaseHeaders.toString());
+                        JSONObject testCaseProperties = IO.toJSONObject(properties.getProperty("TestCase"));
+                        JSONObject testCaseHeaders = IO.toJSONObject(info.testCaseHeaders.toString());
 
                         if (testcase.containsKey("properties")) {
                             JSONObject props = testcase.getJSONObject("properties");
@@ -820,7 +820,7 @@ public final class MainPanel extends javax.swing.JPanel {
 
                         testcaseJSON.element("name", testcase.getString("name"));
                         testcaseJSON.element("disabled", testcase.get("disabled") == Boolean.TRUE);
-                        testcaseJSON.element("path", info.file.getAbsolutePath());
+                        testcaseJSON.element("file", path);
                         testcaseJSON.element("headers", testCaseHeaders);
                         testcaseJSON.element("properties", testCaseProperties);
                         testcaseJSON.element("method", replace.getString("method"));
@@ -833,7 +833,7 @@ public final class MainPanel extends javax.swing.JPanel {
                                 .addTooltip(tooltipURL);
                         testcaseNode.getTreeIconUserObject().setEnabled(testcase.get("disabled") != Boolean.TRUE);
                         testcaseNode.info = info.clone(testcase);
-                        testcaseNode.info.properties.setTestCase(JSONObject.fromObject(testcaseNode.info.testStepInfo.getJSONObject("request").getJSONObject("properties")));
+                        testcaseNode.info.properties.setTestCase(IO.toJSONObject(testcaseNode.info.testStepInfo.getJSONObject("request").getJSONObject("properties")));
                         if (testcase.containsKey("line")) {
                             testcaseNode.info.consoleLine = testcase.getInt("line");
                         }
@@ -846,14 +846,14 @@ public final class MainPanel extends javax.swing.JPanel {
                         debugSuiteNode.add(debugTestCaseNode);
 
                         JSONArray teststeps = new JSONArray();
-                        JSONObject inheritedProperties = JSONObject.fromObject(testCaseInheritedProperties);
+                        JSONObject inheritedProperties = IO.toJSONObject(testCaseInheritedProperties);
                         testcase.getJSONArray("steps").forEach((item) -> {
                             JSONObject step = (JSONObject) item;
                             TreeIconNode.ResourceInfo stepInfo = info.clone(testcase, step);
 
                             teststeps.add(step.getString("name"));
-                            JSONObject testStepJSON = JSONObject.fromObject(testcaseNode.info.testStepInfo);
-                            testStepJSON.element("path", stepInfo.file.getAbsolutePath());
+                            JSONObject testStepJSON = IO.toJSONObject(testcaseNode.info.testStepInfo);
+                            testStepJSON.element("file", path);
                             testStepJSON.element("method", replace.getString("method"));
                             testStepJSON.element("url", url);
                             testStepJSON.element("reqPath", properties.replace(replace.getString("path")).replaceAll("&amp;", "&"));
@@ -862,8 +862,8 @@ public final class MainPanel extends javax.swing.JPanel {
                             });
                             testStepJSON.element("disabled", step.get("disabled") == Boolean.TRUE);
 
-                            JSONObject stepInheritedProperties = JSONObject.fromObject(inheritedProperties);
-                            JSONObject requestProp = JSONObject.fromObject(stepInfo.testStepInfo.getJSONObject("request").getJSONObject("properties"));
+                            JSONObject stepInheritedProperties = IO.toJSONObject(inheritedProperties);
+                            JSONObject requestProp = IO.toJSONObject(stepInfo.testStepInfo.getJSONObject("request").getJSONObject("properties"));
                             if (step.containsKey("request")) {
                                 JSONObject customStepProps = step.getJSONObject("request").getJSONObject("properties");
                                 customStepProps.keySet().forEach((key) -> {
@@ -951,10 +951,11 @@ public final class MainPanel extends javax.swing.JPanel {
             testsuiteList.keySet().forEach((name) -> {
                 JSONObject testSuiteItem = testsuiteList.getJSONObject(name.toString());
                 JSONObject testSuiteJSON = new JSONObject();
-                File file = IO.getFile(collection, String.format(dirFormat, resourceId, name));
+                String dir = String.format(dirFormat, resourceId, name);
+                File file = IO.getFile(collection, dir);
                 testSuites.put(name, file.getAbsolutePath());
                 testSuiteJSON.element("name", name);
-                testSuiteJSON.element("path", file.getAbsolutePath());
+                testSuiteJSON.element("path", dir);
                 testSuiteJSON.element("endpoint", resourseJSON.getString("endpoint"));
                 testSuiteJSON.element("interface", interfaceJSON == null ? "" : interfaceJSON.getString("name"));
                 testSuiteJSON.element("properties", testSuiteItem.getJSONObject("properties"));
@@ -981,7 +982,7 @@ public final class MainPanel extends javax.swing.JPanel {
                     testcaseJSON.element("summary", testCase.getString("summary"));
                     testcaseJSON.element("operationId", config.getString("operationId"));
                     testcaseJSON.element("method", replace.getString("method"));
-                    testcaseJSON.element("path", replace.getString("path"));
+                    testcaseJSON.element("url path", replace.getString("path"));
                     testcaseJSON.element("example", replace.get("body"));
                     testcaseJSON.element("headers", JSONNull.getInstance());
                     testcaseJSON.element("properties", new JSONObject());
@@ -999,8 +1000,8 @@ public final class MainPanel extends javax.swing.JPanel {
                     testcaseNode.info = info;
 
                     if (info != null) {
-                        JSONObject testStepJSON = JSONObject.fromObject(testcaseNode.info.testStepInfo);
-                        testStepJSON.element("path", info.file.getAbsolutePath());
+                        JSONObject testStepJSON = IO.toJSONObject(testcaseNode.info.testStepInfo);
+                        testStepJSON.element("file", path);
                         testcaseNode.info.testStepInfo.keySet().forEach((key) -> {
                             testStepJSON.put(key, testcaseNode.info.testStepInfo.get(key));
                         });
@@ -1027,13 +1028,14 @@ public final class MainPanel extends javax.swing.JPanel {
             {"schemas", collection.schemas, SCHEMA_ITEM, VIEW_ITEM_PROPERTIES, EDIT_ITEM_PROPERTIES}
         };
 
-        File dataDir = IO.getFile(collection, "data");
-        for (String resourceId : dataDir.list()) {
-            File resourceDir = new File(dataDir, resourceId);
-            if (resourceDir.isFile()) { //profile.json
-                continue;
-            }
-            for (Object[] item : loadNodes) {
+        for (Object[] item : loadNodes) {
+            File dataDir = IO.getFile(collection, "data");
+            JSONObject itemJSON = new JSONObject();
+            for (String resourceId : dataDir.list()) {
+                File resourceDir = new File(dataDir, resourceId);
+                if (resourceDir.isFile()) { //profile.json
+                    continue;
+                }
                 File suiteDir = new File(resourceDir, item[0].toString());
                 TreeIconNode parentNode = (TreeIconNode) item[1];
                 TreeCollection.TYPE type = (TreeCollection.TYPE) item[2];
@@ -1041,9 +1043,9 @@ public final class MainPanel extends javax.swing.JPanel {
                     collection.project.add(parentNode);
                 }
                 if (suiteDir.exists()) {
-                    JSONObject itemJSON = new JSONObject();
                     for (String dir : suiteDir.list()) {
                         File subdir = new File(suiteDir, dir);
+                        String subDirPath = String.format("%s/%s/%s/%s", "data", resourceId, item[0], dir);
                         TreeIconNode node;
                         if (parentNode != collection.schemas) {
                             node = collection.addTreeNode(parentNode, dir, TESTSUITE, false);
@@ -1053,8 +1055,8 @@ public final class MainPanel extends javax.swing.JPanel {
                         node.info = new TreeIconNode.ResourceInfo(subdir);
                         node.addProperties(RESOURCES_PROPERTIES)
                                 .addTooltip(subdir.getAbsolutePath())
-                                .addJSON(new JSONObject().element("path", subdir.getAbsolutePath()).element("files", subdir.list()));
-                        itemJSON.element(dir, subdir.getAbsolutePath());
+                                .addJSON(new JSONObject().element("path", subDirPath).element("files", subdir.list()));
+                        itemJSON.element(dir, subDirPath);
                         for (String name : subdir.list()) {
                             File file = new File(suiteDir, dir + "/" + name);
                             if (file.isFile()) {
@@ -1067,8 +1069,8 @@ public final class MainPanel extends javax.swing.JPanel {
                             }
                         }
                     }
-                    parentNode.addProperties((Object[][]) item[3]).addJSON(itemJSON);
                 }
+                parentNode.addProperties((Object[][]) item[3]).addJSON(itemJSON);
             }
         }
 

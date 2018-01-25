@@ -71,7 +71,7 @@ public class SaveDialog extends javax.swing.JPanel {
     public boolean validateAndSave(String title, boolean isRestore) {
         isSame = true;
         model.removeAllElements();
-        JSONArray list = JSONArray.fromObject(userPreferences.get(P_PROJECT_UUIDS, "[]"));
+        JSONArray list = IO.toJSONArray(userPreferences.get(P_PROJECT_UUIDS, "[]"));
         list.forEach((path) -> {
             try {
                 File target = new File(path.toString());

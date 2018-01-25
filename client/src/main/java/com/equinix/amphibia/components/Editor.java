@@ -646,6 +646,7 @@ public final class Editor extends BaseTaskPane {
         public JTreeTable.EditValueRenderer.TYPE type;
         public List<Entry> children;
         private Entry parent;
+        public String rootName;
 
         public Entry(String name) {
             this.name = name;
@@ -670,9 +671,10 @@ public final class Editor extends BaseTaskPane {
             return value;
         }
 
-        public Entry add(JSON parentJson, String name, Object value, Object propType, Object[] props) {
+        public Entry add(JSON parentJson, String name, Object value, Object propType, Object[] props, Object rootName) {
             boolean isleaf = !(JTreeTable.isNotLeaf(propType) || !(propType instanceof JTreeTable.EditValueRenderer.TYPE));
             Entry entry = new Entry(this, parentJson, name, value, isleaf, false);
+            entry.rootName = rootName.toString();
             if (propType instanceof JTreeTable.EditValueRenderer.TYPE) {
                 entry.type = (JTreeTable.EditValueRenderer.TYPE) propType;
             } else {
@@ -699,12 +701,12 @@ public final class Editor extends BaseTaskPane {
                 for (Object[] prop : (Object[][]) propType) {
                     String key = prop[0].toString();
                     if (jo != null) {
-                        entry.add(jo, key, getValue(jo.get(key)), prop[1], prop);
+                        entry.add(jo, key, getValue(jo.get(key)), prop[1], prop, rootName);
                     } else {
                         JSONArray list = (JSONArray) value;
                         for (int i = 0; i < list.size(); i++) {
                             jo = list.getJSONObject(i);
-                            entry.add(jo, key, getValue(jo.get(key)), prop[1], prop);
+                            entry.add(jo, key, getValue(jo.get(key)), prop[1], prop, rootName);
                         }
                     }
                 }
@@ -716,6 +718,7 @@ public final class Editor extends BaseTaskPane {
                 while (keyItr.hasNext()) {
                     String key = keyItr.next();
                     Entry child = new Entry(entry, jo, key, getValue(jo.get(key)), true, true);
+                    child.rootName = rootName.toString();
                     if (props.length > 2) {
                         child.type = (JTreeTable.EditValueRenderer.TYPE) props[2];
                     }

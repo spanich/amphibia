@@ -522,7 +522,7 @@ public final class Profile extends BaseTaskPane implements IHttpConnection {
                 String name = sourceJSON.getString("name");
                 try {
                     date();
-                    final JSONObject testCaseHeaders = JSONObject.fromObject(node.info.testCaseHeaders);
+                    final JSONObject testCaseHeaders = IO.toJSONObject(node.info.testCaseHeaders);
                     if (node.info.testCase != null && node.info.testCase.containsKey("headers")) {
                         JSONObject headers = node.info.testCase.getJSONObject("headers");
                         headers.keySet().forEach((key) -> {

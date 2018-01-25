@@ -163,6 +163,7 @@ public final class Amphibia extends JFrame {
             instance.toFront();
             instance.requestFocus();
             instance.setAlwaysOnTop(false);
+            instance.setVisible(true);
         });
     }
 
@@ -184,13 +185,13 @@ public final class Amphibia extends JFrame {
      * Creates new form NewJFrame
      */
     public void init() {
-        bundle = Amphibia.getBundle();
-
         String[] arr = userPreferences.get(P_LOCALE, "").split("_");
         if (arr.length == 2) {
             Locale.setDefault(new Locale(arr[0], arr[1]));
         }
 
+        bundle = Amphibia.getBundle();
+        
         try {
             String userLF = userPreferences.get(Amphibia.P_LOOKANDFEEL, UIManager.getSystemLookAndFeelClassName());
             UIManager.setLookAndFeel(userLF);
@@ -231,8 +232,8 @@ public final class Amphibia extends JFrame {
 
         mainPanel.saveDialog.validateAndSave(bundle.getString("restore"), true);
         
-        JSONArray recentProjects = JSONArray.fromObject(userPreferences.get(P_RECENT_PROJECTS, "[]"));
-        JSONArray list = JSONArray.fromObject(userPreferences.get(P_PROJECT_UUIDS, "[]"));
+        JSONArray recentProjects = IO.toJSONArray(userPreferences.get(P_RECENT_PROJECTS, "[]"));
+        JSONArray list = IO.toJSONArray(userPreferences.get(P_PROJECT_UUIDS, "[]"));
         TreeCollection collection = null;
         for (int i = list.size() - 1; i >= 0; i--) {
             File file = new File(list.getString(i));
@@ -277,7 +278,6 @@ public final class Amphibia extends JFrame {
         } else {
             Amphibia.getBounds(this, P_APP_BOUNDS);
         }
-        setVisible(true);
     }
 
     public void showHideTab(int index, boolean b) {
@@ -346,13 +346,13 @@ public final class Amphibia extends JFrame {
     public void updateRecentProjects(File file, JSONArray recentProjects) {
         if (recentProjects == null) {
             String projects = userPreferences.get(P_PROJECT_UUIDS, "[]");
-            JSONArray list = JSONArray.fromObject(projects);
+            JSONArray list = IO.toJSONArray(projects);
             list.remove(file.getAbsolutePath());
             list.add(0, file.getAbsolutePath());
             userPreferences.put(Amphibia.P_PROJECT_UUIDS, list.toString());
 
             projects = userPreferences.get(P_RECENT_PROJECTS, "[]");
-            recentProjects = JSONArray.fromObject(projects);
+            recentProjects = IO.toJSONArray(projects);
         }
 
         recentProjects.remove(file.getAbsolutePath());
@@ -363,7 +363,7 @@ public final class Amphibia extends JFrame {
     public void createRecentProjectMenu(TreeCollection collection) {
         menuRecentProject.removeAll();
         String projects = userPreferences.get(P_RECENT_PROJECTS, "[]");
-        JSONArray recentProjects = JSONArray.fromObject(projects);
+        JSONArray recentProjects = IO.toJSONArray(projects);
         for (int i = recentProjects.size() - 1; i >= 0; i--) {
             File projectFile = new File(recentProjects.getString(i));
             if (projectFile.exists()) {
@@ -476,7 +476,7 @@ public final class Amphibia extends JFrame {
     }
     
     public int getSelectedEnvDataIndex() {
-        int columnEnv = 2; //0 - column type, 1 - environment name
+        int columnEnv = GlobalVariableDialog.defaultColumnIndex;
         String[] columns = GlobalVariableDialog.getGlobalVarColumns();
         String selectedEnv = userPreferences.get(P_SELECTED_ENVIRONMENT, null);
         for (int c = columnEnv + 1; c < columns.length; c++) {
@@ -488,17 +488,17 @@ public final class Amphibia extends JFrame {
     }
     
     public void resetEnvironmentModel() {
-        int columnIndex = 0;
-        int columnEnv = 2; //0 - column type, 1 - environment name
+        int index = 0;
+        int columnEnv = GlobalVariableDialog.defaultColumnIndex;
         
         String[] columns = GlobalVariableDialog.getGlobalVarColumns();
         Object[][] data = GlobalVariableDialog.getGlobalVarData();
         SelectedEnvironment[] model = new SelectedEnvironment[columns.length - columnEnv + 1];
-        model[columnIndex++] = new SelectedEnvironment(bundle.getString("default"), data, columnEnv);
+        model[index++] = new SelectedEnvironment("default", bundle.getString("default"), data, columnEnv);
         for (int c = columnEnv + 1; c < columns.length; c++) {
-            model[columnIndex++] = new SelectedEnvironment(columns[c], data, c);
+            model[index++] = new SelectedEnvironment(columns[c], columns[c], data, c);
         }
-        model[columnIndex++] = new SelectedEnvironment(bundle.getString("addEnvironment"), new Object[][]{}, -1);
+        model[index++] = new SelectedEnvironment(null, bundle.getString("addEnvironment"), new Object[][]{}, -1);
         cmbEnvironment.setModel(new DefaultComboBoxModel(model));
         cmbEnvironment.setSelectedIndex(getSelectedEnvDataIndex() - columnEnv);
         mainPanel.wizard.updateEndPoints();
@@ -1495,21 +1495,8 @@ public final class Amphibia extends JFrame {
         mainPanel.wizard.addWizardTab();
     }//GEN-LAST:event_btnAddToWizardActionPerformed
 
-    private void cmbEnvironmentActionPerformed(ActionEvent evt) {//GEN-FIRST:event_cmbEnvironmentActionPerformed
-        if (cmbEnvironment.getSelectedIndex() == cmbEnvironment.getItemCount() - 1) {
-           mainPanel.globalVarsDialog.openDialog();
-        } else {
-            userPreferences.put(P_SELECTED_ENVIRONMENT, cmbEnvironment.getSelectedItem().toString());
-        }
-        resetEnvironmentModel();
-        if (MainPanel.selectedNode != null) {
-            mainPanel.reloadCollection(MainPanel.selectedNode.getCollection());
-        }
-    }//GEN-LAST:event_cmbEnvironmentActionPerformed
-
     private void mnuGlobalVarsActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuGlobalVarsActionPerformed
         mainPanel.globalVarsDialog.openDialog();
-        resetEnvironmentModel();
     }//GEN-LAST:event_mnuGlobalVarsActionPerformed
 
     private void mnuInterfacesActionPerformed(ActionEvent evt) {//GEN-FIRST:event_mnuInterfacesActionPerformed
@@ -1529,6 +1516,19 @@ public final class Amphibia extends JFrame {
     private void btnGlobalVarsActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnGlobalVarsActionPerformed
         mnuGlobalVarsActionPerformed(evt);
     }//GEN-LAST:event_btnGlobalVarsActionPerformed
+
+    private void cmbEnvironmentActionPerformed(ActionEvent evt) {//GEN-FIRST:event_cmbEnvironmentActionPerformed
+        SelectedEnvironment item = (SelectedEnvironment)cmbEnvironment.getSelectedItem();
+        if (item.columnIndex == -1) {
+           mainPanel.globalVarsDialog.openDialog();
+           cmbEnvironment.setSelectedIndex(getSelectedEnvDataIndex() - GlobalVariableDialog.defaultColumnIndex);
+        } else {
+            userPreferences.put(P_SELECTED_ENVIRONMENT, item.name);
+            if (MainPanel.selectedNode != null) {
+                mainPanel.reloadCollection(MainPanel.selectedNode.getCollection());
+            }
+        }
+    }//GEN-LAST:event_cmbEnvironmentActionPerformed
 
     public void export(String type) {
         Amphibia.setWaitOverlay(true);
@@ -1743,11 +1743,13 @@ public final class Amphibia extends JFrame {
 
     public static class SelectedEnvironment {
 
+        public String name;
         public String column;
         public Object[][] data;
         public int columnIndex;
 
-        public SelectedEnvironment(String column, Object[][] data, int columnIndex) {
+        public SelectedEnvironment(String name, String column, Object[][] data, int columnIndex) {
+            this.name = name;
             this.data = new Object[data.length][3];
             this.column = column;
             this.columnIndex = columnIndex;

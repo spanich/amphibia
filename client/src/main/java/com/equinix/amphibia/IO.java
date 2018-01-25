@@ -35,6 +35,14 @@ public class IO {
     
     public static final JSONNull NULL = JSONNull.getInstance();
     
+    public static JSONArray toJSONArray(Object obj) {
+        return JSONArray.fromObject(obj);
+    }
+    
+    public static JSONObject toJSONObject(Object obj) {
+        return JSONObject.fromObject(obj);
+    }
+
     public static boolean isNULL(Object value) {
         if (value == null) {
             return true;
@@ -48,9 +56,9 @@ public class IO {
 
     public static JSON toJSON(String json) throws Exception {
         if (json.startsWith("[")) {
-            return JSONArray.fromObject(json);
+            return IO.toJSONArray(json);
         } else {
-            return JSONObject.fromObject(json);
+            return IO.toJSONObject(json);
         }
     }
 

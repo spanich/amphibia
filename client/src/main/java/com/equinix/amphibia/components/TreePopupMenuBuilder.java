@@ -9,6 +9,7 @@ import static com.equinix.amphibia.Amphibia.getUserPreferences;
 import static com.equinix.amphibia.components.TreeCollection.TYPE.*;
 
 import com.equinix.amphibia.Amphibia;
+import com.equinix.amphibia.IO;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -145,7 +146,7 @@ public final class TreePopupMenuBuilder implements ActionListener {
                 int dialogResult = JOptionPane.showConfirmDialog(mainPanel, bundle.getString("tip_deleting"), bundle.getString("title"), JOptionPane.YES_NO_OPTION);
                 if (dialogResult == JOptionPane.YES_OPTION) {
                     mainPanel.deleteProject(collection);
-                    JSONArray list = JSONArray.fromObject(userPreferences.get(Amphibia.P_PROJECT_UUIDS, "[]"));
+                    JSONArray list = IO.toJSONArray(userPreferences.get(Amphibia.P_PROJECT_UUIDS, "[]"));
                     for (int i = 0; i < list.size(); i++) {
                         if (collection.getProjectFile().getAbsolutePath().equals(list.getString(i))) {
                             list.remove(i);

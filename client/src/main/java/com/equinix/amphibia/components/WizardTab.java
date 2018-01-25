@@ -244,7 +244,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
                 testcase.element("summary", "");
                 testcase.element("name", testCaseName);
                 testcase.element("type", "restrequest");
-                testcase.element("config", JSONObject.fromObject("{\"replace\": {}}"));
+                testcase.element("config", IO.toJSONObject("{\"replace\": {}}"));
                 testcase.element("properties", new JSONObject());
                 addTestCase = true;
             }
@@ -259,7 +259,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
                     code = 0;
                 }
                 testcase.getJSONObject("properties").element("HTTPStatusCode", code);
-                config.element("assertions", JSONArray.fromObject("[{\"replace\": {\"value\": \"${#HTTPStatusCode}\"},\"type\": \"ValidHTTPStatusCodes\"}]"));
+                config.element("assertions", IO.toJSONArray("[{\"replace\": {\"value\": \"${#HTTPStatusCode}\"},\"type\": \"ValidHTTPStatusCodes\"}]"));
             }
             config.element("operationId", txtTestCaseFuncName.getText());
 
@@ -854,7 +854,6 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
 
     private void btnEndpointInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEndpointInfoActionPerformed
         wizard.mainPanel.globalVarsDialog.openDialog();
-        Amphibia.instance.resetEnvironmentModel();
     }//GEN-LAST:event_btnEndpointInfoActionPerformed
 
     private void btnHeadersActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnHeadersActionPerformed
@@ -886,7 +885,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
                 lblTimeValue.setText("");
 
                 Wizard.ComboItem item = (Wizard.ComboItem) cmdInterface.getSelectedItem();
-                JSONObject headers = JSONObject.fromObject(item.json.getOrDefault("headers", new JSONObject()));
+                JSONObject headers = IO.toJSONObject(item.json.getOrDefault("headers", new JSONObject()));
                 for (int r = 0; r < tblHeadersBottom.getRowCount(); r++) {
                     Object key = tblHeadersBottom.getValueAt(r, 0);
                     if (key != null && !key.toString().isEmpty()) {

@@ -14,12 +14,14 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.text.NumberFormat;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.io.File;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.ResourceBundle;
@@ -105,11 +107,10 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
                     switch(this.cmbPropertyTypes.getSelectedItem().toString()) {
                         case "Global":
                             JSONArray globals = new JSONArray();
-                            globals.add(JSONObject.fromObject(new HashMap<String, Object>(){{
+                            globals.add(IO.toJSONObject(new HashMap<String, Object>(){{
                                put("name", m.group(2));
                                put("value", value);
                             }}));
-                            collection.project.jsonObject().getJSONArray("globals").addAll(globals);
                             mainPanel.globalVarsDialog.mergeVariables(globals);
                             break;
                         case "Project":
@@ -159,14 +160,22 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
                         }
                     }
                 }
-                if (entry.type == JTreeTable.EditValueRenderer.TYPE.ADD) {
+                if (chbOnlyForTeststep.isVisible() && !chbOnlyForTeststep.isSelected()) {
+                    File file = IO.getFile(collection, node.jsonObject().getString("file"));
+                    if (file.exists()) {
+                        JSONObject json = (JSONObject) IO.getJSON(file);
+                        json.getJSONObject(entry.rootName).getJSONObject("properties").element(txtName.getText(), value);
+                        IO.write(IO.prettyJson(json.toString()), file);
+                        mainPanel.reloadCollection(collection);
+                    }
+                } else if (entry.type == JTreeTable.EditValueRenderer.TYPE.ADD) {
                     JSONObject json = ((JSONObject) entry.json).getJSONObject(entry.name);
                     if (json.isNullObject()) {
                         json = new JSONObject();
                         ((JSONObject) entry.json).element(entry.name, json);
                     }
                     json.element(txtName.getText(), value);
-                    Editor.Entry child = entry.add(json, txtName.getText(), value, EDIT, null);
+                    Editor.Entry child = entry.add(json, txtName.getText(), value, EDIT, null, txtName.getText());
                     child.isDynamic = true;
                     saveSelectedNode(child);
                 } else {
@@ -187,13 +196,29 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
         });
         deleteButton = new JButton(bundle.getString("delete"));
         deleteButton.addActionListener((ActionEvent evt) -> {
-            entry.isDelete = true;
-            if (entry.json instanceof JSONObject) {
-                ((JSONObject) entry.json).remove(entry.name);
+            TreeIconNode node = MainPanel.selectedNode;
+            TreeCollection collection = node.getCollection();
+            if (chbOnlyForTeststep.isVisible() && !chbOnlyForTeststep.isSelected()) {
+                try {
+                    File file = IO.getFile(collection, node.jsonObject().getString("file"));
+                    if (file.exists()) {
+                        JSONObject json = (JSONObject) IO.getJSON(file);
+                        json.getJSONObject(entry.rootName).getJSONObject("properties").remove(entry.name);
+                        IO.write(IO.prettyJson(json.toString()), file);
+                        mainPanel.reloadCollection(collection);
+                    }
+                } catch (Exception ex) {
+                    logger.log(Level.SEVERE, ex.toString(), ex);
+                }
             } else {
-                ((JSONArray) entry.json).remove(Integer.parseInt(entry.name));
+                entry.isDelete = true;
+                if (entry.json instanceof JSONObject) {
+                    ((JSONObject) entry.json).remove(entry.name);
+                } else {
+                    ((JSONArray) entry.json).remove(Integer.parseInt(entry.name));
+                }
+                saveSelectedNode(entry);
             }
-            saveSelectedNode(entry);
             dialog.setVisible(false);
         });
         cancelButton = new JButton(bundle.getString("cancel"));
@@ -241,6 +266,8 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
         } else {
             optionPane.setOptions(new Object[]{okButton});
         }
+        chbOnlyForTeststep.setVisible(MainPanel.selectedNode.getType() == TreeCollection.TYPE.TEST_STEP_ITEM && 
+            ("properties".equals(entry.toString()) || "properties".equals(entry.getParent().toString())));
         ckbPropertyCreate.setSelected(false);
         ckbPropertyCopy.setSelected(false);
         ckbPropertyCopy.setEnabled(false);
@@ -332,6 +359,7 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
         splEditor = new JScrollPane();
         txtEditor = new JTextArea();
         pnlFooter = new JPanel();
+        chbOnlyForTeststep = new JCheckBox();
         pnlDataType = new JPanel();
         lblDataType = new JLabel();
         cmbDataType = new JComboBox<>();
@@ -385,7 +413,12 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
         add(splEditor, BorderLayout.CENTER);
 
         pnlFooter.setPreferredSize(new Dimension(603, 60));
-        pnlFooter.setLayout(new GridLayout(2, 0));
+        pnlFooter.setLayout(new GridLayout(3, 0));
+
+        chbOnlyForTeststep.setText(bundle.getString("onlyForTeststep")); // NOI18N
+        pnlFooter.add(chbOnlyForTeststep);
+
+        pnlDataType.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
 
         lblDataType.setText(bundle.getString("dataType")); // NOI18N
         pnlDataType.add(lblDataType);
@@ -429,6 +462,7 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
                     propDialog.setVisible(false);
                 });
                 btnOk.addActionListener((ActionEvent e) -> {       
+                    entry.value = txtEditor.getText();
                     txtEditor.setText("${#" + cmbPropertyTypes.getSelectedItem() + "#" + txtName.getText()  + "}");
                     propDialog.setVisible(false);
                 });
@@ -448,6 +482,7 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private JCheckBox chbOnlyForTeststep;
     private JCheckBox ckbPropertyCopy;
     private JCheckBox ckbPropertyCreate;
     private JComboBox<String> cmbDataType;

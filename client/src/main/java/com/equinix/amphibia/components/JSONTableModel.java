@@ -60,11 +60,11 @@ public final class JSONTableModel extends JTreeTable.AbstractTreeTableModel {
                     if (!isInherit && "inherited-properties".equals(name)) {
                         continue;
                     }
-                    rootEntry.add(json, name.toString(), element, prop[1], prop);
+                    rootEntry.add(json, name.toString(), element, prop[1], prop, name);
                 } else if (prop.length == 2) {
                     JSONObject j = (JSONObject) json;
                     j.keySet().forEach((key) -> {
-                        rootEntry.add(json, key.toString(), j.get(key), prop[1], prop);
+                        rootEntry.add(json, key.toString(), j.get(key), prop[1], prop, name);
                     });
                 }
             }
@@ -79,9 +79,9 @@ public final class JSONTableModel extends JTreeTable.AbstractTreeTableModel {
                     Object name = prop[0];
                     if (name != null) {
                         Object element = array.getJSONObject(i).get(name.toString());
-                        node.add(json, name.toString(), element, prop[1], prop);
+                        node.add(json, name.toString(), element, prop[1], prop, name);
                     } else {
-                        node.add(json, String.valueOf(i), array.getJSONObject(i), prop[1], prop);
+                        node.add(json, String.valueOf(i), array.getJSONObject(i), prop[1], prop, name);
                     }
                 }
             }

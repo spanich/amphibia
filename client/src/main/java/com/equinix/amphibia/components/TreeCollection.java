@@ -129,7 +129,7 @@ public final class TreeCollection {
     public static final Object[][] TESTCASE_PROPERTIES = new Object[][]{
         {"disabled", EDIT_LIMIT},
         {"name", EDIT_LIMIT},
-        {"path", REFERENCE},
+        {"file", REFERENCE},
         {"method", VIEW},
         {"url", VIEW},
         {"interface", VIEW},
@@ -143,7 +143,7 @@ public final class TreeCollection {
     public static final Object[][] TEST_STEP_ITEM_PROPERTIES = new Object[][]{
         {"disabled", EDIT_LIMIT},
         {"name", EDIT_LIMIT},
-        {"path", REFERENCE},
+        {"file", REFERENCE},
         {"method", VIEW},
         {"url", VIEW},
         {"request", new Object[][]{
@@ -163,7 +163,7 @@ public final class TreeCollection {
                 
     public static final Object[][] TEST_ITEM_PROPERTIES = new Object[][]{
         {"defaultName", EDIT_LIMIT},
-        {"path", REFERENCE_EDIT},
+        {"file", REFERENCE_EDIT},
         {"request", new Object[][]{
             {"properties", ADD},
             {"body", REFERENCE_EDIT},
@@ -191,8 +191,8 @@ public final class TreeCollection {
         {"type", VIEW},
         {"summary", EDIT},
         {"operationId", EDIT},
+        {"url path", EDIT_LIMIT},
         {"method", EDIT_LIMIT},
-        {"path", EDIT_LIMIT},
         {"example", EDIT},
         {"properties", ADD},
         {"headers", ADD}

@@ -191,8 +191,11 @@ public final class ReferenceDialog extends javax.swing.JPanel {
         String dirPath = "data/%s/%s/%s";
         String resourceId = info.resource.getString("resourceId");
         String testSuiteName = info.testSuite.getString("name");
-        if ("path".equals(entry.name)) {
-            File file = new File(entry.value.toString());
+        if ("file".equals(entry.name)) {
+            File file = IO.getFile(collection, entry.value.toString());
+            if (!file.exists()) {
+                file = new File(entry.value.toString());
+            }
             return new Object[]{null, file.getParentFile(), file};
         } else if ("request".equals(entry.getParent().toString())) {
             switch (entry.name) {

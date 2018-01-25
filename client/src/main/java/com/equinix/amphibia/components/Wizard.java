@@ -5,10 +5,12 @@
  */
 package com.equinix.amphibia.components;
 
-import com.equinix.amphibia.Amphibia;
 import static com.equinix.amphibia.Amphibia.TYPE;
 import static com.equinix.amphibia.Amphibia.NAME;
 import static com.equinix.amphibia.Amphibia.VALUE;
+
+import com.equinix.amphibia.Amphibia;
+import com.equinix.amphibia.IO;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -166,7 +168,7 @@ public class Wizard extends javax.swing.JPanel {
             interfaceIds.put(((JSONObject) item).getString("interfaceId"), true);
         });
         json.getJSONArray("interfaces").forEach((item) -> {
-            JSONObject iJson = JSONObject.fromObject(item.toString());
+            JSONObject iJson = IO.toJSONObject(item.toString());
             ComboItem comboItem = new ComboItem(iJson, !interfaceIds.containsKey(iJson.getString("id")));
             interfaceNameModel.addElement(comboItem);
         }); 
@@ -538,7 +540,7 @@ public class Wizard extends javax.swing.JPanel {
         if (cmdName.getSelectedIndex() != -1) {
             if (saveSelectedModel(headerSaveIndex)) {
                 ComboItem item = (ComboItem) interfaceNameModel.getElementAt(cmdName.getSelectedIndex());
-                newInterface(JSONObject.fromObject(item.json.toString()));
+                newInterface(IO.toJSONObject(item.json.toString()));
             }
         }
     }//GEN-LAST:event_btnCloneActionPerformed
