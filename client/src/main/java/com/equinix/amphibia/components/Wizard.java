@@ -202,6 +202,21 @@ public class Wizard extends javax.swing.JPanel {
         }
     }
     
+    public void replaceNode(TreeIconNode node) {
+        for (int i = 0; i < tabNav.getTabCount(); i++) {
+            ((WizardTab)tabNav.getComponent(i)).replaceNode(node);
+        }       
+    }
+    
+    public void removeDeadNodes() {
+        for (int i = tabNav.getTabCount() - 1; i > 0; i--) { //till first tab
+            WizardTab tab = (WizardTab)tabNav.getComponent(i);
+            if (tab.getNode() != null && tab.getNode().getParent() == null) {
+                tabNav.remove(i);
+            }
+        }       
+    }
+
     private boolean newInterface(JSONObject json) {
         boolean b = saveSelectedModel(cmdName.getSelectedIndex());
         if (b) {

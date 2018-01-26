@@ -269,7 +269,7 @@ public final class ResourceEditDialog extends javax.swing.JPanel {
         }
         isTestProperties = ("request".equals(entry.rootName) || "response".equals(entry.rootName));
         chbOnlyForTeststep.setVisible(isTestProperties && MainPanel.selectedNode.getType() == TreeCollection.TYPE.TEST_STEP_ITEM);
-        chbOnlyForTeststep.setSelected(false);
+        chbOnlyForTeststep.setSelected(true);
         ckbPropertyCreate.setSelected(false);
         ckbPropertyCopy.setSelected(false);
         ckbPropertyCopy.setEnabled(false);

@@ -89,6 +89,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     private DefaultComboBoxModel testSuitesModel;
     private Object[][] lastSavedDataModel;
     private ExtendedStyledEditorKit editorKit;
+    private String uID;
 
     private final Border DEFAULT_BORDER;
     private final Border ERROR_BORDER = BorderFactory.createCompoundBorder(
@@ -130,6 +131,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         DEFAULT_BORDER = txtTestCase.getBorder();
 
         if (openedNode != null) {
+            uID = openedNode.getUID();
             btnReload.setVisible(true);
             cmdInterface.setEnabled(false);
             cmdMethod.setEnabled(false);
@@ -146,6 +148,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
             btnAddTestSuite.setEnabled(false);
             txtTestCase.setEditable(false);
         } else {
+            chbAutoReload.setVisible(false);
             btnReload.setVisible(false);
             btnClose.setVisible(false);
         }
@@ -400,7 +403,20 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
 
         saveTestCase.setVisible(true);
     }
-
+    
+    public TreeIconNode getNode() {
+        return openedNode;
+    }
+    
+    public void replaceNode(TreeIconNode node) {
+        if (node.getUID().equals(uID)) {
+            openedNode = node;
+            if (chbAutoReload.isSelected()) {
+                btnReloadActionPerformed(null);
+            }
+        }        
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -477,6 +493,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         lblCode = new JLabel();
         lblTime = new JLabel();
         lblTimeValue = new JLabel();
+        chbAutoReload = new JCheckBox();
         btnReload = new JButton();
         btnSend = new JButton();
         btnSave = new JButton();
@@ -824,6 +841,9 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         gridBagConstraints.weightx = 1.0;
         pnlFooter.add(lblTimeValue, gridBagConstraints);
 
+        chbAutoReload.setText(bundle.getString("autoReload")); // NOI18N
+        pnlFooter.add(chbAutoReload, new GridBagConstraints());
+
         btnReload.setText(bundle.getString("mnuReload")); // NOI18N
         btnReload.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
@@ -986,7 +1006,6 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     }//GEN-LAST:event_btnAddTestSuiteActionPerformed
 
     private void btnReloadActionPerformed(ActionEvent evt) {//GEN-FIRST:event_btnReloadActionPerformed
-        System.out.println(openedNode.getParent() + "+"+ openedNode.getNodePath());
         txtPath.setText(openedNode.jsonObject().getString("reqPath"));
         txtReqBody.setText(openedNode.info.getRequestBody(openedNode.getCollection()));
         testSuitesModel.addElement(openedNode.info.testSuite.getString("name"));
@@ -994,7 +1013,6 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
         txtSummary.setText(openedNode.info.testCaseInfo.getString("summary"));
         txtTestCaseFuncName.setText(openedNode.info.testCaseInfo.getJSONObject("config").getString("operationId"));
     }//GEN-LAST:event_btnReloadActionPerformed
-
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     JButton btnAddTestSuite;
@@ -1007,6 +1025,7 @@ public final class WizardTab extends javax.swing.JPanel implements IHttpConnecti
     JButton btnReload;
     JButton btnSave;
     JButton btnSend;
+    JCheckBox chbAutoReload;
     JCheckBox ckbReqSchema;
     JCheckBox ckbResSchema;
     JCheckBox ckbSaveExample;

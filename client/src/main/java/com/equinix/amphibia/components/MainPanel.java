@@ -841,6 +841,9 @@ public final class MainPanel extends javax.swing.JPanel {
                             testcase.element("states", new int[]{0, 0, 0, 0});
                         }
                         testcaseNode.info.states = testcase.getJSONArray("states");
+                        if (testcaseNode.info.states.getInt(TreeIconNode.STATE_OPEN_PROJECT_OR_WIZARD_TAB) == 1) {
+                            wizard.replaceNode(testcaseNode);
+                        }
 
                         TreeIconNode debugTestCaseNode = new TreeIconNode(testcaseNode).addJSON(testcase);
                         debugSuiteNode.add(debugTestCaseNode);
@@ -923,6 +926,9 @@ public final class MainPanel extends javax.swing.JPanel {
                                 step.element("states", new int[]{-1, -1, 0, 0});
                             }
                             testStepNode.info.states = step.getJSONArray("states");
+                            if (testStepNode.info.states.getInt(TreeIconNode.STATE_OPEN_PROJECT_OR_WIZARD_TAB) == 1) {
+                                wizard.replaceNode(testStepNode);
+                            }
 
                             debugTestCaseNode.add(new TreeIconNode(testStepNode, null).addJSON(step));
                         });
@@ -1098,6 +1104,7 @@ public final class MainPanel extends javax.swing.JPanel {
         amphibia.enableSave(true);
         amphibia.mnuOpen.setEnabled(!collection.isOpen());
         amphibia.mnuClose.setEnabled(collection.isOpen());
+        wizard.removeDeadNodes();
 
         IO.write(collection.profile, editor);
         return true;
